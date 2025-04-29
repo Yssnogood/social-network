@@ -1,0 +1,182 @@
+# Exclure les fichiers et dossiers générés par Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Exclure les fichiers de configuration locaux
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Exclure les fichiers de build
+build/
+dist/
+out/
+
+# Exclure les fichiers de log
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Exclure les fichiers de cache
+.cache/
+*.cache
+
+# Exclure les fichiers de couverture de test
+coverage/
+*.lcov
+
+# Exclure les fichiers générés par Next.js
+.next/
+
+# Exclure les fichiers générés par Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Exclure les fichiers spécifiques à macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Exclure les fichiers de configuration de l'éditeur
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Exclure les fichiers de sauvegarde
+*.bak
+*.tmp
+*.swp
+
+# Exclure les fichiers de test
+__tests__/
+__mocks__/
+
+# Exclure les fichiers de documentation générés
+docs/
+
+# Exclure les fichiers de dépendances
+package-lock.json
+yarn.lock
+
+# Exclure les fichiers de configuration de TypeScript
+tsconfig.tsbuildinfo
+
+# Exclure les fichiers de configuration de Go
+*.test
+*.prof
+*.mprof
+
+# Exclure les fichiers de configuration de SQLite
+*.db
+*.sqlite
+
+# Exclure les fichiers de configuration de Webpack
+webpack.config.js
+
+# Exclure les fichiers de configuration de Swagger
+swagger.yaml
+swagger.json
+
+# Exclure les fichiers de configuration de Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Exclure les fichiers de configuration de Electron
+electron.js
+electron.html
+
+# Exclure les fichiers de configuration de Redux
+.redux/
+
+# Exclure les fichiers de configuration de Context API
+.context/
+
+# Exclure les fichiers de configuration de OpenAPI
+openapi.yaml
+openapi.json
+
+# Exclure les fichiers de configuration de WebSockets
+.websockets/
+
+# Exclure les fichiers de configuration de SQLite
+.sqlite/
+
+# Exclure les fichiers de configuration de Go
+.go/
+
+# Exclure les fichiers de configuration de Next.js
+.next/
+
+# Exclure les fichiers de configuration de Docker
+.docker/
+
+# Exclure les fichiers de configuration de Electron
+.electron/
+
+# Exclure les fichiers de configuration de Redux
+.redux/
+
+# Exclure les fichiers de configuration de Context API
+.context/
+
+# Exclure les fichiers de configuration de OpenAPI
+.openapi/
+
+# Exclure les fichiers de configuration de WebSockets
+.websockets/
+
+# Exclure les fichiers de configuration de SQLite
+.sqlite/
+
+# Exclure les fichiers de configuration de Go
+.go/
+
+# Exclure les fichiers de configuration de Swagger
+.swagger/
+
+# Exclure les fichiers de configuration de Webpack
+.webpack/
+
+# Exclure les fichiers de configuration de Next.js
+.next/
+
+# Exclure les fichiers de configuration de Docker
+.docker/
+
+# Exclure les fichiers de configuration de Electron
+.electron/
+
+# Exclure les fichiers de configuration de Redux
+.redux/
+
+# Exclure les fichiers de configuration de Context API
+.context/
+
+# Exclure les fichiers de configuration de OpenAPI
+.openapi/
+
+# Exclure les fichiers de configuration de WebSockets
+.websockets/
+
+# Exclure les fichiers de configuration de SQLite
+.sqlite/
+
+# Exclure les fichiers de configuration de Go
+.go/
+
+# Exclure les fichiers de configuration de Swagger
+.swagger/
+
+# Exclure les fichiers de configuration de Webpack
+.webpack/
