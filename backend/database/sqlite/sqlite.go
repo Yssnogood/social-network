@@ -14,42 +14,42 @@ import (
 )
 
 func InitDBAndMigrate() *sql.DB {
-	// 🔍 Récupère le chemin vers la base depuis la variable d'env
+	// Get the database path from the environment variable
 	dbPath := os.Getenv("DB_PATH")
 	if dbPath == "" {
-		log.Fatal("⚠️  Environment variable DB_PATH is not set")
+		log.Fatal("Environment variable DB_PATH is not set")
 	}
 
-	// 🔌 Connexion SQLite
+	// Open a SQLite connection
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		log.Fatalf("❌ Cannot open SQLite database: %v", err)
+		log.Fatalf("Cannot open SQLite database: %v", err)
 	}
 
-	// 🔧 Préparation du driver pour les migrations
+	// Prepare the driver for migrations
 	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
 	if err != nil {
-		log.Fatalf("❌ Cannot create SQLite migration driver: %v", err)
+		log.Fatalf("Cannot create SQLite migration driver: %v", err)
 	}
 
-	// 📂 Résolution du chemin absolu vers les fichiers de migration
+	// Resolve the absolute path to the migration files
 	absPath, err := filepath.Abs("backend/database/migrations/sqlite")
 	if err != nil {
-		log.Fatalf("❌ Cannot resolve absolute path for migrations: %v", err)
+		log.Fatalf("Cannot resolve absolute path for migrations: %v", err)
 	}
 
-	// 🚀 Application des migrations
+	// Apply the migrations
 	m, err := migrate.NewWithDatabaseInstance(
 		"file://"+absPath,
 		"sqlite3", driver)
 	if err != nil {
-		log.Fatalf("❌ Migration init failed: %v", err)
+		log.Fatalf("Migration init failed: %v", err)
 	}
 
 	if err := m.Up(); err != nil && err.Error() != "no change" {
-		log.Fatalf("❌ Migration failed: %v", err)
+		log.Fatalf("Migration failed: %v", err)
 	}
 
-	fmt.Println("✅ Migrations applied successfully")
+	fmt.Println("Migrations applied successfully")
 	return db
 }

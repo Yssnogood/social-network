@@ -11,13 +11,13 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("⚠️  Erreur lors du chargement du fichier .env")
+		log.Fatal("Erreur loading .env")
 	}
 
-	log.Println("📂 DB_PATH =", os.Getenv("DB_PATH"))
+	log.Println("DB_PATH =", os.Getenv("DB_PATH"))
 
 	db := sqlite.InitDBAndMigrate()
 	defer db.Close()
 
-	log.Println("🚀 Serveur prêt.")
+	log.Println("Serveur ready")
 }
