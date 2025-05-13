@@ -1,7 +1,14 @@
-créer la db + migration : go run backend/cmd/server/main.go
+## Initialisation
 
-commande de migration :
+Pour créer la base de données et lancer les migrations automatiquement :
 
-go run backend/cmd/tools/migrate.go up = créer toutes les tables
-go run backend/cmd/tools/migrate.go alldown = supprime toutes les tables
-go run backend/cmd/tools/migrate.go reset = supprime toutes les tables + recréer toutes les tables
+```bash
+go run backend/cmd/server/main.go
+```
+# commande de migration
+
+| Commande                                      | Description                                        |
+| --------------------------------------------- | -------------------------------------------------- |
+| `go run backend/cmd/tools/migrate.go up`      | ✅ Crée toutes les tables (applique les migrations)|
+| `go run backend/cmd/tools/migrate.go alldown` | 🗑️ Supprime toutes les tables (rollback total)     |
+| `go run backend/cmd/tools/migrate.go reset`   | 🔄 Supprime **et** recrée toutes les tables        |
