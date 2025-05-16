@@ -51,7 +51,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	hashedPassword, err := h.UserService.HashPassword(req.Password)
 	if err != nil {
-		http.Error(w, "Erreur hash password", http.StatusInternalServerError)
+		http.Error(w, "Error hash password", http.StatusInternalServerError)
 		return
 	}
 
@@ -76,7 +76,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.UserRepository.Create(user)
 	if err != nil {
-		http.Error(w, "Error for create user", http.StatusInternalServerError)
+		http.Error(w, "Erreur lors de la création de l'utilisateur", http.StatusInternalServerError)
 		return
 	}
 
