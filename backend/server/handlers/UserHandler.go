@@ -76,7 +76,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.UserRepository.Create(user)
 	if err != nil {
-		http.Error(w, "Erreur lors de la création de l'utilisateur", http.StatusInternalServerError)
+		http.Error(w, "Erreur create user", http.StatusInternalServerError)
 		return
 	}
 
