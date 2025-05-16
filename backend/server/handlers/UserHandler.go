@@ -40,7 +40,7 @@ type createUserRequest struct {
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req createUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Requête invalide", http.StatusBadRequest)
+		http.Error(w, "Request invalid", http.StatusBadRequest)
 		return
 	}
 
@@ -51,13 +51,13 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	hashedPassword, err := h.UserService.HashPassword(req.Password)
 	if err != nil {
-		http.Error(w, "Erreur lors du hash du mot de passe", http.StatusInternalServerError)
+		http.Error(w, "Error hash password", http.StatusInternalServerError)
 		return
 	}
 
 	birthDate, err := time.Parse("2006-01-02", req.BirthDate)
 	if err != nil {
-		http.Error(w, "Format de date invalide. Utilisez YYYY-MM-DD.", http.StatusBadRequest)
+		http.Error(w, "Format invalid. Use YYYY-MM-DD.", http.StatusBadRequest)
 		return
 	}
 
@@ -76,13 +76,13 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.UserRepository.Create(user)
 	if err != nil {
-		http.Error(w, "Erreur lors de la création de l'utilisateur", http.StatusInternalServerError)
+		http.Error(w, "Error create user", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": "Utilisateur créé avec succès",
+		"message": "User created successfully",
 		"user_id": user.ID,
 	})
 }
