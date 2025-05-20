@@ -31,19 +31,50 @@ func main() {
 	// Repositories
 	userRepo := repository.NewUserRepository(db)
 	postRepo := repository.NewPostRepository(db)
+	// commentRepo := repository.NewCommentRepository(db)
+	// notificationRepo := repository.NewNotificationRepository(db)
+	// messageRepo := repository.NewMessageRepository(db)
+	// sessionRepo := repository.NewSessionRepository(db)
+	// followerRepo := repository.NewFollowerRepository(db)
+	// groupRepo := repository.NewGroupRepository(db)
+	// eventRepo := repository.NewEventRepository(db)
+
 
 	// Services
 	userService := services.NewUserService(db)
+	// postService := services.NewPostService(db)
+	// commentService := services.NewCommentService(db)
+	// notificationService := services.NewNotificationService(db)
+	// messageService := services.NewMessageService(db)
+	// sessionService := services.NewSessionService(db)
+	// followerService := services.NewFollowerService(db)
+	// groupService := services.NewGroupService(db)
+	// eventService := services.NewEventService(db)
 
 	// Handlers
 	userHandler := handlers.NewUserHandler(userService, userRepo)
 	postHandler := handlers.NewPostHandler(postRepo)
+	// commentHandler := handlers.NewCommentHandler(commentRepo)
+	// notificationHandler := handlers.NewNotificationHandler(notificationRepo)
+	// messageHandler := handlers.NewMessageHandler(messageRepo)
+	// sessionHandler := handlers.NewSessionHandler(sessionRepo)
+	// followerHandler := handlers.NewFollowerHandler(followerRepo)
+	// groupHandler := handlers.NewGroupHandler(groupRepo)
+	// eventHandler := handlers.NewEventHandler(eventRepo)
 
+	// Create a new router
 	r := mux.NewRouter()
 
 	//routes
 	routes.UserRoutes(r, userHandler)
 	routes.PostRoutes(r, postHandler)
+	//routes.CommentsRoutes(r, commentHandler)
+	//routes.NotificationRoutes(r, notificationHandler)
+	//routes.MessageRoutes(r, messageHandler)
+	//routes.SessionRoutes(r, sessionHandler)
+	//routes.FollowerRoutes(r, followerHandler)
+	//routes.GroupRoutes(r, groupHandler)
+	//routes.EventRoutes(r, eventHandler)
 
 	// start serveur
 	log.Println("Serveur en écoute sur :8080")
