@@ -1,0 +1,154 @@
+package handlers
+
+import (
+	"encoding/json"
+	"net/http"
+	"time"
+
+	"social-network/backend/database/models"
+	"social-network/backend/database/repositories"
+)
+
+// MessageHandler handles HTTP requests related to messages.
+type MessageHandler struct {
+	MessageRepository *repository.MessageRepository
+}
+
+// NewMessageHandler creates a new MessageHandler.
+func NewMessageHandler(mr *repository.MessageRepository) *MessageHandler {
+	return &MessageHandler{
+		MessageRepository: mr,
+	}
+}
+
+// Request DTOs
+
+type createMessageRequest struct {
+	SenderID   int64     `json:"sender_id"`
+	ReceiverID int64     `json:"receiver_id"`
+	GroupID    *int64    `json:"group_id,omitempty"`
+	Content    string    `json:"content"`
+}
+
+type getMessageByIDRequest struct {
+	ID int64 `json:"id"`
+}
+
+type getMessagesBetweenUsersRequest struct {
+	User1ID int64 `json:"user1_id"`
+	User2ID int64 `json:"user2_id"`
+}
+
+type updateMessageRequest struct {
+	ID      int64      `json:"id"`
+	Content string     `json:"content"`
+	ReadAt  *time.Time `json:"read_at,omitempty"`
+}
+
+type deleteMessageRequest struct {
+	ID int64 `json:"id"`
+}
+
+// Handlers
+
+// CreateMessage creates a new message.
+func (h *MessageHandler) CreateMessage(w http.ResponseWriter, r *http.Request) {
+	var req createMessageRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	message := &models.Message{
+		SenderID:   req.SenderID,
+		ReceiverID: req.ReceiverID,
+		GroupID:    req.GroupID,
+		Content:    req.Content,
+		CreatedAt:  time.Now(),
+	}
+
+	id, err := h.MessageRepository.Create(message)
+	if err != nil {
+		http.Error(w, "Failed to create message", http.StatusInternalServerError)
+		return
+	}
+
+	message.ID = id
+	json.NewEncoder(w).Encode(message)
+}
+
+// GetMessageByID retrieves a message by its ID.
+func (h *MessageHandler) GetMessageByID(w http.ResponseWriter, r *http.Request) {
+	var req getMessageByIDRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	message, err := h.MessageRepository.GetByID(req.ID)
+	if err != nil {
+		http.Error(w, "Message not found", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(message)
+}
+
+// GetMessagesBetweenUsers returns messages between two users.
+func (h *MessageHandler) GetMessagesBetweenUsers(w http.ResponseWriter, r *http.Request) {
+	var req getMessagesBetweenUsersRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	messages, err := h.MessageRepository.GetMessagesBetweenUsers(req.User1ID, req.User2ID)
+	if err != nil {
+		http.Error(w, "Failed to retrieve messages", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(messages)
+}
+
+// UpdateMessage updates an existing message.
+func (h *MessageHandler) UpdateMessage(w http.ResponseWriter, r *http.Request) {
+	var req updateMessageRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	message := &models.Message{
+		ID:      req.ID,
+		Content: req.Content,
+		ReadAt:  req.ReadAt,
+	}
+
+	if err := h.MessageRepository.Update(message); err != nil {
+		http.Error(w, "Failed to update message", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Message updated successfully",
+	})
+}
+
+// DeleteMessage deletes a message by ID.
+func (h *MessageHandler) DeleteMessage(w http.ResponseWriter, r *http.Request) {
+	var req deleteMessageRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.MessageRepository.Delete(req.ID); err != nil {
+		http.Error(w, "Failed to delete message", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Message deleted successfully",
+	})
+}
