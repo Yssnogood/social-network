@@ -1,0 +1,205 @@
+erDiagram
+    USER {
+        int id PK
+        string email
+        string password_hash
+        string first_name
+        string last_name
+        date birth_date
+        string avatar_path
+        string nickname
+        string about_me
+        boolean is_public
+        timestamp created_at
+        timestamp updated_at
+        boolean online_status
+    }
+    
+    %% Système de publications classique
+    POST {
+        int id PK
+        int user_id FK
+        string content
+        string image_path
+        int privacy_type
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    COMMENT {
+        int id PK
+        int post_id FK
+        int user_id FK
+        string content
+        string image_path
+        timestamp created_at
+    }
+    
+    POST_PRIVACY {
+        int id PK
+        int post_id FK
+        int user_id FK
+    }
+    
+    GROUP {
+        int id PK
+        int creator_id FK
+        string title
+        string description
+        timestamp created_at
+    }
+    
+    GROUP_MEMBER {
+        int id PK
+        int group_id FK
+        int user_id FK
+        boolean is_accepted
+        timestamp created_at
+    }
+    
+    GROUP_POST {
+        int id PK
+        int group_id FK
+        int user_id FK
+        string content
+        string image_path
+        timestamp created_at
+    }
+    
+    GROUP_COMMENT {
+        int id PK
+        int group_post_id FK
+        int user_id FK
+        string content
+        string image_path
+        timestamp created_at
+    }
+    
+    EVENT {
+        int id PK
+        int group_id FK
+        int creator_id FK
+        string title
+        string description
+        datetime event_time
+        timestamp created_at
+    }
+    
+    EVENT_OPTION {
+        int id PK
+        int event_id FK
+        string option_text
+    }
+    
+    EVENT_RESPONSE {
+        int id PK
+        int event_id FK
+        int user_id FK
+        int option_id FK
+        timestamp created_at
+    }
+    
+    %% Système de messagerie instantanée
+    CONVERSATION {
+        int id PK
+        string name
+        boolean is_group
+        timestamp created_at
+    }
+    
+    CONVERSATION_PARTICIPANT {
+        int id PK
+        int conversation_id FK
+        int user_id FK
+        timestamp joined_at
+    }
+    
+    INSTANT_MESSAGE {
+        int id PK
+        int conversation_id FK
+        int sender_id FK
+        int reference_message_id FK
+        string content
+        string image_path
+        boolean is_read
+        timestamp created_at
+    }
+    
+    TYPING_STATUS {
+        int id PK
+        int conversation_id FK
+        int user_id FK
+        timestamp last_updated
+    }
+    
+    READ_RECEIPT {
+        int id PK
+        int message_id FK
+        int user_id FK
+        timestamp read_at
+    }
+    
+    %% Système commun
+    FOLLOW {
+        int id PK
+        int follower_id FK
+        int followed_id FK
+        boolean is_accepted
+        timestamp created_at
+    }
+    
+    NOTIFICATION {
+        int id PK
+        int user_id FK
+        int type
+        int reference_id
+        string reference_type
+        boolean is_read
+        timestamp created_at
+    }
+    
+    SESSION {
+        int id PK
+        int user_id FK
+        string token
+        timestamp expires_at
+        string client_id
+        string device_info
+    }
+
+    %% Relations du système de publications
+    USER ||--o{ POST : "creates"
+    USER ||--o{ COMMENT : "writes"
+    USER ||--o{ FOLLOW : "follows"
+    USER }o--o{ FOLLOW : "is followed by"
+    POST ||--o{ COMMENT : "has"
+    POST ||--o{ POST_PRIVACY : "restricts to"
+    USER ||--o{ POST_PRIVACY : "can view"
+    USER ||--o{ GROUP : "creates"
+    GROUP ||--o{ GROUP_MEMBER : "has"
+    USER ||--o{ GROUP_MEMBER : "belongs to"
+    GROUP ||--o{ GROUP_POST : "contains"
+    USER ||--o{ GROUP_POST : "creates"
+    GROUP_POST ||--o{ GROUP_COMMENT : "has"
+    USER ||--o{ GROUP_COMMENT : "writes"
+    GROUP ||--o{ EVENT : "hosts"
+    USER ||--o{ EVENT : "creates"
+    EVENT ||--o{ EVENT_OPTION : "offers"
+    EVENT ||--o{ EVENT_RESPONSE : "receives"
+    USER ||--o{ EVENT_RESPONSE : "selects"
+    EVENT_OPTION ||--o{ EVENT_RESPONSE : "is selected"
+    
+    %% Relations du système de messagerie instantanée
+    USER ||--o{ CONVERSATION_PARTICIPANT : "participates in"
+    CONVERSATION ||--o{ CONVERSATION_PARTICIPANT : "includes"
+    USER ||--o{ INSTANT_MESSAGE : "sends"
+    CONVERSATION ||--o{ INSTANT_MESSAGE : "contains"
+    INSTANT_MESSAGE ||--o{ INSTANT_MESSAGE : "references"
+    USER ||--o{ TYPING_STATUS : "indicates typing"
+    CONVERSATION ||--o{ TYPING_STATUS : "displays typing"
+    INSTANT_MESSAGE ||--o{ READ_RECEIPT : "is read by"
+    USER ||--o{ READ_RECEIPT : "reads"
+    
+    %% Relations du système commun
+    USER ||--o{ NOTIFICATION : "receives"
+    USER ||--o{ SESSION : "has"
