@@ -13,6 +13,7 @@ import (
 	"social-network/backend/app/services"
 	"social-network/backend/database/repositories"
 	"social-network/backend/server/routes"
+	"social-network/backend/server/middlewares"
 )
 
 func main() {
@@ -75,6 +76,10 @@ func main() {
 	//routes.FollowerRoutes(r, followerHandler)
 	//routes.GroupRoutes(r, groupHandler)
 	//routes.EventRoutes(r, eventHandler)
+	
+	// Middleware
+	r.Handle("/api/posts", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.CreatePost))).Methods("POST")
+
 
 	// start serveur
 	log.Println("Serveur en écoute sur :8080")

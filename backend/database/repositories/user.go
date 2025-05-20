@@ -90,6 +90,40 @@ func (r *UserRepository) GetByID(id int64) (*models.User, error) {
 	return user, nil
 }
 
+// Get a user by email
+func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT id, email, password_hash, first_name, last_name, birth_date,
+			avatar_path, nickname, about_me, is_public, created_at, updated_at
+		FROM users WHERE email = ?
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	user := &models.User{}
+	err = stmt.QueryRow(email).Scan(
+		&user.ID,
+		&user.Email,
+		&user.PasswordHash,
+		&user.FirstName,
+		&user.LastName,
+		&user.BirthDate,
+		&user.AvatarPath,
+		&user.Nickname,
+		&user.AboutMe,
+		&user.IsPublic,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
 // update a user in the database
 func (r *UserRepository) Update(user *models.User) error {
 	stmt, err := r.db.Prepare(`
@@ -138,6 +172,6 @@ func (r *UserRepository) Delete(id int64) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
