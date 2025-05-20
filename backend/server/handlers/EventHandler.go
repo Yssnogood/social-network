@@ -66,7 +66,7 @@ func (h *EventHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		GroupID:     req.GroupID,
 		CreatorID:   req.CreatorID,
 		Title:       req.Title,
-		Description: req.Description,
+		Description: &req.Description,
 		EventDate:   req.EventDate,
 		CreatedAt:   time.Now(),
 	}
@@ -128,7 +128,7 @@ func (h *EventHandler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		GroupID:     req.GroupID,
 		CreatorID:   req.CreatorID,
 		Title:       req.Title,
-		Description: req.Description,
+		Description: &req.Description,
 		EventDate:   req.EventDate,
 	}
 

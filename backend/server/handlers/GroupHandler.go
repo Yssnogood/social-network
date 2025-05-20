@@ -60,7 +60,7 @@ func (h *GroupHandler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	group := &models.Group{
 		CreatorID:   req.CreatorID,
 		Title:       req.Title,
-		Description: req.Description,
+		Description: &req.Description,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
@@ -120,7 +120,7 @@ func (h *GroupHandler) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	group := &models.Group{
 		ID:          req.ID,
 		Title:       req.Title,
-		Description: req.Description,
+		Description: &req.Description,
 		UpdatedAt:   time.Now(),
 	}
 
