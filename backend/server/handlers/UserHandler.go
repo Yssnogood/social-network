@@ -59,6 +59,35 @@ type deleteUserRequest struct {
 	ID int64 `json:"id"`
 }
 
+type loginRequest struct {
+	Email    string `json:"email"`
+	Nickname string `json:"nickname"`
+	Password string `json:"password"`
+}
+
+// Login handles user login.
+func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
+	var req loginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.UserRepository.GetByEmail(req.Email)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	if !h.UserService.CheckPasswordHash(req.Password, user.PasswordHash) {
+		http.Error(w, "Invalid password", http.StatusUnauthorized)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
+}
+
 // CreateUser create a new user.
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req createUserRequest

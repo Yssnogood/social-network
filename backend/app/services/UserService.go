@@ -5,6 +5,8 @@ import (
 	"errors"
 	"regexp"
 	"golang.org/x/crypto/bcrypt"
+	"time"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // UserService is a service for managing users.
@@ -33,3 +35,20 @@ func (s *UserService) HashPassword(password string) (string, error) {
 	return string(bytes), err
 }
 
+// checkPasswordHash checks if the given password matches the hashed password.
+func (s *UserService) CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+var jwtSecret = []byte("ton_secret_jwt")
+
+func (s *UserService) GenerateJWT(userID int64) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id": userID,
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(jwtSecret)
+}
