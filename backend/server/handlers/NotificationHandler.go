@@ -73,8 +73,8 @@ func (h *NotificationHandler) CreateNotification(w http.ResponseWriter, r *http.
 		Type:          req.Type,
 		Content:       req.Content,
 		Read:          req.Read,
-		ReferenceID:   req.ReferenceID,
-		ReferenceType: req.ReferenceType,
+		ReferenceID:   &req.ReferenceID,
+		ReferenceType: &req.ReferenceType,
 		CreatedAt:     time.Now(),
 	}
 
@@ -137,8 +137,8 @@ func (h *NotificationHandler) UpdateNotification(w http.ResponseWriter, r *http.
 		Type:          req.Type,
 		Content:       req.Content,
 		Read:          req.Read,
-		ReferenceID:   req.ReferenceID,
-		ReferenceType: req.ReferenceType,
+		ReferenceID:   &req.ReferenceID,
+		ReferenceType: &req.ReferenceType,
 	}
 
 	if err := h.NotificationRepository.Update(notification); err != nil {
