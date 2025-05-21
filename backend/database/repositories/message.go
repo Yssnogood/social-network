@@ -20,8 +20,8 @@ func NewMessageRepository(db *sql.DB) *MessageRepository {
 func (r *MessageRepository) Create(message *models.Message) (int64, error) {
 	stmt, err := r.db.Prepare(`
 		INSERT INTO messages(
-			sender_id, receiver_id, group_id, content, created_at
-		) VALUES(?, ?, ?, ?, ?)
+			conversation_id, sender_id, receiver_id, group_id, content, created_at
+		) VALUES(?, ?, ?, ?, ?, ?)
 	`)
 
 	if err != nil {
@@ -29,6 +29,7 @@ func (r *MessageRepository) Create(message *models.Message) (int64, error) {
 	}
 	defer stmt.Close()
 	result, err := stmt.Exec(
+		message.ConversationID,
 		message.SenderID,
 		message.ReceiverID,
 		message.GroupID,

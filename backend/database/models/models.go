@@ -52,13 +52,14 @@ type Follower struct {
 
 // Message model
 type Message struct {
-	ID         int64      `json:"id"`
-	SenderID   int64      `json:"sender_id"`
-	ReceiverID int64      `json:"receiver_id"`
-	GroupID    *int64     `json:"group_id"`
-	Content    string     `json:"content"`
-	CreatedAt  time.Time  `json:"created_at"`
-	ReadAt     *time.Time `json:"read_at"`
+	ID         		int64      `json:"id"`
+	ConversationID 	int64      `json:"conversation_id"`
+	SenderID   		int64      `json:"sender_id"`
+	ReceiverID 		int64      `json:"receiver_id"`
+	GroupID    		*int64     `json:"group_id"`
+	Content    		string     `json:"content"`
+	CreatedAt  		time.Time  `json:"created_at"`
+	ReadAt     		*time.Time `json:"read_at"`
 }
 
 // Notification model
