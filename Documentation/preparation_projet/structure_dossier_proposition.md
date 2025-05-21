@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_name TEXT NOT NULL,
     birth_date DATE NOT NULL,
     avatar_path TEXT,
-    nickname TEXT,
+    username TEXT,
     about_me TEXT,
     is_public BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

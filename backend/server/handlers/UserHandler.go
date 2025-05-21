@@ -7,7 +7,7 @@ import (
 
 	"social-network/backend/app/services"
 	"social-network/backend/database/models"
-	"social-network/backend/database/repositories"
+	repository "social-network/backend/database/repositories"
 )
 
 // UserHandler is a handler for managing users.
@@ -31,7 +31,7 @@ type createUserRequest struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	BirthDate string `json:"birth_date"`
-	Nickname  string `json:"nickname"`
+	Username  string `json:"username"`
 	AboutMe   string `json:"about_me"`
 	IsPublic  bool   `json:"is_public"`
 }
@@ -49,7 +49,7 @@ type updateUserRequest struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	BirthDate string `json:"birth_date"`
-	Nickname  string `json:"nickname"`
+	Username  string `json:"username"`
 	AboutMe   string `json:"about_me"`
 	IsPublic  bool   `json:"is_public"`
 }
@@ -61,7 +61,7 @@ type deleteUserRequest struct {
 
 type loginRequest struct {
 	Email    string `json:"email"`
-	Nickname string `json:"nickname"`
+	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
@@ -108,7 +108,6 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-
 // Logout handles user logout.
 func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
@@ -127,7 +126,6 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		"message": "Logged out successfully",
 	})
 }
-
 
 // CreateUser create a new user.
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -160,7 +158,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
 		BirthDate:    birthDate,
-		Nickname:     req.Nickname,
+		Username:     req.Username,
 		AboutMe:      req.AboutMe,
 		IsPublic:     req.IsPublic,
 		CreatedAt:    time.Now(),
@@ -215,7 +213,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	user.Email = req.Email
 	user.FirstName = req.FirstName
 	user.LastName = req.LastName
-	user.Nickname = req.Nickname
+	user.Username = req.Username
 	user.AboutMe = req.AboutMe
 	user.IsPublic = req.IsPublic
 	user.UpdatedAt = time.Now()

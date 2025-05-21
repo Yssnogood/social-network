@@ -12,7 +12,7 @@
 | last_name | TEXT | - | Nom de famille de l'utilisateur | NOT NULL |
 | birth_date | DATE | - | Date de naissance | NOT NULL |
 | avatar_path | TEXT | - | Chemin vers l'avatar/image de profil | NULL |
-| nickname | TEXT | - | Surnom de l'utilisateur | NULL |
+| username | TEXT | - | Surnom de l'utilisateur | NULL |
 | about_me | TEXT | - | Description personnelle | NULL |
 | is_public | BOOLEAN | - | Indique si le profil est public (TRUE) ou privé (FALSE) | DEFAULT FALSE |
 | online_status | BOOLEAN | - | Indique si l'utilisateur est en ligne | DEFAULT FALSE |

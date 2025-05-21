@@ -1,7 +1,7 @@
 # Modèle Logique des Données (MLD) Révisé
 
 ## Utilisateurs
-- **users** (id, email, password_hash, first_name, last_name, birth_date, avatar_path, nickname, about_me, is_public, created_at, updated_at, online_status)
+- **users** (id, email, password_hash, first_name, last_name, birth_date, avatar_path, username, about_me, is_public, created_at, updated_at, online_status)
 
 ## Système de publications classique
 - **posts** (id, user_id, content, image_path, privacy_type, created_at, updated_at)

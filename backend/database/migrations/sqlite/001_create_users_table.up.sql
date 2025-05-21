@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
 	last_name TEXT NOT NULL CHECK (length(last_name) <= 255),
 	birth_date DATE NOT NULL,
 	avatar_path TEXT CHECK (length(avatar_path) <= 255),
-	nickname TEXT UNIQUE CHECK (length(nickname) <= 255),
+	username TEXT UNIQUE CHECK (length(username) <= 255),
 	about_me TEXT CHECK (length(about_me) <= 255),
 	is_public BOOLEAN NOT NULL DEFAULT 0,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

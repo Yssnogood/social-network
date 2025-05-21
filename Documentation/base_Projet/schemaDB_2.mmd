@@ -7,14 +7,14 @@ erDiagram
         string last_name
         date birth_date
         string avatar_path
-        string nickname
+        string username
         string about_me
         boolean is_public
         timestamp created_at
         timestamp updated_at
         boolean online_status
     }
-    
+
     %% Système de publications classique
     POST {
         int id PK
@@ -25,7 +25,7 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     COMMENT {
         int id PK
         int post_id FK
@@ -34,13 +34,13 @@ erDiagram
         string image_path
         timestamp created_at
     }
-    
+
     POST_PRIVACY {
         int id PK
         int post_id FK
         int user_id FK
     }
-    
+
     GROUP {
         int id PK
         int creator_id FK
@@ -48,7 +48,7 @@ erDiagram
         string description
         timestamp created_at
     }
-    
+
     GROUP_MEMBER {
         int id PK
         int group_id FK
@@ -56,7 +56,7 @@ erDiagram
         boolean is_accepted
         timestamp created_at
     }
-    
+
     GROUP_POST {
         int id PK
         int group_id FK
@@ -65,7 +65,7 @@ erDiagram
         string image_path
         timestamp created_at
     }
-    
+
     GROUP_COMMENT {
         int id PK
         int group_post_id FK
@@ -74,7 +74,7 @@ erDiagram
         string image_path
         timestamp created_at
     }
-    
+
     EVENT {
         int id PK
         int group_id FK
@@ -84,13 +84,13 @@ erDiagram
         datetime event_time
         timestamp created_at
     }
-    
+
     EVENT_OPTION {
         int id PK
         int event_id FK
         string option_text
     }
-    
+
     EVENT_RESPONSE {
         int id PK
         int event_id FK
@@ -98,7 +98,7 @@ erDiagram
         int option_id FK
         timestamp created_at
     }
-    
+
     %% Système de messagerie instantanée
     CONVERSATION {
         int id PK
@@ -106,14 +106,14 @@ erDiagram
         boolean is_group
         timestamp created_at
     }
-    
+
     CONVERSATION_PARTICIPANT {
         int id PK
         int conversation_id FK
         int user_id FK
         timestamp joined_at
     }
-    
+
     INSTANT_MESSAGE {
         int id PK
         int conversation_id FK
@@ -124,21 +124,21 @@ erDiagram
         boolean is_read
         timestamp created_at
     }
-    
+
     TYPING_STATUS {
         int id PK
         int conversation_id FK
         int user_id FK
         timestamp last_updated
     }
-    
+
     READ_RECEIPT {
         int id PK
         int message_id FK
         int user_id FK
         timestamp read_at
     }
-    
+
     %% Système commun
     FOLLOW {
         int id PK
@@ -147,7 +147,7 @@ erDiagram
         boolean is_accepted
         timestamp created_at
     }
-    
+
     NOTIFICATION {
         int id PK
         int user_id FK
@@ -157,7 +157,7 @@ erDiagram
         boolean is_read
         timestamp created_at
     }
-    
+
     SESSION {
         int id PK
         int user_id FK
@@ -188,7 +188,7 @@ erDiagram
     EVENT ||--o{ EVENT_RESPONSE : "receives"
     USER ||--o{ EVENT_RESPONSE : "selects"
     EVENT_OPTION ||--o{ EVENT_RESPONSE : "is selected"
-    
+
     %% Relations du système de messagerie instantanée
     USER ||--o{ CONVERSATION_PARTICIPANT : "participates in"
     CONVERSATION ||--o{ CONVERSATION_PARTICIPANT : "includes"
@@ -199,7 +199,7 @@ erDiagram
     CONVERSATION ||--o{ TYPING_STATUS : "displays typing"
     INSTANT_MESSAGE ||--o{ READ_RECEIPT : "is read by"
     USER ||--o{ READ_RECEIPT : "reads"
-    
+
     %% Relations du système commun
     USER ||--o{ NOTIFICATION : "receives"
     USER ||--o{ SESSION : "has"
