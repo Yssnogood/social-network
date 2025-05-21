@@ -39,8 +39,8 @@ type getFollowersRequest struct {
 
 // Handlers
 
-// FollowUser creates a new follow request (or direct follow if accepted by default).
-func (h *FollowerHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
+// CreateFollower creates a new follow request (or direct follow if accepted by default).
+func (h *FollowerHandler) CreateFollower(w http.ResponseWriter, r *http.Request) {
 	var req followRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -99,8 +99,8 @@ func (h *FollowerHandler) GetFollowers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(followers)
 }
 
-// UnfollowUser removes a follower relationship.
-func (h *FollowerHandler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
+// UnCreateFollower removes a follower relationship.
+func (h *FollowerHandler) DeleteFollower(w http.ResponseWriter, r *http.Request) {
 	var req followRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
