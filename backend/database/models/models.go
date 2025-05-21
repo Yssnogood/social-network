@@ -78,8 +78,9 @@ type Session struct {
 type Conversation struct {
 	ID          int64     `json:"id"`
 	Name 	  	string    `json:"name"`
-	Is_group   	bool      `json:"is_group"`
+	IsGroup   	bool      `json:"is_group"`
 	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 // ConversationMember model
