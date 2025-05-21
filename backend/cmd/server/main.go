@@ -8,12 +8,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 
+	"social-network/backend/app/services"
+	repository "social-network/backend/database/repositories"
 	"social-network/backend/database/sqlite"
 	"social-network/backend/server/handlers"
-	"social-network/backend/app/services"
-	"social-network/backend/database/repositories"
-	"social-network/backend/server/routes"
 	"social-network/backend/server/middlewares"
+	"social-network/backend/server/routes"
 )
 
 func main() {
@@ -39,7 +39,6 @@ func main() {
 	// followerRepo := repository.NewFollowerRepository(db)
 	// groupRepo := repository.NewGroupRepository(db)
 	// eventRepo := repository.NewEventRepository(db)
-
 
 	// Services
 	userService := services.NewUserService(db)
@@ -76,14 +75,17 @@ func main() {
 	//routes.FollowerRoutes(r, followerHandler)
 	//routes.GroupRoutes(r, groupHandler)
 	//routes.EventRoutes(r, eventHandler)
-	
+
 	// Middleware
 	r.Handle("/api/posts", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.CreatePost))).Methods("POST")
 
-
 	// start serveur
-	log.Println("Serveur en écoute sur :8080")
-	if err := http.ListenAndServe(":8080", r); err != nil {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8090" // Port par défaut si la variable d'environnement n'est pas définie
+	}
+	log.Println("Serveur en écoute sur :" + port)
+	if err := http.ListenAndServe(":"+port, r); err != nil {
 		log.Fatal("Erreur au lancement du serveur :", err)
 	}
 }
