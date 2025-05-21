@@ -1,4 +1,4 @@
-CREATE TABLE conversation_participants (
+CREATE TABLE conversation_members (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     conversation_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,

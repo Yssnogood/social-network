@@ -50,17 +50,6 @@ type Follower struct {
 	FollowedAt time.Time `json:"followed_at"`
 }
 
-// Message model
-type Message struct {
-	ID         		int64      `json:"id"`
-	ConversationID 	int64      `json:"conversation_id"`
-	SenderID   		int64      `json:"sender_id"`
-	ReceiverID 		int64      `json:"receiver_id"`
-	GroupID    		*int64     `json:"group_id"`
-	Content    		string     `json:"content"`
-	CreatedAt  		time.Time  `json:"created_at"`
-	ReadAt     		*time.Time `json:"read_at"`
-}
 
 // Notification model
 type Notification struct {
@@ -82,6 +71,45 @@ type Session struct {
 	CreatedAt    time.Time `json:"created_at"`
 	ExpiresAt    time.Time `json:"expires_at"`
 }
+
+// --- Conversation models ---
+
+// Conversation model
+type Conversation struct {
+	ID          int64     `json:"id"`
+	Name 	  	string    `json:"name"`
+	Is_group   	bool      `json:"is_group"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+// ConversationMember model
+type ConversationMember struct {
+	ID             int64     `json:"id"`
+	ConversationID int64     `json:"conversation_id"`
+	UserID         int64     `json:"user_id"`
+	JoinedAt       time.Time `json:"joined_at"`
+}
+
+// TypingStatus model
+type TypingStatus struct {
+	ID             int64     `json:"id"`
+	ConversationID int64     `json:"conversation_id"`
+	UserID         int64     `json:"user_id"`
+	Last_update     time.Time `json:"last_update"`
+}
+
+// Message model
+type Message struct {
+	ID         		int64      `json:"id"`
+	ConversationID 	int64      `json:"conversation_id"`
+	SenderID   		int64      `json:"sender_id"`
+	ReceiverID 		int64      `json:"receiver_id"`
+	GroupID    		*int64     `json:"group_id"`
+	Content    		string     `json:"content"`
+	CreatedAt  		time.Time  `json:"created_at"`
+	ReadAt     		*time.Time `json:"read_at"`
+}
+
 
 // --- Group models ---
 
