@@ -84,9 +84,50 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Génère le JWT
+	token, err := h.UserService.GenerateJWT(user.ID)
+	if err != nil {
+		http.Error(w, "Token generation failed", http.StatusInternalServerError)
+		return
+	}
+
+	// Écrit le token dans un cookie sécurisé
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false, // à mettre sur true en HTTPS
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   86400, // 24h
+	})
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Login successful",
+	})
 }
+
+
+// Logout handles user logout.
+func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Logged out successfully",
+	})
+}
+
 
 // CreateUser create a new user.
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
