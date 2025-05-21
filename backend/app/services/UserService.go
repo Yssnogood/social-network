@@ -3,10 +3,10 @@ package services
 import (
 	"database/sql"
 	"errors"
-	"regexp"
-	"golang.org/x/crypto/bcrypt"
-	"time"
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
+	"regexp"
+	"time"
 )
 
 // UserService is a service for managing users.
@@ -52,4 +52,3 @@ func (s *UserService) GenerateJWT(userID int64) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(jwtSecret)
 }
-
