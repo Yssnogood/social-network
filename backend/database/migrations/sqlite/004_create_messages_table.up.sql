@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS messages (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	conversation_id INTEGER NOT NULL,
 	sender_id INTEGER NOT NULL,
 	receiver_id INTEGER NOT NULL,
 	group_id INTEGER,
