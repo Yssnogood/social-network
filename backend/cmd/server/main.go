@@ -69,14 +69,14 @@ func main() {
 	//routes
 	routes.UserRoutes(r, userHandler)
 	routes.PostRoutes(r, postHandler)
-	//routes.CommentsRoutes(r, commentHandler)
-	//routes.NotificationRoutes(r, notificationHandler)
-	//routes.MessageRoutes(r, messageHandler)
-	//routes.SessionRoutes(r, sessionHandler)
-	//routes.FollowerRoutes(r, followerHandler)
-	//routes.GroupRoutes(r, groupHandler)
-	//routes.EventRoutes(r, eventHandler)
-	
+	// routes.CommentsRoutes(r, commentHandler)
+	// routes.NotificationRoutes(r, notificationHandler)
+	// routes.MessageRoutes(r, messageHandler)
+	// routes.SessionRoutes(r, sessionHandler)
+	// routes.FollowerRoutes(r, followerHandler)
+	// routes.GroupRoutes(r, groupHandler)
+	// routes.EventRoutes(r, eventHandler)
+
 	// Middleware
 	r.Handle("/api/posts", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.CreatePost))).Methods("POST")
 
