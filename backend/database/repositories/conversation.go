@@ -15,7 +15,7 @@ func NewConversationRepository(db *sql.DB) *ConversationRepository {
 	return &ConversationRepository{db: db}
 }
 
-// Create ajoute une nouvelle conversation
+// Create
 func (r *ConversationRepository) Create(convo *models.Conversation) (*models.Conversation, error) {
 	stmt, err := r.db.Prepare(`
 		INSERT INTO conversations(name, is_group, created_at)
@@ -42,6 +42,7 @@ func (r *ConversationRepository) Create(convo *models.Conversation) (*models.Con
 	return convo, nil
 }
 
+// GetByID
 func (r *ConversationRepository) GetByID(id int64) (*models.Conversation, error) {
 	stmt, err := r.db.Prepare(`
 		SELECT id, name, is_group, created_at
@@ -61,6 +62,7 @@ func (r *ConversationRepository) GetByID(id int64) (*models.Conversation, error)
 	return convo, nil
 }
 
+// GetByName
 func (r *ConversationRepository) GetByName(name string) (*models.Conversation, error) {
 	stmt, err := r.db.Prepare(`
 		SELECT id, name, is_group, created_at
@@ -80,6 +82,7 @@ func (r *ConversationRepository) GetByName(name string) (*models.Conversation, e
 	return convo, nil
 }
 
+// Update
 func (r *ConversationRepository) UpdatedAt(id int64) (*models.Conversation, error) {
 	now := time.Now()
 	stmt, err := r.db.Prepare(`
@@ -98,6 +101,7 @@ func (r *ConversationRepository) UpdatedAt(id int64) (*models.Conversation, erro
 	return r.GetByID(id)
 }
 
+// Delete
 func (r *ConversationRepository) Delete(id int64) error {
 	stmt, err := r.db.Prepare(`
 		DELETE FROM conversations WHERE id = ?

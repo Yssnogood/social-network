@@ -84,7 +84,7 @@ type Conversation struct {
 }
 
 // ConversationMember model
-type ConversationMember struct {
+type ConversationMembers struct {
 	ID             int64     `json:"id"`
 	ConversationID int64     `json:"conversation_id"`
 	UserID         int64     `json:"user_id"`
@@ -96,7 +96,7 @@ type TypingStatus struct {
 	ID             int64     `json:"id"`
 	ConversationID int64     `json:"conversation_id"`
 	UserID         int64     `json:"user_id"`
-	Last_update     time.Time `json:"last_update"`
+	LastUpdate     time.Time `json:"last_update"`
 }
 
 // Message model
