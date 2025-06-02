@@ -1,7 +1,91 @@
+'use client';
+
 import Link from "next/link";
 import Image from "next/image";
+import { useState, useEffect } from "react";
+import { getPosts, createPost, Post } from "../../services/post";
 
 export default function Home() {
+    const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
+    const [postTitle, setPostTitle] = useState('');
+    const [postContent, setPostContent] = useState('');
+    const [postImage, setPostImage] = useState<File | null>(null);
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        async function loadPosts() {
+            try {
+                const fetchedPosts = await getPosts();
+                setPosts(fetchedPosts);
+            } catch (error) {
+                console.error("Failed to fetch posts:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        loadPosts();
+    }, []);
+
+    const handleOpenModal = () => {
+        setIsCreatePostModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsCreatePostModalOpen(false);
+        setPostTitle('');
+        setPostContent('');
+        setPostImage(null);
+    };
+
+    const handleSubmitPost = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        try {
+            // In a real app, you'd upload the image first and get a URL
+            let imageUrl;
+            if (postImage) {
+                // This would be replaced with actual image upload logic
+                imageUrl = URL.createObjectURL(postImage);
+            }
+
+            const newPost = await createPost({
+                userId: 'current-user-id', // This would come from authentication
+                userName: 'Current User', // This would come from user profile
+                title: postTitle,
+                content: postContent,
+                imageUrl
+            });
+
+            // Add the new post to the top of the list
+            setPosts([newPost, ...posts]);
+            handleCloseModal();
+        } catch (error) {
+            console.error("Failed to create post:", error);
+            // Here you would show an error notification to the user
+        }
+    };
+
+    // Format date to relative time (e.g., "2 hours ago")
+    const formatRelativeTime = (date: Date) => {
+        const now = new Date();
+        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+        
+        if (diffInSeconds < 60) return 'just now';
+        
+        const diffInMinutes = Math.floor(diffInSeconds / 60);
+        if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+        
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        if (diffInHours < 24) return `${diffInHours}h ago`;
+        
+        const diffInDays = Math.floor(diffInHours / 24);
+        if (diffInDays < 30) return `${diffInDays}d ago`;
+        
+        return date.toLocaleDateString();
+    };
+
     return (
         <>
             <header className="fixed top-0 left-0 right-0 h-12 bg-blue-600 shadow-sm z-50 flex items-center px-4">
@@ -52,16 +136,147 @@ export default function Home() {
                     </nav>
                 </div>
             </header>
-            <div className="flex min-h-screen flex-col items-center justify-center p-4">
-                <div className="w-full max-w-md space-y-8 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md">
-                    <div className="text-center">
-                        <h1 className="text-3xl font-bold">Welcome to Our App</h1>
-                        <p className="mt-2 text-gray-600 dark:text-gray-400">
-                            Your journey starts here
-                        </p>
-                    </div>
+
+            {/* Create Post Button - Fixed to middle-left */}
+            <button
+                onClick={handleOpenModal}
+                className="fixed left-5 top-1/2 transform -translate-y-1/2 bg-blue-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors z-40"
+                aria-label="Create post"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+            </button>
+
+            <div className="pt-16 px-4 flex justify-center">
+                {/* Main Content Area - Posts more centered */}
+                <div className="w-full max-w-xl mx-auto">
+                    {/* Loading state */}
+                    {isLoading && (
+                        <div className="text-center py-10">
+                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                            <p className="mt-2 text-gray-600">Loading posts...</p>
+                        </div>
+                    )}
+
+                    {/* No posts state */}
+                    {!isLoading && posts.length === 0 && (
+                        <div className="text-center py-10">
+                            <p className="text-gray-600">No posts yet. Be the first to post!</p>
+                        </div>
+                    )}
+
+                    {/* Posts list */}
+                    {posts.map((post) => (
+                        <div key={post.id} className="bg-white p-4 rounded-lg shadow-md mb-4">
+                            <div className="flex items-center mb-3">
+                                <div className="w-10 h-10 bg-gray-200 rounded-full mr-3"></div>
+                                <div>
+                                    <div className="font-semibold">{post.userName}</div>
+                                    <div className="text-xs text-gray-500">
+                                        {formatRelativeTime(post.createdAt)}
+                                    </div>
+                                </div>
+                            </div>
+                            <h3 className="font-medium text-lg mb-2">{post.title}</h3>
+                            <div className="mb-3">
+                                {post.content}
+                            </div>
+                            {post.imageUrl && (
+                                <div className="mb-3">
+                                    <img 
+                                        src={post.imageUrl} 
+                                        alt="Post image"
+                                        className="max-h-96 rounded-lg mx-auto"
+                                    />
+                                </div>
+                            )}
+                            <div className="border-t border-gray-100 pt-3 mt-3 flex gap-4">
+                                <button className="text-gray-500 hover:text-blue-600 text-sm flex items-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                    </svg>
+                                    {post.likes} Like{post.likes !== 1 ? 's' : ''}
+                                </button>
+                                <button className="text-gray-500 hover:text-blue-600 text-sm flex items-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                                    </svg>
+                                    {post.comments} Comment{post.comments !== 1 ? 's' : ''}
+                                </button>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
+
+            {/* Create Post Modal */}
+            {isCreatePostModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold">Create a Post</h2>
+                            <button onClick={handleCloseModal} className="text-gray-500 hover:text-gray-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <form onSubmit={handleSubmitPost}>
+                            <div className="mb-4">
+                                <label htmlFor="postTitle" className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                                <input
+                                    id="postTitle"
+                                    type="text"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={postTitle}
+                                    onChange={(e) => setPostTitle(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            
+                            <div className="mb-4">
+                                <label htmlFor="postContent" className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                                <textarea
+                                    id="postContent"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md h-32 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={postContent}
+                                    onChange={(e) => setPostContent(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            
+                            <div className="mb-4">
+                                <label htmlFor="postImage" className="block text-sm font-medium text-gray-700 mb-1">Upload Image</label>
+                                <input
+                                    id="postImage"
+                                    type="file"
+                                    accept="image/*"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    onChange={(e) => setPostImage(e.target.files?.[0] || null)}
+                                />
+                            </div>
+                            
+                            <div className="flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleCloseModal}
+                                    className="px-4 py-2 text-gray-500 hover:text-gray-700"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                >
+                                    Post
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
