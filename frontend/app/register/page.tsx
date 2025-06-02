@@ -1,6 +1,52 @@
-import Link from "next/link";
+"use client";
 
+import Link from "next/link";
+import { useState } from "react";
+import { redirect } from "next/navigation";
+import { url } from "../login/page"; 
+import { useCookies } from "next-client-cookies";
 export default function Register() {
+    const cookies = useCookies()
+    if (cookies.get('jwt') != undefined) {
+        redirect('/home')
+    }
+    const [firstName,setFirstName] = useState('');
+    const [lastName,setLastName] = useState('');
+    const [userName, setUserName] = useState('');
+    const [birthDate, setBirthDate] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword,setConfirmPassword] = useState('');
+
+    const handleRegister = async (e:React.FormEvent) => {
+        e.preventDefault();
+        if (password !== confirmPassword) {
+            console.error('Not Same Password')
+            return
+        }
+        try {
+            const resp = await fetch(url+'/register',{
+                method:"POST",
+                body:JSON.stringify({
+                    first_name:firstName,
+                    last_name: lastName,
+                    username: userName,
+                    birth_date: birthDate,
+                    email: email,
+                    password: password
+                })
+            })
+            if (resp.ok) {
+                const r = await resp.json()
+                console.log(r.message)
+                redirect("/login")
+            } else {
+                console.error("Internal Server Error")
+            }
+        } catch(err) {
+            console.log("Error Fetching",err)
+        }
+    }
     return (
         <div className="flex min-h-screen flex-col items-center justify-center p-4">
             <div className="w-full max-w-md space-y-8 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md">
@@ -9,7 +55,7 @@ export default function Register() {
                     <p className="mt-2 text-gray-600 dark:text-gray-400">Create your account</p>
                 </div>
 
-                <form className="mt-8 space-y-6">
+                <form onSubmit={handleRegister} className="mt-8 space-y-6">
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -21,6 +67,7 @@ export default function Register() {
                                     name="firstName"
                                     type="text"
                                     required
+                                    onChange={(e) => setFirstName(e.target.value)}
                                     className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                 />
                             </div>
@@ -33,6 +80,7 @@ export default function Register() {
                                     name="lastName"
                                     type="text"
                                     required
+                                    onChange={(e) => setLastName(e.target.value)}
                                     className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                 />
                             </div>
@@ -47,6 +95,7 @@ export default function Register() {
                                 name="username"
                                 type="text"
                                 required
+                                    onChange={(e) => setUserName(e.target.value)}
                                 className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
                         </div>
@@ -60,6 +109,7 @@ export default function Register() {
                                 name="birthDate"
                                 type="date"
                                 required
+                                onChange={(e) => setBirthDate(e.target.value)}
                                 className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
                         </div>
@@ -74,6 +124,7 @@ export default function Register() {
                                 type="email"
                                 autoComplete="email"
                                 required
+                                onChange={(e) => setEmail(e.target.value)}
                                 className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
                         </div>
@@ -87,6 +138,7 @@ export default function Register() {
                                 name="password"
                                 type="password"
                                 required
+                                onChange={(e) => setPassword(e.target.value)}
                                 className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
                         </div>
@@ -100,6 +152,7 @@ export default function Register() {
                                 name="confirmPassword"
                                 type="password"
                                 required
+                                onChange={(e) => setConfirmPassword(e.target.value)}
                                 className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
                         </div>

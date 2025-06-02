@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -12,15 +13,17 @@ import (
 
 // UserHandler is a handler for managing users.
 type UserHandler struct {
-	UserService    *services.UserService
-	UserRepository *repository.UserRepository
+	UserService       *services.UserService
+	UserRepository    *repository.UserRepository
+	SessionRepository *repository.SessionRepository
 }
 
 // NewUserHandler creates a new UserHandler.
-func NewUserHandler(us *services.UserService, ur *repository.UserRepository) *UserHandler {
+func NewUserHandler(us *services.UserService, ur *repository.UserRepository, sr *repository.SessionRepository) *UserHandler {
 	return &UserHandler{
-		UserService:    us,
-		UserRepository: ur,
+		UserService:       us,
+		UserRepository:    ur,
+		SessionRepository: sr,
 	}
 }
 
@@ -39,6 +42,11 @@ type createUserRequest struct {
 // getUserRequest defines the request body for getting a user.
 type getUserRequest struct {
 	ID int64 `json:"id"`
+}
+
+// getUserRequest defines the request body for getting a user.
+type getCurrentUserRequest struct {
+	JWT string `json:"jwt"`
 }
 
 // updateUserRequest defines the fields allowed for user update.
@@ -65,10 +73,16 @@ type loginRequest struct {
 	Password string `json:"password"`
 }
 
+type logoutRequest struct {
+	JWT string `json:"jwt"`
+}
+
 // Login handles user login.
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req loginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		fmt.Println(err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -91,35 +105,50 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Écrit le token dans un cookie sécurisé
-	http.SetCookie(w, &http.Cookie{
-		Name:     "jwt",
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   false, // à mettre sur true en HTTPS
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   86400, // 24h
-	})
+	session := &models.Session{
+		UserID:       user.ID,
+		SessionToken: token,
+		CreatedAt:    time.Now(),
+		ExpiresAt:    time.Now().Add(time.Hour * 24),
+	}
+	h.SessionRepository.Create(session)
+
+	// // Écrit le token dans un cookie sécurisé
+	// http.SetCookie(w, &http.Cookie{
+	// 	Name:     "jwt",
+	// 	Value:    token,
+	// 	Path:     "/",
+	// 	HttpOnly: true,
+	// 	Secure:   false, // à mettre sur true en HTTPS
+	// 	SameSite: http.SameSiteLaxMode,
+	// 	MaxAge:   86400, // 24h
+	// })
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Login successful",
+		"jwt":     token,
 	})
 }
 
 // Logout handles user logout.
 func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     "jwt",
-		Value:    "",
-		Path:     "/",
-		Expires:  time.Unix(0, 0),
-		MaxAge:   -1,
-		HttpOnly: true,
-		Secure:   false,
-		SameSite: http.SameSiteLaxMode,
-	})
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	var req logoutRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		fmt.Println(err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	h.SessionRepository.Delete(session.ID)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
@@ -129,6 +158,7 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 // CreateUser create a new user.
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req createUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Request invalid", http.StatusBadRequest)
@@ -142,6 +172,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	hashedPassword, err := h.UserService.HashPassword(req.Password)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Error hash password", http.StatusInternalServerError)
 		return
 	}
@@ -167,6 +198,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.UserRepository.Create(user)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Erreur create user", http.StatusInternalServerError)
 		return
 	}
@@ -180,6 +212,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 // GetUser retrieves a user by ID from JSON body.
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req getUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -188,6 +221,33 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.UserRepository.GetByID(req.ID)
 	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
+}
+
+// GetUser retrieves a user by ID from JSON body.
+func (h *UserHandler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	var req getCurrentUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		fmt.Println("error1", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
+	if err != nil {
+		fmt.Println("error2", err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := h.UserRepository.GetByID(session.UserID)
+	if err != nil {
+		fmt.Println("error3", err)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}

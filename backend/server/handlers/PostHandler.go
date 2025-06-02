@@ -2,40 +2,51 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
 	"social-network/backend/database/models"
-	"social-network/backend/database/repositories"
+	repository "social-network/backend/database/repositories"
 )
 
 type PostHandler struct {
-	PostRepository *repository.PostRepository
+	PostRepository    *repository.PostRepository
+	SessionRepository *repository.SessionRepository
 }
 
-func NewPostHandler(pr *repository.PostRepository) *PostHandler {
+func NewPostHandler(pr *repository.PostRepository, sr *repository.SessionRepository) *PostHandler {
 	return &PostHandler{
-		PostRepository: pr,
+		PostRepository:    pr,
+		SessionRepository: sr,
 	}
 }
 
 type CreatePostRequest struct {
-	UserID      int64   `json:"user_id"`
+	JWT         string  `json:"jwt"`
 	Content     string  `json:"content"`
 	ImagePath   *string `json:"image_path,omitempty"`
 	PrivacyType int64   `json:"privacy_type"`
 }
 
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req CreatePostRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
+		fmt.Println(req, err)
+		return
+	}
+
+	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
 	now := time.Now()
 	post := &models.Post{
-		UserID:      req.UserID,
+		UserID:      session.UserID,
 		Content:     req.Content,
 		ImagePath:   req.ImagePath,
 		PrivacyType: req.PrivacyType,
@@ -53,6 +64,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(post)
 }
+
 // GetPostRequest is the request body for retrieving a post by ID.
 type GetPostRequest struct {
 	ID int64 `json:"id"`

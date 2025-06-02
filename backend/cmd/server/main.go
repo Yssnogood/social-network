@@ -35,7 +35,7 @@ func main() {
 	// commentRepo := repository.NewCommentRepository(db)
 	// notificationRepo := repository.NewNotificationRepository(db)
 	// messageRepo := repository.NewMessageRepository(db)
-	// sessionRepo := repository.NewSessionRepository(db)
+	sessionRepo := repository.NewSessionRepository(db)
 	// followerRepo := repository.NewFollowerRepository(db)
 	// groupRepo := repository.NewGroupRepository(db)
 	// eventRepo := repository.NewEventRepository(db)
@@ -52,8 +52,8 @@ func main() {
 	// eventService := services.NewEventService(db)
 
 	// Handlers
-	userHandler := handlers.NewUserHandler(userService, userRepo)
-	postHandler := handlers.NewPostHandler(postRepo)
+	userHandler := handlers.NewUserHandler(userService, userRepo, sessionRepo)
+	postHandler := handlers.NewPostHandler(postRepo, sessionRepo)
 	// commentHandler := handlers.NewCommentHandler(commentRepo)
 	// notificationHandler := handlers.NewNotificationHandler(notificationRepo)
 	// messageHandler := handlers.NewMessageHandler(messageRepo)
@@ -71,7 +71,7 @@ func main() {
 	//routes.CommentsRoutes(r, commentHandler)
 	//routes.NotificationRoutes(r, notificationHandler)
 	//routes.MessageRoutes(r, messageHandler)
-	//routes.SessionRoutes(r, sessionHandler)
+	// routes.SessionRoutes(r, sessionHandler)
 	//routes.FollowerRoutes(r, followerHandler)
 	//routes.GroupRoutes(r, groupHandler)
 	//routes.EventRoutes(r, eventHandler)

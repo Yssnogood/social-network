@@ -21,7 +21,7 @@ func (r *SessionRepository) Create(session *models.Session) (int64, error) {
 	stmt, err := r.db.Prepare(`
 		INSERT INTO sessions(
 			user_id, session_token, created_at, expires_at
-		) VALUES(?, ?, ?, ?)
+		) VALUES(?, ?, ?, ?);
 	`)
 
 	if err != nil {
@@ -62,6 +62,32 @@ func (r *SessionRepository) GetByID(id int64) (*models.Session, error) {
 
 	session := &models.Session{}
 	err = stmt.QueryRow(id).Scan(
+		&session.ID,
+		&session.UserID,
+		&session.SessionToken,
+		&session.CreatedAt,
+		&session.ExpiresAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return session, nil
+}
+
+// Get a session by his token
+func (r *SessionRepository) GetBySessionToken(session_token string) (*models.Session, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT id, user_id, session_token, created_at, expires_at
+		FROM sessions WHERE session_token = ?
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	session := &models.Session{}
+	err = stmt.QueryRow(session_token).Scan(
 		&session.ID,
 		&session.UserID,
 		&session.SessionToken,
