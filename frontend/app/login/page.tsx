@@ -50,10 +50,10 @@ export default function Login() {
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
       
         
-      <div className="w-full max-w-md space-y-8 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md">
+      <div className="w-full max-w-md space-y-8 bg-gray-800 dark:bg-white p-8 rounded-xl shadow-md">
         <div className="text-center">
-          <h1 className="text-3xl font-bold">Login</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Sign in to your account</p>
+          <h1 className="text-3xl font-bold text-white dark:text-gray-900">Login</h1>
+          <p className="mt-2 text-gray-400 dark:text-gray-600">Sign in to your account</p>
         </div>
 
         <form onSubmit={handleLogin} className="mt-8 space-y-6">
@@ -102,16 +102,16 @@ export default function Login() {
         </form>
 
         <div className="text-center mt-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-400 dark:text-gray-600">
             Don't have an account?{" "}
-            <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+            <Link href="/register" className="font-medium text-indigo-400 hover:text-indigo-300 dark:text-indigo-600">
               Register
             </Link>
           </p>
         </div>
       </div>
 
-      <Link href="/" className="mt-8 text-sm text-gray-600 dark:text-gray-400 hover:underline">
+      <Link href="/" className="mt-8 text-sm text-gray-400 dark:text-gray-600 hover:underline">
         ← Back to home
       </Link>
     </div>
