@@ -1,9 +1,12 @@
+import { getCookies } from "next-client-cookies/server";
+
+const url = "http://localhost:8080/api"
 export interface Post {
-  id: string;
+  id: number;
   userId: string;
   userName: string;
-  title: string;
   content: string;
+  privacy: number;
   imageUrl?: string;
   createdAt: Date;
   likes: number;
@@ -13,32 +16,31 @@ export interface Post {
 // Mock data for posts
 const MOCK_POSTS: Post[] = [
   {
-    id: '1',
+    id: 1,
     userId: 'user1',
     userName: 'Jane Doe',
-    title: 'First Post',
     content: 'Just joined this amazing social network! Looking forward to connecting with everyone.',
+    privacy: 0,
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
     likes: 15,
     comments: 3
   },
   {
-    id: '2',
+    id: 2,
     userId: 'user2',
     userName: 'John Smith',
-    title: 'Hello World',
     content: 'Hello everyone! This is my first post. I\'m excited to share my journey with all of you.',
-    imageUrl: '/sample-post-image.jpg',
+    privacy: 0,
     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
     likes: 8,
     comments: 2
   },
   {
-    id: '3',
+    id: 3,
     userId: 'user3',
     userName: 'Alex Johnson',
-    title: 'Tech News',
     content: 'Just read about the latest advancements in AI. The future looks promising! What do you think?',
+    privacy: 0,
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
     likes: 23,
     comments: 7
@@ -49,10 +51,40 @@ const MOCK_POSTS: Post[] = [
  * Fetches all posts
  * In a real app, this would make an API call to get posts
  */
-export async function getPosts(): Promise<Post[]> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return [...MOCK_POSTS];
+export async function getPosts(jwt?:string): Promise<Post[]> {
+  let posts: Post[] = [];
+  try {
+    const resp = await fetch(url+"/posts",{
+      method: "POST",
+      body: JSON.stringify({
+        jwt: jwt
+      })
+    })
+    if (resp.ok) {
+      const r = await resp.json()
+      for (const post of r) {
+        console.log(post)
+        const newPost : Post = {
+                  id: post.id,
+                  userId: post.user_id,
+                  userName: "test",
+                  imageUrl: post.image_path,
+                  privacy: post.privacy_type,
+                  createdAt: new Date(Date.parse(post.created_at)),
+                  content: post.content,
+                  likes: 0,
+                  comments: 0
+
+                }
+        posts.push(newPost)
+      }
+    }
+  } catch (err) {
+    if (err) {
+      console.log(err)
+    }
+  }
+  return posts;
 }
 
 /**
@@ -61,24 +93,53 @@ export async function getPosts(): Promise<Post[]> {
  * @returns The created post object
  */
 export async function createPost(postData: { 
-  userId: string;
-  userName: string;
-  title: string;
   content: string;
+  privacy: number
   imageUrl?: string;
-}): Promise<Post> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  const newPost: Post = {
-    ...postData,
-    id: Math.random().toString(36).substring(2, 15),
+},jwt?:string): Promise<Post> {
+  let newPost: Post = {
+    userId: "",
+    userName: "",
+    content:"",
+    privacy:0,
+    id: 0,
     createdAt: new Date(),
     likes: 0,
     comments: 0
   };
+        try {
+            const resp = await fetch(url+"/post",{
+                method: "POST",
+                body: JSON.stringify({
+                    jwt: jwt,
+                    content: postData.content,
+                    privacy_type: postData.privacy
+                })
+            })
+            if (resp.ok) {
+                const r = await resp.json()
+                console.log(r)
+                newPost = {
+                  id: r.post.id,
+                  userId: r.post.user_id,
+                  userName: r.username,
+                  imageUrl: r.post.image_path,
+                  privacy: r.post.privacy_type,
+                  createdAt: new Date(Date.parse(r.post.created_at)),
+                  content: r.post.content,
+                  likes: 0,
+                  comments: 0
+
+                }
+            } else {
+                console.log(resp.status)
+            }
+        } catch (err) {
+            console.log(err)
+        }
   
   // In a real app, we would send this to the server
   // and get back the saved post
   return newPost;
 }
+

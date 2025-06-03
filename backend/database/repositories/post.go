@@ -77,6 +77,42 @@ func (r *PostRepository) GetByID(id int64) (*models.Post, error) {
 	return post, nil
 }
 
+func (r *PostRepository) GetPosts() ([]*models.Post, error) {
+	var posts []*models.Post
+	stmt, err := r.db.Prepare(`
+		SELECT id, user_id, content, image_path, privacy_type, created_at, updated_at
+		FROM posts
+		ORDER BY created_at DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	results, err := stmt.Query()
+	if err != nil {
+		return nil, err
+	}
+
+	for results.Next() {
+		post := &models.Post{}
+		err = results.Scan(
+			&post.ID,
+			&post.UserID,
+			&post.Content,
+			&post.ImagePath,
+			&post.PrivacyType,
+			&post.CreatedAt,
+			&post.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+	return posts, nil
+}
+
 // update a post in the database
 func (r *PostRepository) Update(post *models.Post) error {
 	stmt, err := r.db.Prepare(`

@@ -42,7 +42,7 @@ func main() {
 
 	// Services
 	userService := services.NewUserService(db)
-	// postService := services.NewPostService(db)
+	postService := services.NewPostService(db)
 	// commentService := services.NewCommentService(db)
 	// notificationService := services.NewNotificationService(db)
 	// messageService := services.NewMessageService(db)
@@ -53,7 +53,7 @@ func main() {
 
 	// Handlers
 	userHandler := handlers.NewUserHandler(userService, userRepo, sessionRepo)
-	postHandler := handlers.NewPostHandler(postRepo, sessionRepo)
+	postHandler := handlers.NewPostHandler(postService, postRepo, sessionRepo)
 	// commentHandler := handlers.NewCommentHandler(commentRepo)
 	// notificationHandler := handlers.NewNotificationHandler(notificationRepo)
 	// messageHandler := handlers.NewMessageHandler(messageRepo)

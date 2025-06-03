@@ -6,17 +6,20 @@ import (
 	"net/http"
 	"time"
 
+	"social-network/backend/app/services"
 	"social-network/backend/database/models"
 	repository "social-network/backend/database/repositories"
 )
 
 type PostHandler struct {
+	PostService       *services.PostService
 	PostRepository    *repository.PostRepository
 	SessionRepository *repository.SessionRepository
 }
 
-func NewPostHandler(pr *repository.PostRepository, sr *repository.SessionRepository) *PostHandler {
+func NewPostHandler(ps *services.PostService, pr *repository.PostRepository, sr *repository.SessionRepository) *PostHandler {
 	return &PostHandler{
+		PostService:       ps,
 		PostRepository:    pr,
 		SessionRepository: sr,
 	}
@@ -54,6 +57,8 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:   now,
 	}
 
+	user, _ := h.PostService.GetPostAuthor(post)
+
 	id, err := h.PostRepository.Create(post)
 	if err != nil {
 		http.Error(w, "Error creating post", http.StatusInternalServerError)
@@ -62,29 +67,58 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	post.ID = id
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(post)
+	json.NewEncoder(w).Encode(map[string]any{
+		"post":     post,
+		"username": user.Username,
+	})
 }
 
 // GetPostRequest is the request body for retrieving a post by ID.
 type GetPostRequest struct {
-	ID int64 `json:"id"`
+	JWT string `json:"jwt"`
 }
 
 // GetPost retrieves a post by ID from JSON body.
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req GetPostRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	post, err := h.PostRepository.GetByID(req.ID)
+	_, err := h.SessionRepository.GetBySessionToken(req.JWT)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	id := 0
+	post, err := h.PostRepository.GetByID(int64(id))
 	if err != nil {
 		http.Error(w, "Post not found", http.StatusNotFound)
 		return
 	}
 
 	json.NewEncoder(w).Encode(post)
+}
+
+// GetRecentsPosts retrieves recents posts.
+func (h *PostHandler) GetRecentsPosts(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	var req GetPostRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	posts, err := h.PostRepository.GetPosts()
+	if err != nil {
+		http.Error(w, "Post not found", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(posts)
 }
 
 // UpdatePostRequest is the request body for updating a post.

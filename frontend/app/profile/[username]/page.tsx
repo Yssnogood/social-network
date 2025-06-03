@@ -1,11 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getUserProfile, UserProfile } from "../../services/user";
+import { getUserProfile, UserProfile } from "../../../services/user";
+import { getCookies } from "next-client-cookies/server";
 
 export default async function Profile() {
+    const cookies = await getCookies()
     // Get user profile data with mock data (boolean is set to 'true')
     // In the future, "undefined" will be replaced with the actual user ID
-    const profile: UserProfile = await getUserProfile(undefined, true);
+    const profile: UserProfile = await getUserProfile(cookies.get("user"), false);
 
     return (
         <>
@@ -66,7 +68,7 @@ export default async function Profile() {
                         <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
                             <div className="flex-shrink-0">
                                 <Image
-                                    src={profile.avatarPath}
+                                    src={profile.avatar_path || "/defaultPP.webp"}
                                     alt="Profile"
                                     width={150}
                                     height={150}
@@ -80,7 +82,7 @@ export default async function Profile() {
                                     {profile.username}
                                 </h1>
                                 <h2 className="text-xl text-gray-700 dark:text-gray-300 mt-2">
-                                    {profile.firstName} {profile.lastName}
+                                    {profile.first_name} {profile.last_name}
                                 </h2>
 
                                 <div className="flex items-center mt-4">
@@ -128,7 +130,7 @@ export default async function Profile() {
                                         Birth Date
                                     </p>
                                     <p className="text-gray-900 dark:text-white">
-                                        {profile.birthDate}
+                                        {(new Date(Date.parse(profile.birth_date))).toLocaleDateString("FR")}
                                     </p>
                                 </div>
                                 <div className="md:col-span-2">
@@ -136,7 +138,7 @@ export default async function Profile() {
                                         About Me
                                     </p>
                                     <p className="text-gray-900 dark:text-white">
-                                        {profile.aboutMe}
+                                        {profile.about_me}
                                     </p>
                                 </div>
                             </div>
@@ -150,7 +152,8 @@ export default async function Profile() {
                         </h3>
                         <div className="space-y-4">
                             {/* Map through the friends from the profile data */}
-                            {profile.friends.map((friend) => (
+                            {profile.friends 
+                            ? profile.friends.map((friend) => (
                                 <div key={friend.id} className="flex items-center space-x-3">
                                     <Image
                                         src={friend.avatarPath || "/social-placeholder.png"}
@@ -165,10 +168,11 @@ export default async function Profile() {
                                         </p>
                                     </div>
                                 </div>
-                            ))}
+                            ))
+                        : ""}
 
                             {/* Show message when no friends are found */}
-                            {profile.friends.length === 0 && (
+                            {profile.friends && (
                                 <p className="text-gray-500 dark:text-gray-400 text-center py-4">
                                     No friends found.
                                 </p>

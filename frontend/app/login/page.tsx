@@ -20,7 +20,7 @@ export default function Login() {
       const resp = await fetch(url+"/login",{
         method:"POST",
         body:JSON.stringify({
-          email:email,
+          email:email.toLowerCase(),
           password:password
         })
       })
@@ -28,9 +28,13 @@ export default function Login() {
         console.log("OK")
         const r = await resp.json()
         cookies.set('jwt',r.jwt,{
-      expires:1,
-      path: '/',
-  })
+          expires:1,
+          path: '/',
+        })
+        cookies.set('user',r.user,{
+          expires:1,
+          path: '/',
+      })
         redirect('/home')
       } else {
         console.error('Invalid Credentials')

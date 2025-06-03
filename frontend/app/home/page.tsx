@@ -4,10 +4,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { getPosts, createPost, Post } from "../../services/post";
+import { useCookies } from "next-client-cookies";
 
 export default function Home() {
+    const cookies = useCookies()
     const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
-    const [postTitle, setPostTitle] = useState('');
+    const [postPrivacy, setPostPrivacy] = useState(0);
     const [postContent, setPostContent] = useState('');
     const [postImage, setPostImage] = useState<File | null>(null);
     const [posts, setPosts] = useState<Post[]>([]);
@@ -16,7 +18,7 @@ export default function Home() {
     useEffect(() => {
         async function loadPosts() {
             try {
-                const fetchedPosts = await getPosts();
+                const fetchedPosts = await getPosts(cookies.get("jwt"));
                 setPosts(fetchedPosts);
             } catch (error) {
                 console.error("Failed to fetch posts:", error);
@@ -27,14 +29,14 @@ export default function Home() {
 
         loadPosts();
     }, []);
-
+ 
     const handleOpenModal = () => {
         setIsCreatePostModalOpen(true);
     };
 
     const handleCloseModal = () => {
         setIsCreatePostModalOpen(false);
-        setPostTitle('');
+        setPostPrivacy(0);
         setPostContent('');
         setPostImage(null);
     };
@@ -51,12 +53,10 @@ export default function Home() {
             }
 
             const newPost = await createPost({
-                userId: 'current-user-id', // This would come from authentication
-                userName: 'Current User', // This would come from user profile
-                title: postTitle,
                 content: postContent,
+                privacy: postPrivacy,
                 imageUrl
-            });
+            },cookies.get("jwt"));
 
             // Add the new post to the top of the list
             setPosts([newPost, ...posts]);
@@ -122,7 +122,7 @@ export default function Home() {
                         </Link>
 
                         <Link
-                            href="/profile"
+                            href={`/profile/${cookies.get("user")}`}
                             className="flex items-center justify-center w-8 h-8 rounded-full bg-white hover:bg-blue-100"
                         >
                             <Image
@@ -178,7 +178,6 @@ export default function Home() {
                                     </div>
                                 </div>
                             </div>
-                            <h3 className="font-medium text-lg mb-2">{post.title}</h3>
                             <div className="mb-3">
                                 {post.content}
                             </div>
@@ -225,15 +224,12 @@ export default function Home() {
                         
                         <form onSubmit={handleSubmitPost}>
                             <div className="mb-4">
-                                <label htmlFor="postTitle" className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                                <input
-                                    id="postTitle"
-                                    type="text"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={postTitle}
-                                    onChange={(e) => setPostTitle(e.target.value)}
-                                    required
-                                />
+                                <label htmlFor="postPrivacy" className="block text-sm font-medium text-gray-700 mb-1">Privacy</label>
+                                <select name="postPrivacy" id="postPrivacy" value={postPrivacy} onChange={(e) => setPostPrivacy(Number(e.target.value))}>
+                                    <option value="0">🌍 Public</option>
+                                    <option value="1">🙎‍♂️ Friends</option>
+                                    <option value="2">🔒 Private</option>
+                                </select>
                             </div>
                             
                             <div className="mb-4">

@@ -41,7 +41,7 @@ type createUserRequest struct {
 
 // getUserRequest defines the request body for getting a user.
 type getUserRequest struct {
-	ID int64 `json:"id"`
+	JWT string `json:"jwt"`
 }
 
 // getUserRequest defines the request body for getting a user.
@@ -128,6 +128,7 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Login successful",
 		"jwt":     token,
+		"user":    user.Username,
 	})
 }
 
@@ -218,8 +219,12 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-
-	user, err := h.UserRepository.GetByID(req.ID)
+	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	user, err := h.UserRepository.GetByID(session.UserID)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return

@@ -1,3 +1,5 @@
+import { getCookies } from "next-client-cookies/server";
+
 export interface Friend {
     id: string | number;
     name: string;
@@ -5,29 +7,32 @@ export interface Friend {
 }
 
 export interface UserProfile {
+    id: number;
     username: string;
-    firstName: string;
-    lastName: string;
+    first_name: string;
+    last_name: string;
     email: string;
-    birthDate: string;
-    aboutMe: string;
-    isPublic: boolean;
-    avatarPath: string;
+    birth_date: string;
+    about_me: string;
+    is_public: boolean;
+    avatar_path: string;
     friends: Friend[];
 }
 
-export async function getUserProfile(userId?: string, useMockData: boolean = false): Promise<UserProfile> {
+export async function getUserProfile(userName?: string, useMockData: boolean = false): Promise<UserProfile> {
+    const cookies = await getCookies()
     // If useMockData is true, return mock data
     if (useMockData) {
         return {
+            id:0,
             username: "username",
-            firstName: "FirstName",
-            lastName: "LastName",
+            first_name: "FirstName",
+            last_name: "LastName",
             email: "user@example.com",
-            birthDate: "January 1, 1990",
-            aboutMe: "Description",
-            isPublic: false,
-            avatarPath: "/social-placeholder.png",
+            birth_date: "January 1, 1990",
+            about_me: "Description",
+            is_public: false,
+            avatar_path: "/social-placeholder.png",
             friends: [
                 {
                     id: 1,
@@ -55,7 +60,12 @@ export async function getUserProfile(userId?: string, useMockData: boolean = fal
 
     // Will be changed for the real API endpoint
     try {
-        const response = await fetch(`/api/users/${userId || 'current'}`);
+        const response = await fetch(`http://localhost:8080/api/user/${userName || 'current'}`,{
+            method: "POST",
+            body: JSON.stringify({
+                jwt: cookies.get("jwt")
+            })
+        });
         if (!response.ok) {
             throw new Error('Failed to fetch user profile');
         }
@@ -63,6 +73,6 @@ export async function getUserProfile(userId?: string, useMockData: boolean = fal
     } catch (error) {
         console.error('Error fetching user profile:', error);
         // Fallback to mock data if the API call fails
-        return getUserProfile(userId, true);
+        return getUserProfile(userName, true);
     }
 }

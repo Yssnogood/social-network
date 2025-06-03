@@ -32,7 +32,7 @@ export default function Register() {
                     last_name: lastName,
                     username: userName,
                     birth_date: birthDate,
-                    email: email,
+                    email: email.toLowerCase(),
                     password: password
                 })
             })
