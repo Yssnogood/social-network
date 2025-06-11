@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { getPosts, createPost, Post } from "../../services/post";
+import { formatRelativeTime } from "../../services/utils";
 import { useCookies } from "next-client-cookies";
 
 export default function Home() {
@@ -65,25 +66,6 @@ export default function Home() {
             console.error("Failed to create post:", error);
             // Here you would show an error notification to the user
         }
-    };
-
-    // Format date to relative time (e.g., "2 hours ago")
-    const formatRelativeTime = (date: Date) => {
-        const now = new Date();
-        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-        
-        if (diffInSeconds < 60) return 'just now';
-        
-        const diffInMinutes = Math.floor(diffInSeconds / 60);
-        if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-        
-        const diffInHours = Math.floor(diffInMinutes / 60);
-        if (diffInHours < 24) return `${diffInHours}h ago`;
-        
-        const diffInDays = Math.floor(diffInHours / 24);
-        if (diffInDays < 30) return `${diffInDays}d ago`;
-        
-        return date.toLocaleDateString();
     };
 
     return (
@@ -217,12 +199,15 @@ export default function Home() {
                                     </svg>
                                     {post.likes} Like{post.likes !== 1 ? 's' : ''}
                                 </button>
-                                <button className="text-gray-400 hover:text-gray-200 text-sm flex items-center gap-1">
+                                <Link 
+                                    href={`/post/${post.id}/comments`}
+                                    className="text-gray-400 hover:text-gray-200 text-sm flex items-center gap-1"
+                                >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                                     </svg>
                                     {post.comments} Comment{post.comments !== 1 ? 's' : ''}
-                                </button>
+                                </Link>
                             </div>
                         </div>
                     ))}
