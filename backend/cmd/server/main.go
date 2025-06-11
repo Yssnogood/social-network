@@ -32,7 +32,7 @@ func main() {
 	// Repositories
 	userRepo := repository.NewUserRepository(db)
 	postRepo := repository.NewPostRepository(db)
-	// commentRepo := repository.NewCommentRepository(db)
+	commentRepo := repository.NewCommentRepository(db)
 	// notificationRepo := repository.NewNotificationRepository(db)
 	// messageRepo := repository.NewMessageRepository(db)
 	sessionRepo := repository.NewSessionRepository(db)
@@ -54,7 +54,7 @@ func main() {
 	// Handlers
 	userHandler := handlers.NewUserHandler(userService, userRepo, sessionRepo)
 	postHandler := handlers.NewPostHandler(postService, postRepo, sessionRepo)
-	// commentHandler := handlers.NewCommentHandler(commentRepo)
+	commentHandler := handlers.NewCommentHandler(commentRepo, sessionRepo)
 	// notificationHandler := handlers.NewNotificationHandler(notificationRepo)
 	// messageHandler := handlers.NewMessageHandler(messageRepo)
 	// sessionHandler := handlers.NewSessionHandler(sessionRepo)
@@ -68,7 +68,7 @@ func main() {
 	//routes
 	routes.UserRoutes(r, userHandler)
 	routes.PostRoutes(r, postHandler)
-	//routes.CommentsRoutes(r, commentHandler)
+	routes.CommentsRoutes(r, commentHandler)
 	//routes.NotificationRoutes(r, notificationHandler)
 	//routes.MessageRoutes(r, messageHandler)
 	// routes.SessionRoutes(r, sessionHandler)

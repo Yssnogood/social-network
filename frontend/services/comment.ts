@@ -45,39 +45,47 @@ export async function getComments(postId: number, jwt?: string): Promise<Comment
 export async function createComment(
     commentData: {
         postId: number;
-        userId: number;
         content: string;
         imageUrl?: string;
     },
     jwt?: string
-): Promise<Comment | null> {
+): Promise<Comment> {
+    let newComment: Comment = {
+        id: 0,
+        postId: commentData.postId,
+        userId: "",
+        userName: "",
+        content: commentData.content,
+        imageUrl: commentData.imageUrl,
+        createdAt: new Date()
+    };
+
     try {
-        const resp = await fetch(`${url}/comment`, {
+        const resp = await fetch(`${url}/comments`, {
             method: "POST",
             body: JSON.stringify({
                 jwt: jwt,
                 post_id: commentData.postId,
-                user_id: commentData.userId,
-                content: commentData.content
+                content: commentData.content,
+                image_path: commentData.imageUrl
             })
         });
 
         if (resp.ok) {
-            const data = await resp.json();
-
-            return {
-                id: data.id || Date.now(),
-                postId: commentData.postId,
-                userId: data.user_id || "",
-                userName: data.username || "User",
-                content: commentData.content,
-                imageUrl: commentData.imageUrl,
-                createdAt: new Date()
+            const r = await resp.json();
+            newComment = {
+                id: r.comment.id,
+                postId: r.comment.post_id,
+                userId: r.comment.user_id,
+                userName: r.username || "User",
+                content: r.comment.content,
+                imageUrl: r.comment.image_path,
+                createdAt: new Date(Date.parse(r.comment.created_at))
             };
         }
     } catch (error) {
         console.error("Failed to create comment:", error);
     }
 
-    return null;
+    return newComment;
 }
