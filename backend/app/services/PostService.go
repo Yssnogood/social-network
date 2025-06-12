@@ -47,3 +47,28 @@ func (s *PostService) GetPostAuthor(post *models.Post) (*models.User, error) {
 
 	return user, nil
 }
+
+func (s *PostService) GetLikes(post_id int64) ([]string, error) {
+	var likes []string
+	stmt, err := s.db.Prepare(`
+	SELECT users.username 
+	FROM users
+	INNER JOIN post_like ON users.ID = post_like.user_id
+	WHERE post_like.post_id = ?
+	`)
+	if err != nil {
+		return nil, err
+	}
+	result, err := stmt.Query(post_id)
+	if err != nil {
+		return nil, err
+	}
+	for result.Next() {
+		var username string
+		if err = result.Scan(&username); err != nil {
+			return nil, err
+		}
+		likes = append(likes, username)
+	}
+	return likes, nil
+}

@@ -32,6 +32,11 @@ type CreatePostRequest struct {
 	PrivacyType int64   `json:"privacy_type"`
 }
 
+type LikePostRequest struct {
+	JWT     string `json:"jwt"`
+	Post_ID int64  `json:"post_id"`
+}
+
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req CreatePostRequest
@@ -103,6 +108,22 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(post)
 }
 
+func (h *PostHandler) LikePost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	var req LikePostRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	h.PostRepository.Like(req.Post_ID, session.UserID)
+}
+
 // GetRecentsPosts retrieves recents posts.
 func (h *PostHandler) GetRecentsPosts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -112,7 +133,15 @@ func (h *PostHandler) GetRecentsPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	posts, err := h.PostRepository.GetPosts(h.PostService)
+	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user := h.SessionRepository.GetUserBySession(session)
+
+	posts, err := h.PostRepository.GetPosts(h.PostService, user)
 	if err != nil {
 		http.Error(w, "Post not found", http.StatusNotFound)
 		return
