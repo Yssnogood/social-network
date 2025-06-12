@@ -3,7 +3,6 @@ package services
 import (
 	"database/sql"
 	"errors"
-	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"regexp"
 	"time"

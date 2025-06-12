@@ -8,12 +8,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 
-	"social-network/backend/app/services"
 	repository "social-network/backend/database/repositories"
 	"social-network/backend/database/sqlite"
 	"social-network/backend/server/handlers"
 	"social-network/backend/app/services"
-	"social-network/backend/database/repositories"
 	"social-network/backend/server/routes"
 	"social-network/backend/server/middlewares"
 )

@@ -213,7 +213,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	user.Email = req.Email
 	user.FirstName = req.FirstName
 	user.LastName = req.LastName
-	user.Nickname = req.Nickname
+	user.Username = req.Username
 	user.AboutMe = req.AboutMe
 	user.IsPublic = req.IsPublic
 	user.UpdatedAt = time.Now()
