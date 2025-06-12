@@ -53,3 +53,6 @@ func (s *UserService) GenerateJWT(userID int64) (string, error) {
 	return token.SignedString(jwtSecret)
 }
 
+// func (s *UserService) CheckJWT(jwt string) bool {
+
+// }

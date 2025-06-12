@@ -6,25 +6,27 @@ import (
 	"time"
 
 	"social-network/backend/database/models"
-	"social-network/backend/database/repositories"
+	repository "social-network/backend/database/repositories"
 )
 
 // CommentHandler handles comment-related HTTP requests.
 type CommentHandler struct {
 	CommentRepository *repository.CommentRepository
+	SessionRepository *repository.SessionRepository
 }
 
 // NewCommentHandler creates a new CommentHandler.
-func NewCommentHandler(cr *repository.CommentRepository) *CommentHandler {
+func NewCommentHandler(cr *repository.CommentRepository, sr *repository.SessionRepository) *CommentHandler {
 	return &CommentHandler{
 		CommentRepository: cr,
+		SessionRepository: sr,
 	}
 }
 
 // Request structs
 type createCommentRequest struct {
+	JWT       string  `json:"jwt"`
 	PostID    int64   `json:"post_id"`
-	UserID    int64   `json:"user_id"`
 	Content   string  `json:"content"`
 	ImagePath *string `json:"image_path,omitempty"`
 }
@@ -57,9 +59,15 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	comment := &models.Comment{
 		PostID:    req.PostID,
-		UserID:    req.UserID,
+		UserID:    session.UserID,
 		Content:   req.Content,
 		ImagePath: req.ImagePath,
 		CreatedAt: time.Now(),

@@ -2,46 +2,62 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
+	"social-network/backend/app/services"
 	"social-network/backend/database/models"
-	"social-network/backend/database/repositories"
+	repository "social-network/backend/database/repositories"
 )
 
 type PostHandler struct {
-	PostRepository *repository.PostRepository
+	PostService       *services.PostService
+	PostRepository    *repository.PostRepository
+	SessionRepository *repository.SessionRepository
 }
 
-func NewPostHandler(pr *repository.PostRepository) *PostHandler {
+func NewPostHandler(ps *services.PostService, pr *repository.PostRepository, sr *repository.SessionRepository) *PostHandler {
 	return &PostHandler{
-		PostRepository: pr,
+		PostService:       ps,
+		PostRepository:    pr,
+		SessionRepository: sr,
 	}
 }
 
 type CreatePostRequest struct {
-	UserID      int64   `json:"user_id"`
+	JWT         string  `json:"jwt"`
 	Content     string  `json:"content"`
 	ImagePath   *string `json:"image_path,omitempty"`
 	PrivacyType int64   `json:"privacy_type"`
 }
 
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req CreatePostRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
+		fmt.Println(req, err)
+		return
+	}
+
+	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
 	now := time.Now()
 	post := &models.Post{
-		UserID:      req.UserID,
+		UserID:      session.UserID,
 		Content:     req.Content,
 		ImagePath:   req.ImagePath,
 		PrivacyType: req.PrivacyType,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
+
+	user, _ := h.PostService.GetPostAuthor(post)
 
 	id, err := h.PostRepository.Create(post)
 	if err != nil {
@@ -51,28 +67,58 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	post.ID = id
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(post)
+	json.NewEncoder(w).Encode(map[string]any{
+		"post":     post,
+		"username": user.Username,
+	})
 }
+
 // GetPostRequest is the request body for retrieving a post by ID.
 type GetPostRequest struct {
-	ID int64 `json:"id"`
+	JWT string `json:"jwt"`
 }
 
 // GetPost retrieves a post by ID from JSON body.
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req GetPostRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	post, err := h.PostRepository.GetByID(req.ID)
+	_, err := h.SessionRepository.GetBySessionToken(req.JWT)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	id := 0
+	post, err := h.PostRepository.GetByID(int64(id))
 	if err != nil {
 		http.Error(w, "Post not found", http.StatusNotFound)
 		return
 	}
 
 	json.NewEncoder(w).Encode(post)
+}
+
+// GetRecentsPosts retrieves recents posts.
+func (h *PostHandler) GetRecentsPosts(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	var req GetPostRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	posts, err := h.PostRepository.GetPosts(h.PostService)
+	if err != nil {
+		http.Error(w, "Post not found", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(posts)
 }
 
 // UpdatePostRequest is the request body for updating a post.

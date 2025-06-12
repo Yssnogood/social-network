@@ -32,17 +32,17 @@ func main() {
 	// Repositories
 	userRepo := repository.NewUserRepository(db)
 	postRepo := repository.NewPostRepository(db)
-	// commentRepo := repository.NewCommentRepository(db)
+	commentRepo := repository.NewCommentRepository(db)
 	// notificationRepo := repository.NewNotificationRepository(db)
 	// messageRepo := repository.NewMessageRepository(db)
-	// sessionRepo := repository.NewSessionRepository(db)
+	sessionRepo := repository.NewSessionRepository(db)
 	// followerRepo := repository.NewFollowerRepository(db)
 	// groupRepo := repository.NewGroupRepository(db)
 	// eventRepo := repository.NewEventRepository(db)
 
 	// Services
 	userService := services.NewUserService(db)
-	// postService := services.NewPostService(db)
+	postService := services.NewPostService(db)
 	// commentService := services.NewCommentService(db)
 	// notificationService := services.NewNotificationService(db)
 	// messageService := services.NewMessageService(db)
@@ -52,9 +52,9 @@ func main() {
 	// eventService := services.NewEventService(db)
 
 	// Handlers
-	userHandler := handlers.NewUserHandler(userService, userRepo)
-	postHandler := handlers.NewPostHandler(postRepo)
-	// commentHandler := handlers.NewCommentHandler(commentRepo)
+	userHandler := handlers.NewUserHandler(userService, userRepo, sessionRepo)
+	postHandler := handlers.NewPostHandler(postService, postRepo, sessionRepo)
+	commentHandler := handlers.NewCommentHandler(commentRepo, sessionRepo)
 	// notificationHandler := handlers.NewNotificationHandler(notificationRepo)
 	// messageHandler := handlers.NewMessageHandler(messageRepo)
 	// sessionHandler := handlers.NewSessionHandler(sessionRepo)
@@ -68,10 +68,10 @@ func main() {
 	//routes
 	routes.UserRoutes(r, userHandler)
 	routes.PostRoutes(r, postHandler)
-	//routes.CommentsRoutes(r, commentHandler)
+	routes.CommentsRoutes(r, commentHandler)
 	//routes.NotificationRoutes(r, notificationHandler)
 	//routes.MessageRoutes(r, messageHandler)
-	//routes.SessionRoutes(r, sessionHandler)
+	// routes.SessionRoutes(r, sessionHandler)
 	//routes.FollowerRoutes(r, followerHandler)
 	//routes.GroupRoutes(r, groupHandler)
 	//routes.EventRoutes(r, eventHandler)
