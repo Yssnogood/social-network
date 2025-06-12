@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"path"
 	"time"
 
 	"social-network/backend/app/services"
@@ -211,20 +212,23 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// GetUser retrieves a user by ID from JSON body.
+// GetUser retrieves a user by Username from the request.
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req getUserRequest
+
+	username := path.Base((r.URL.Path))
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
+	_, err := h.SessionRepository.GetBySessionToken(req.JWT)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	user, err := h.UserRepository.GetByID(session.UserID)
+	user, err := h.UserRepository.GetByUserName(username)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return

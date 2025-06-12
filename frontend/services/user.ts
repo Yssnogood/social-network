@@ -1,4 +1,5 @@
 import { getCookies } from "next-client-cookies/server";
+import { notFound } from "next/navigation";
 
 export interface Friend {
     id: string | number;
@@ -66,13 +67,10 @@ export async function getUserProfile(userName?: string, useMockData: boolean = f
                 jwt: cookies.get("jwt")
             })
         });
-        if (!response.ok) {
-            throw new Error('Failed to fetch user profile');
-        }
         return await response.json();
     } catch (error) {
         console.error('Error fetching user profile:', error);
         // Fallback to mock data if the API call fails
-        return getUserProfile(userName, true);
+        notFound()
     }
 }

@@ -112,7 +112,7 @@ func (h *PostHandler) GetRecentsPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	posts, err := h.PostRepository.GetPosts()
+	posts, err := h.PostRepository.GetPosts(h.PostService)
 	if err != nil {
 		http.Error(w, "Post not found", http.StatusNotFound)
 		return

@@ -2,12 +2,18 @@ import Link from "next/link";
 import Image from "next/image";
 import { getUserProfile, UserProfile } from "../../../services/user";
 import { getCookies } from "next-client-cookies/server";
+import { cookies } from "next/headers";
 
-export default async function Profile() {
+export default async function Profile({
+  params,
+}: {
+  params: Promise<{ username: string }>
+}) {
+    const { username } = await params
     const cookies = await getCookies()
     // Get user profile data with mock data (boolean is set to 'true')
     // In the future, "undefined" will be replaced with the actual user ID
-    const profile: UserProfile = await getUserProfile(cookies.get("user"), false);
+    const profile: UserProfile = await getUserProfile(username, false);
 
     return (
         <>
@@ -65,7 +71,7 @@ export default async function Profile() {
                         </Link>
 
                         <Link
-                            href="/profile"
+                            href={`/profile/${cookies.get("user")}`}
                             className="flex items-center justify-center w-8 h-8 rounded-full bg-white hover:bg-blue-100"
                         >
                             <Image

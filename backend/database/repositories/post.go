@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 
+	"social-network/backend/app/services"
 	"social-network/backend/database/models"
 )
 
@@ -77,8 +78,8 @@ func (r *PostRepository) GetByID(id int64) (*models.Post, error) {
 	return post, nil
 }
 
-func (r *PostRepository) GetPosts() ([]*models.Post, error) {
-	var posts []*models.Post
+func (r *PostRepository) GetPosts(ps *services.PostService) ([]map[string]any, error) {
+	var posts []map[string]any
 	stmt, err := r.db.Prepare(`
 		SELECT id, user_id, content, image_path, privacy_type, created_at, updated_at
 		FROM posts
@@ -108,7 +109,11 @@ func (r *PostRepository) GetPosts() ([]*models.Post, error) {
 		if err != nil {
 			return nil, err
 		}
-		posts = append(posts, post)
+		user, _ := ps.GetPostAuthor(post)
+		posts = append(posts, map[string]any{
+			"post": post,
+			"user": user.Username,
+		})
 	}
 	return posts, nil
 }

@@ -63,15 +63,14 @@ export async function getPosts(jwt?:string): Promise<Post[]> {
     if (resp.ok) {
       const r = await resp.json()
       for (const post of r) {
-        console.log(post)
         const newPost : Post = {
-                  id: post.id,
-                  userId: post.user_id,
-                  userName: "test",
-                  imageUrl: post.image_path,
-                  privacy: post.privacy_type,
-                  createdAt: new Date(Date.parse(post.created_at)),
-                  content: post.content,
+                  id: post.post.id,
+                  userId: post.post.user_id,
+                  userName: post.user,
+                  imageUrl: post.post.image_path,
+                  privacy: post.post.privacy_type,
+                  createdAt: new Date(Date.parse(post.post.created_at)),
+                  content: post.post.content,
                   likes: 0,
                   comments: 0
 
@@ -118,7 +117,6 @@ export async function createPost(postData: {
             })
             if (resp.ok) {
                 const r = await resp.json()
-                console.log(r)
                 newPost = {
                   id: r.post.id,
                   userId: r.post.user_id,
