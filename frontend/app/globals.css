@@ -33,3 +33,7 @@ body {
   background-color: white;
   color: black;
 }
+
+.liked {
+  fill: white;
+}
