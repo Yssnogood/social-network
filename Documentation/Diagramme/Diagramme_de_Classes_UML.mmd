@@ -286,6 +286,7 @@ classDiagram
     User "1" -- "n" EventResponse : Submits
     EventOption "1" -- "n" EventResponse : Selected
 
+    
     User "n" -- "n" Conversation : Participates
     Conversation "1" -- "n" ConversationParticipant : Has
     User "1" -- "n" ConversationParticipant : Joins
@@ -297,6 +298,7 @@ classDiagram
     InstantMessage "1" -- "n" ReadReceipt : IsReadBy
     User "1" -- "n" ReadReceipt : Reads
 
+    
     User "1" -- "n" Notification : Receives
     User "1" -- "n" Session : Has
 
@@ -306,6 +308,7 @@ classDiagram
     WebSocketManager "1" -- "1" ChannelManager : Uses
     ChannelManager "1" -- "n" WebSocketClient : Groups
 
+    
     %% Electron components relationships
     OfflineSync --> InstantMessage : Synchronizes
     OfflineSync --> Conversation : Synchronizes

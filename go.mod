@@ -1,14 +1,16 @@
 module social-network
 
-go 1.22
+go 1.23.0
+
+toolchain go1.23.3
 
 require (
-	github.com/golang-jwt/jwt/v5 v5.2.0
-	github.com/golang-migrate/migrate/v4 v4.16.2
+	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/gorilla/mux v1.8.1
 	github.com/joho/godotenv v1.5.1
-	github.com/mattn/go-sqlite3 v1.14.17
-	golang.org/x/crypto v0.14.0
+	github.com/mattn/go-sqlite3 v1.14.22
+	golang.org/x/crypto v0.36.0
 )
 
 require (

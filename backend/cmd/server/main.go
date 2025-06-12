@@ -12,8 +12,10 @@ import (
 	repository "social-network/backend/database/repositories"
 	"social-network/backend/database/sqlite"
 	"social-network/backend/server/handlers"
-	"social-network/backend/server/middlewares"
+	"social-network/backend/app/services"
+	"social-network/backend/database/repositories"
 	"social-network/backend/server/routes"
+	"social-network/backend/server/middlewares"
 )
 
 func main() {
