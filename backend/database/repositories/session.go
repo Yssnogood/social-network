@@ -101,6 +101,35 @@ func (r *SessionRepository) GetBySessionToken(session_token string) (*models.Ses
 	return session, nil
 }
 
+func (r *SessionRepository) GetUserBySession(session *models.Session) *models.User {
+	stmt, err := r.db.Prepare(`
+		SELECT id, email, first_name, last_name, birth_date,
+			avatar_path, username, about_me, is_public, created_at, updated_at
+		FROM users WHERE id = ?
+	`)
+	if err != nil {
+		return nil
+	}
+	defer stmt.Close()
+
+	user := &models.User{}
+	stmt.QueryRow(session.UserID).Scan(
+		&user.ID,
+		&user.Email,
+		&user.FirstName,
+		&user.LastName,
+		&user.BirthDate,
+		&user.AvatarPath,
+		&user.Username,
+		&user.AboutMe,
+		&user.IsPublic,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	return user
+}
+
 // update a session in the database
 func (r *SessionRepository) Update(session *models.Session) error {
 	stmt, err := r.db.Prepare(`

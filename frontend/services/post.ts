@@ -10,6 +10,7 @@ export interface Post {
   imageUrl?: string;
   createdAt: Date;
   likes: number;
+  liked: boolean;
   comments: number;
 }
 
@@ -23,6 +24,7 @@ const MOCK_POSTS: Post[] = [
     privacy: 0,
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
     likes: 15,
+    liked:true,
     comments: 3
   },
   {
@@ -33,6 +35,7 @@ const MOCK_POSTS: Post[] = [
     privacy: 0,
     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
     likes: 8,
+    liked:true,
     comments: 2
   },
   {
@@ -43,6 +46,7 @@ const MOCK_POSTS: Post[] = [
     privacy: 0,
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
     likes: 23,
+    liked:true,
     comments: 7
   }
 ];
@@ -71,7 +75,8 @@ export async function getPosts(jwt?:string): Promise<Post[]> {
                   privacy: post.post.privacy_type,
                   createdAt: new Date(Date.parse(post.post.created_at)),
                   content: post.post.content,
-                  likes: 0,
+                  likes: post.like,
+                  liked: post.user_liked,
                   comments: 0
 
                 }
@@ -84,6 +89,32 @@ export async function getPosts(jwt?:string): Promise<Post[]> {
     }
   }
   return posts;
+}
+
+export async function LikePost(post_id:number, jwt?:string) {
+  const resp = await fetch(url+'/like',{
+    method: "POST",
+    body: JSON.stringify({
+      jwt: jwt,
+      post_id: post_id
+    })
+  })
+  if (resp.ok) {
+    let post = document.getElementById(String(post_id))
+    let like_button = post?.querySelector('.like')
+    let like_count = document.getElementById(`like ${post_id}`)
+    if (like_button?.classList.contains("liked")) {
+      like_button.classList.remove("liked")
+      if (like_count) {
+        like_count.innerText = String(Number(like_count.innerText) - 1)
+      }
+    } else {
+      like_button?.classList.add("liked")
+      if (like_count) {
+        like_count.innerText = String(Number(like_count.innerText) + 1)
+      }
+    }
+  }
 }
 
 /**
@@ -104,6 +135,7 @@ export async function createPost(postData: {
     id: 0,
     createdAt: new Date(),
     likes: 0,
+    liked:false,
     comments: 0
   };
         try {
@@ -126,6 +158,7 @@ export async function createPost(postData: {
                   createdAt: new Date(Date.parse(r.post.created_at)),
                   content: r.post.content,
                   likes: 0,
+                  liked:false,
                   comments: 0
 
                 }
