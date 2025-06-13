@@ -40,6 +40,7 @@ type Comment struct {
 	ImagePath *string   `json:"image_path"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	Username  string    `json:"username"`
 }
 
 // Follower model
