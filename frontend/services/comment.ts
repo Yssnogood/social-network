@@ -14,7 +14,7 @@ export async function getComments(postId: number, jwt?: string): Promise<Comment
     let comments: Comment[] = [];
 
     try {
-        const resp = await fetch(`${url}/comments`, {
+        const resp = await fetch(`${url}/comments/${postId}`, {
             method: "POST",
             body: JSON.stringify({
                 jwt: jwt,
@@ -24,7 +24,7 @@ export async function getComments(postId: number, jwt?: string): Promise<Comment
 
         if (resp.ok) {
             const commentsData = await resp.json();
-
+            
             comments = commentsData.map((comment: any) => ({
                 id: comment.id,
                 postId: comment.post_id,
@@ -38,7 +38,7 @@ export async function getComments(postId: number, jwt?: string): Promise<Comment
     } catch (error) {
         console.error("Failed to fetch comments:", error);
     }
-
+    console.log("Fetched comments:", comments);
     return comments;
 }
 
