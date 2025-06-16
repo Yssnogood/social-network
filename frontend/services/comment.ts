@@ -24,6 +24,9 @@ export async function getComments(postId: number, jwt?: string): Promise<Comment
 
         if (resp.ok) {
             const commentsData = await resp.json();
+            if (!commentsData) {
+                return comments
+            }
             
             comments = commentsData.map((comment: any) => ({
                 id: comment.id,

@@ -6,14 +6,20 @@ import { useCookies } from "next-client-cookies";
 import { getPosts, Post } from "../../../../services/post";
 import { formatRelativeTime } from "../../../../services/utils";
 import { getComments, createComment, Comment } from "../../../../services/comment";
+import { use } from "react";
 
-export default function CommentsPage({ params }: { params: { id: string } }) {
+export default function CommentsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
     const cookies = useCookies();
     const [post, setPost] = useState<Post | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [commentContent, setCommentContent] = useState('');
-    const postId = parseInt(params.id);
+    const param = use(params)
+    const postId = parseInt(param.id);
 
     useEffect(() => {
         async function loadPostAndComments() {
