@@ -29,6 +29,7 @@ type Post struct {
 	PrivacyType int64     `json:"privacy_type"` // 0: public, 1: friend, 2: private
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+	CommentsCount int64   `json:"comments_count"`
 }
 
 // Comment model

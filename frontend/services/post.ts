@@ -72,8 +72,8 @@ export async function getPosts(jwt?:string): Promise<Post[]> {
                   createdAt: new Date(Date.parse(post.post.created_at)),
                   content: post.post.content,
                   likes: 0,
-                  comments: 0
-
+                  comments: post.post.comments_count
+                  
                 }
         posts.push(newPost)
       }
