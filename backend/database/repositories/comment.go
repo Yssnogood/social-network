@@ -83,8 +83,11 @@ func (r *CommentRepository) GetByID(id int64) (*models.Comment, error) {
 // GetComments retrieves the list of comments for a post
 func (r *CommentRepository) GetComments(postID int64) ([]*models.Comment, error) {
 	rows, err := r.db.Query(`
-		SELECT id, post_id, user_id, content, image_path, created_at, updated_at
-		FROM comments WHERE post_id = ?
+		SELECT c.id, c.post_id, c.user_id, u.username, c.content, c.image_path, c.created_at, c.updated_at
+		FROM comments c
+		JOIN users u ON c.user_id = u.id
+		WHERE c.post_id = ?
+		ORDER BY c.created_at ASC
 	`, postID)
 	if err != nil {
 		return nil, err
@@ -99,6 +102,7 @@ func (r *CommentRepository) GetComments(postID int64) ([]*models.Comment, error)
 			&c.ID,
 			&c.PostID,
 			&c.UserID,
+			&c.Username,
 			&c.Content,
 			&c.ImagePath,
 			&c.CreatedAt,

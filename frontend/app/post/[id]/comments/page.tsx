@@ -27,7 +27,7 @@ export default function CommentsPage({ params }: { params: { id: string } }) {
 
                     // Fetch comments for the post
                     const postComments = await getComments(postId, cookies.get("jwt"));
-                    setComments(postComments);
+                    setComments(postComments.reverse());
                 }
             } catch (error) {
                 console.error("Failed to fetch post or comments:", error);
@@ -43,6 +43,9 @@ export default function CommentsPage({ params }: { params: { id: string } }) {
         e.preventDefault();
         if (!commentContent.trim()) return;
 
+        // Get the current username from cookie
+        const username = cookies.get("user");
+
         // Awaiting the async comment creation
         const newComment = await createComment({
             postId,
@@ -51,7 +54,12 @@ export default function CommentsPage({ params }: { params: { id: string } }) {
 
         if (newComment) {
             // Add the new comment to the existing list
-            setComments([...comments, newComment]);
+            const commentWithUsername = {
+                ...newComment,
+                userName: username || newComment.userName || "You"
+            };
+            
+            setComments([commentWithUsername, ...comments]);
             setCommentContent('');
 
             // Also update the comment count on the post

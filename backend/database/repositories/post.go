@@ -113,6 +113,11 @@ func (r *PostRepository) GetPosts(ps *services.PostService, curr_user *models.Us
 			return nil, err
 		}
 		likes, _ := ps.GetLikes(post.ID)
+		commentCount, err := r.GetNumberOfComments(post.ID)
+		if err != nil {
+			return nil, err
+		}
+		post.CommentsCount = commentCount
 		user, _ := ps.GetPostAuthor(post)
 		posts = append(posts, map[string]any{
 			"post":       post,
@@ -122,6 +127,17 @@ func (r *PostRepository) GetPosts(ps *services.PostService, curr_user *models.Us
 		})
 	}
 	return posts, nil
+}
+
+func (r *PostRepository) GetNumberOfComments(postID int64) (int64, error) {
+	var count int64
+	err := r.db.QueryRow(`
+		SELECT COUNT(*) FROM comments WHERE post_id = ?
+	`, postID).Scan(&count)
+	if err != nil && err == sql.ErrNoRows {
+		return 0, err
+	}
+	return count, nil
 }
 
 // update a post in the database

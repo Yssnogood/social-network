@@ -87,6 +87,7 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 
 // GetComment returns a single comment by ID.
 func (h *CommentHandler) GetComment(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req getCommentRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -104,6 +105,7 @@ func (h *CommentHandler) GetComment(w http.ResponseWriter, r *http.Request) {
 
 // GetCommentsByPost returns all comments for a specific post.
 func (h *CommentHandler) GetCommentsByPost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req getPostCommentsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
