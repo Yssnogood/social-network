@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useCookies } from "next-client-cookies";
-import { getPosts, Post } from "../../../../services/post";
+import { getSpecificPost, Post } from "../../../../services/post";
 import { formatRelativeTime } from "../../../../services/utils";
 import { getComments, createComment, Comment } from "../../../../services/comment";
 import { use } from "react";
@@ -24,9 +24,8 @@ export default function CommentsPage({
     useEffect(() => {
         async function loadPostAndComments() {
             try {
-                // Fetch all posts and filter for the specific one, might need to be changed to fetch only the post by ID
-                const fetchedPosts = await getPosts(cookies.get("jwt"));
-                const foundPost = fetchedPosts.find(p => p.id === postId);
+                // Fetch the specific post and its comments
+                const foundPost = await getSpecificPost(postId, cookies.get("jwt"));
 
                 if (foundPost) {
                     setPost(foundPost);

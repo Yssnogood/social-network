@@ -41,7 +41,6 @@ export async function getComments(postId: number, jwt?: string): Promise<Comment
     } catch (error) {
         console.error("Failed to fetch comments:", error);
     }
-    console.log("Fetched comments:", comments);
     return comments;
 }
 

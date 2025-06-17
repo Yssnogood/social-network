@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"social-network/backend/app/services"
@@ -98,8 +100,15 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := 0
-	post, err := h.PostRepository.GetByID(int64(id))
+	// Extract ID from URL path, assuming /post/{id}
+	parts := strings.Split(r.URL.Path, "/")
+	postID, err := strconv.Atoi(parts[3])
+	if err != nil {
+		fmt.Println("Post ID:", postID)
+		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+		return
+	}
+	post, err := h.PostRepository.GetByID(int64(postID))
 	if err != nil {
 		http.Error(w, "Post not found", http.StatusNotFound)
 		return
