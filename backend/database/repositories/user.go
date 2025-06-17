@@ -3,6 +3,8 @@ package repository
 import (
 	"database/sql"
 
+	"fmt"
+
 	"social-network/backend/database/models"
 )
 
@@ -159,17 +161,59 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 
 // update a user in the database
 func (r *UserRepository) Update(user *models.User) error {
-	stmt, err := r.db.Prepare(`
+
+	fmt.Println(user)
+
+	// case where the PassWord is not getting change
+	if(user.PasswordHash == ""){
+		stmt, err := r.db.Prepare(`
 		UPDATE users SET
-			email = ?, password_hash = ?, first_name = ?, last_name = ?,
+			email = ?, first_name = ?, last_name = ?,
 			birth_date = ?, avatar_path = ?, username = ?, about_me = ?,
 			is_public = ?, updated_at = ?
 		WHERE id = ?
 	`)
 	if err != nil {
 		return err
+	}	
+
+		defer stmt.Close()
+
+	fmt.Println(user)
+	fmt.Println(user.AboutMe)
+
+	_, err = stmt.Exec(
+		user.Email,
+		user.FirstName,
+		user.LastName,
+		user.BirthDate,
+		user.AvatarPath,
+		user.Username,
+		user.AboutMe,
+		user.IsPublic,
+		user.UpdatedAt,
+		user.ID,
+	)
+	if err != nil {
+		return err
 	}
-	defer stmt.Close()
+
+	return nil
+
+	}else {
+		//Case the password is getting changed
+		stmt, err := r.db.Prepare(`
+			UPDATE users SET
+				email = ?, password_hash = ?, first_name = ?, last_name = ?,
+				birth_date = ?, avatar_path = ?, username = ?, about_me = ?,
+				is_public = ?, updated_at = ?
+			WHERE id = ?
+		`)
+		if err != nil {
+			return err
+		}
+
+			defer stmt.Close()
 
 	_, err = stmt.Exec(
 		user.Email,
@@ -189,6 +233,8 @@ func (r *UserRepository) Update(user *models.User) error {
 	}
 
 	return nil
+	}
+
 }
 
 // Delete a user from the database

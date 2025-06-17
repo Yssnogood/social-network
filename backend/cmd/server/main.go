@@ -7,16 +7,25 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	gorillaHandlers "github.com/gorilla/handlers" // alias pour le package externe handlers
 
 	repository "social-network/backend/database/repositories"
 	"social-network/backend/database/sqlite"
-	"social-network/backend/server/handlers"
+	appHandlers "social-network/backend/server/handlers" // alias pour ton propre package handlers
 	"social-network/backend/app/services"
 	"social-network/backend/server/routes"
 	"social-network/backend/server/middlewares"
 )
 
 func main() {
+	r := mux.NewRouter()
+
+	// Appliquer le middleware CORS
+	headersOk := gorillaHandlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
+	originsOk := gorillaHandlers.AllowedOrigins([]string{"http://localhost:3000"})
+	credentialsOk := gorillaHandlers.AllowCredentials()
+	methodsOk := gorillaHandlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"})
+
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Erreur loading .env")
@@ -33,59 +42,28 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	postRepo := repository.NewPostRepository(db)
 	commentRepo := repository.NewCommentRepository(db)
-	// notificationRepo := repository.NewNotificationRepository(db)
-	// messageRepo := repository.NewMessageRepository(db)
 	sessionRepo := repository.NewSessionRepository(db)
-	// followerRepo := repository.NewFollowerRepository(db)
-	// groupRepo := repository.NewGroupRepository(db)
-	// eventRepo := repository.NewEventRepository(db)
 
 	// Services
 	userService := services.NewUserService(db)
 	postService := services.NewPostService(db)
-	// commentService := services.NewCommentService(db)
-	// notificationService := services.NewNotificationService(db)
-	// messageService := services.NewMessageService(db)
-	// sessionService := services.NewSessionService(db)
-	// followerService := services.NewFollowerService(db)
-	// groupService := services.NewGroupService(db)
-	// eventService := services.NewEventService(db)
 
 	// Handlers
-	userHandler := handlers.NewUserHandler(userService, userRepo, sessionRepo)
-	postHandler := handlers.NewPostHandler(postService, postRepo, sessionRepo)
-	commentHandler := handlers.NewCommentHandler(commentRepo, sessionRepo)
-	// notificationHandler := handlers.NewNotificationHandler(notificationRepo)
-	// messageHandler := handlers.NewMessageHandler(messageRepo)
-	// sessionHandler := handlers.NewSessionHandler(sessionRepo)
-	// followerHandler := handlers.NewFollowerHandler(followerRepo)
-	// groupHandler := handlers.NewGroupHandler(groupRepo)
-	// eventHandler := handlers.NewEventHandler(eventRepo)
+	userHandler := appHandlers.NewUserHandler(userService, userRepo, sessionRepo)
+	postHandler := appHandlers.NewPostHandler(postService, postRepo, sessionRepo)
+	commentHandler := appHandlers.NewCommentHandler(commentRepo, sessionRepo)
 
-	// Create a new router
-	r := mux.NewRouter()
-
-	//routes
+	// Routes
 	routes.UserRoutes(r, userHandler)
 	routes.PostRoutes(r, postHandler)
 	routes.CommentsRoutes(r, commentHandler)
-	//routes.NotificationRoutes(r, notificationHandler)
-	//routes.MessageRoutes(r, messageHandler)
-	// routes.SessionRoutes(r, sessionHandler)
-	//routes.FollowerRoutes(r, followerHandler)
-	//routes.GroupRoutes(r, groupHandler)
-	//routes.EventRoutes(r, eventHandler)
 
 	// Middleware
 	r.Handle("/api/posts", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.CreatePost))).Methods("POST")
 
-	// start serveur
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8090" // Port par défaut si la variable d'environnement n'est pas définie
-	}
-	log.Println("Serveur en écoute sur :" + port)
-	if err := http.ListenAndServe(":"+port, r); err != nil {
-		log.Fatal("Erreur au lancement du serveur :", err)
+	// Start server
+	log.Println("Server start on http://localhost:8080/")
+	if err := http.ListenAndServe(":8080", gorillaHandlers.CORS(originsOk, headersOk, methodsOk, credentialsOk)(r)); err != nil {
+		log.Fatalf("Error starting server: %v", err)
 	}
 }

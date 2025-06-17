@@ -267,6 +267,13 @@ func (h *UserHandler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 
 // UpdateUser updates user information using JSON body.
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+
+	    // Handle preflight requests
+    if r.Method == "OPTIONS" {
+        w.WriteHeader(http.StatusOK)
+        return
+    }
+
 	var req updateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -294,9 +301,13 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		user.PasswordHash = hashedPassword
+	}else {
+		user.PasswordHash = req.Password
 	}
 
+	
 	birthDate, err := time.Parse("2006-01-02", req.BirthDate)
+	fmt.Println(req.BirthDate, "Parsed time : ", birthDate)
 	if err != nil {
 		http.Error(w, "Invalid birth date format. Use YYYY-MM-DD.", http.StatusBadRequest)
 		return
@@ -315,6 +326,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 // DeleteUser deletes a user by ID from JSON body.
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req deleteUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)

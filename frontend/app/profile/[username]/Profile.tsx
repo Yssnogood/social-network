@@ -17,12 +17,19 @@ export default function ClientProfile({
   const [isEditing, setIsEditing] = useState(false);
 
   const handleSave = async () => {
-    const response = await fetch("http://localhost:8080/api/profile/about", {
-      method: "POST",
+    const response = await fetch(`http://localhost:8080/api/users/${profile.id}`, {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        user_id: loggedInUser,
+        id: profile.id,
+        email: profile.email,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        birth_date: profile.birth_date,
+        username: profile.username,
         about_me: aboutMe,
+        is_public: profile.is_public,
+        password: "", // empty as not changing password
       }),
     });
 

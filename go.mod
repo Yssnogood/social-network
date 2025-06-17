@@ -7,6 +7,7 @@ toolchain go1.23.3
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang-migrate/migrate/v4 v4.18.3
+	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.8.1
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-sqlite3 v1.14.22
