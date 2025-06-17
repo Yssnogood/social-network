@@ -76,6 +76,10 @@ export default function Home() {
                         Social Network
                     </Link>
                     <nav className="flex gap-4 items-center">
+                    <Link
+                        href="/contact"
+                        className="text-sm text-white hover:text-blue-200"
+                    >
                         <button
                             className="text-sm text-white hover:text-blue-200 cursor-pointer flex items-center"
                             aria-label="Messages"
@@ -96,6 +100,7 @@ export default function Home() {
                             </svg>
                         </button>
                         
+                    </Link>                        
                         <button
                             className="text-sm text-white hover:text-blue-200 cursor-pointer flex items-center"
                             aria-label="Notifications"
