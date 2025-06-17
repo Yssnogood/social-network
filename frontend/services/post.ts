@@ -125,19 +125,20 @@ export async function getSpecificPost(post_id: number, jwt?: string): Promise<Po
       body: JSON.stringify({ jwt })
     });
     if (resp.ok) {
-      const post = await resp.json();
+      const r = await resp.json();
       newPost = {
-        id: post.id,
-        userId: post.user_id,
-        userName: post.user,
-        imageUrl: post.image_path,
-        privacy: post.privacy_type,
-        createdAt: new Date(Date.parse(post.created_at)),
-        content: post.content,
-        likes: 0, // needs to be changed to get the proper like count
-        liked: post.user_liked, // same, doesn't know if the user liked the post
-        comments: post.comments_count
+        id: r.post.id,
+        userId: r.post.user_id,
+        userName: r.user,
+        imageUrl: r.post.image_path,
+        privacy: r.post.privacy_type,
+        createdAt: new Date(Date.parse(r.post.created_at)),
+        content: r.post.content,
+        likes:r.likes, // needs to be changed to get the proper like count
+        liked: r.liked, // same, doesn't know if the user liked the post
+        comments: r.post.comments_count
       };
+      console.log(newPost)
     }
   } catch (err) {
     console.log(err);
