@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"time"
 
 	"social-network/backend/database/models"
 )
@@ -158,3 +159,32 @@ func (r *MessageRepository) Delete(id int64) error {
 	return nil
 }
 
+
+// MarkAsRead marque un message comme lu avec un timestamp
+func (r *MessageRepository) MarkAsRead(messageID int64, readAt time.Time) error {
+	stmt, err := r.db.Prepare(`
+		UPDATE messages SET read_at = ? WHERE id = ?
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(readAt, messageID)
+	return err
+}
+
+// GetConversationID récupère l'ID de conversation d'un message
+func (r *MessageRepository) GetConversationID(messageID int64) (int64, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT conversation_id FROM messages WHERE id = ?
+	`)
+	if err != nil {
+		return 0, err
+	}
+	defer stmt.Close()
+
+	var conversationID int64
+	err = stmt.QueryRow(messageID).Scan(&conversationID)
+	return conversationID, err
+}

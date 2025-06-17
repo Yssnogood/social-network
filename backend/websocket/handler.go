@@ -9,8 +9,6 @@ import (
 	"social-network/backend/database/repositories"
 )
 
-var GlobalHub = NewHub()
-
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true

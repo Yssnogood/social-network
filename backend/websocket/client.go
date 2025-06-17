@@ -16,6 +16,7 @@ const (
 
 type Client struct {
 	ID   string
+	UserID int64
 	Conn *websocket.Conn
 	Send chan []byte
 	Hub  *Hub

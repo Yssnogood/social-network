@@ -114,3 +114,44 @@ func (r *ConversationRepository) Delete(id int64) error {
 	_, err = stmt.Exec(id)
 	return err
 }
+
+// Ajoute cette méthode à ton conversation.go
+
+// GetMembers récupère tous les membres d'une conversation
+func (r *ConversationRepository) GetMembers(conversationID int64) ([]models.ConversationMembers, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT id, conversation_id, user_id, joined_at
+		FROM conversation_members WHERE conversation_id = ?
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(conversationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var members []models.ConversationMembers
+	for rows.Next() {
+		member := models.ConversationMembers{}
+		err := rows.Scan(
+			&member.ID,
+			&member.ConversationID,
+			&member.UserID,
+			&member.JoinedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		members = append(members, member)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return members, nil
+}
