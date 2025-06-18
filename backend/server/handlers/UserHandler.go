@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"strings"
 	"time"
 
 	"social-network/backend/app/services"
@@ -210,6 +211,30 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		"message": "User created successfully",
 		"user_id": user.ID,
 	})
+}
+
+func (h *UserHandler) SearchUsers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	path := r.URL.Path
+	prefix := "/api/users/search/"
+
+	if !strings.HasPrefix(path, prefix) {
+		http.Error(w, "Invalid path", http.StatusBadRequest)
+		return
+	}
+
+	name := strings.TrimPrefix(path, prefix)
+	name = strings.TrimSpace(name)
+
+	users, err := h.UserRepository.GetUsersForContact(name)
+	if err != nil {
+		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
 }
 
 // GetUser retrieves a user by Username from the request.
