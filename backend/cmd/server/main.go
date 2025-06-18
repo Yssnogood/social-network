@@ -36,7 +36,7 @@ func main() {
 	// notificationRepo := repository.NewNotificationRepository(db)
 	// messageRepo := repository.NewMessageRepository(db)
 	sessionRepo := repository.NewSessionRepository(db)
-	// followerRepo := repository.NewFollowerRepository(db)
+	followerRepo := repository.NewFollowerRepository(db)
 	// groupRepo := repository.NewGroupRepository(db)
 	// eventRepo := repository.NewEventRepository(db)
 
@@ -58,7 +58,7 @@ func main() {
 	// notificationHandler := handlers.NewNotificationHandler(notificationRepo)
 	// messageHandler := handlers.NewMessageHandler(messageRepo)
 	// sessionHandler := handlers.NewSessionHandler(sessionRepo)
-	// followerHandler := handlers.NewFollowerHandler(followerRepo)
+	followerHandler := handlers.NewFollowerHandler(followerRepo)
 	// groupHandler := handlers.NewGroupHandler(groupRepo)
 	// eventHandler := handlers.NewEventHandler(eventRepo)
 
@@ -72,7 +72,7 @@ func main() {
 	//routes.NotificationRoutes(r, notificationHandler)
 	//routes.MessageRoutes(r, messageHandler)
 	// routes.SessionRoutes(r, sessionHandler)
-	//routes.FollowerRoutes(r, followerHandler)
+	routes.FollowersRoutes(r, followerHandler)
 	//routes.GroupRoutes(r, groupHandler)
 	//routes.EventRoutes(r, eventHandler)
 

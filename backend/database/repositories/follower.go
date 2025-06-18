@@ -42,7 +42,7 @@ func (r *FollowerRepository) GetFollowers(userID int64) ([]*models.Follower, err
 	rows, err := r.db.Query(`
 		SELECT follower_id, followed_id, accepted, followed_at
 		FROM followers
-		WHERE followed_id = ?
+		WHERE followed_id = ? AND accepted = 1
 	`, userID)
 	if err != nil {
 		return nil, err
@@ -99,4 +99,3 @@ func (r *FollowerRepository) Delete(followerID, followedID int64) error {
 	_, err = stmt.Exec(followerID, followedID)
 	return err
 }
-
