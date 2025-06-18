@@ -306,8 +306,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	
-	birthDate, err := time.Parse("2006-01-02", req.BirthDate)
-	fmt.Println(req.BirthDate, "Parsed time : ", birthDate)
+	birthDate, err := time.Parse("2006-01-02T15:04:05Z", req.BirthDate)
 	if err != nil {
 		http.Error(w, "Invalid birth date format. Use YYYY-MM-DD.", http.StatusBadRequest)
 		return

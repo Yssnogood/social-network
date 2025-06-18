@@ -3,8 +3,6 @@ package repository
 import (
 	"database/sql"
 
-	"fmt"
-
 	"social-network/backend/database/models"
 )
 
@@ -162,8 +160,6 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 // update a user in the database
 func (r *UserRepository) Update(user *models.User) error {
 
-	fmt.Println(user)
-
 	// case where the PassWord is not getting change
 	if(user.PasswordHash == ""){
 		stmt, err := r.db.Prepare(`
@@ -178,9 +174,6 @@ func (r *UserRepository) Update(user *models.User) error {
 	}	
 
 		defer stmt.Close()
-
-	fmt.Println(user)
-	fmt.Println(user.AboutMe)
 
 	_, err = stmt.Exec(
 		user.Email,
