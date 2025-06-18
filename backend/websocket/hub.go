@@ -60,10 +60,10 @@ func (h *Hub) handleMessage(rawMessage []byte) {
 	switch wsMessage.Type {
 	case "new_message":
 		h.handleNewMessage(wsMessage.Payload)
-	// case "typing":
-	// 	h.handleTyping(wsMessage.Payload)
-	// case "message_read":
-	// 	h.handleMessageRead(wsMessage.Payload)
+	case "typing":
+		h.handleTyping(wsMessage.Payload)
+	case "message_read":
+		h.handleMessageRead(wsMessage.Payload)
 	default:
 		log.Printf("Unknown message type: %s", wsMessage.Type)
 	}
