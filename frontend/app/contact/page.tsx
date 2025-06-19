@@ -6,15 +6,9 @@ import { fetchUsersByUsername } from '@/services/contact';
 import Link from 'next/link';
 
 export default function ContactPage() {
-  const [contacts] = useState([
-    { id: 1, name: 'User 1', avatar: '/social-placeholder.png', time: '5m', isOnline: true },
-    { id: 2, name: 'User 2', avatar: '/social-placeholder.png', time: '30m', isOnline: true },
-    { id: 3, name: 'User 3', avatar: '/social-placeholder.png', time: '2h', isOnline: false },
-    { id: 4, name: 'User 4', avatar: '/social-placeholder.png', time: '1d', isOnline: false },
-    { id: 5, name: 'User 5', avatar: '/social-placeholder.png', time: '2d', isOnline: false },
-  ]);
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [selectedContact, setSelectedContact] = useState<any | null>(null);
 
-  const [selectedContact] = useState(contacts[0]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewConversationModalOpen, setIsNewConversationModalOpen] = useState(false);
   const [newConversationSearchTerm, setNewConversationSearchTerm] = useState('');
@@ -26,7 +20,6 @@ export default function ContactPage() {
       if (newConversationSearchTerm.trim()) {
         fetchUsersByUsername(newConversationSearchTerm)
           .then(data => {
-            // If the data is null or an empty array, clear users, no error
             if (data && Array.isArray(data) && data.length > 0) {
               const mapped = data.map((user: any) => ({
                 id: user.id,
@@ -40,19 +33,16 @@ export default function ContactPage() {
             }
           })
           .catch(error => {
-            // log and clear users during error
             console.error('Error fetching users:', error);
             setUsers([]);
           });
       } else {
-        // If search term is empty, just clear users list
         setUsers([]);
       }
     }, 300);
 
     return () => clearTimeout(delayDebounce);
   }, [newConversationSearchTerm]);
-
 
   const filteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -100,7 +90,11 @@ export default function ContactPage() {
 
         <div className="flex-1 overflow-y-auto">
           {filteredContacts.map((contact) => (
-            <div key={contact.id} className={`flex items-center p-3 border-b border-gray-400 hover:bg-blue-400 cursor-pointer ${selectedContact.id === contact.id ? 'bg-blue-800' : ''}`}>
+            <div
+              key={contact.id}
+              onClick={() => setSelectedContact(contact)}
+              className={`flex items-center p-3 border-b border-gray-400 hover:bg-blue-400 cursor-pointer ${selectedContact?.id === contact.id ? 'bg-blue-800' : ''}`}
+            >
               <div className="relative">
                 <Image src={contact.avatar} alt={contact.name} width={40} height={40} className="rounded-full" />
                 {contact.isOnline && (
@@ -120,46 +114,55 @@ export default function ContactPage() {
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col bg-gray-800">
-        <div className="p-4 border-b border-gray-400 flex items-center">
-          <div className="relative">
-            <Image src={selectedContact.avatar} alt={selectedContact.name} width={48} height={48} className="rounded-full" />
-            {selectedContact.isOnline && (
-              <div className="w-3 h-3 bg-green-500 rounded-full absolute bottom-0 right-0 border-2 border-white"></div>
-            )}
-          </div>
-          <div className="ml-3">
-            <h2 className="font-semibold">{selectedContact.name}</h2>
-            <p className="text-xs text-gray-400">
-              {selectedContact.isOnline ? 'Online now' : 'Last seen 2 hours ago'}
-            </p>
-          </div>
-        </div>
+        {selectedContact ? (
+          <>
+            <div className="p-4 border-b border-gray-400 flex items-center">
+              <div className="relative">
+                <Image src={selectedContact.avatar} alt={selectedContact.name} width={48} height={48} className="rounded-full" />
+                {selectedContact.isOnline && (
+                  <div className="w-3 h-3 bg-green-500 rounded-full absolute bottom-0 right-0 border-2 border-white"></div>
+                )}
+              </div>
+              <div className="ml-3">
+                <h2 className="font-semibold">{selectedContact.name}</h2>
+                <p className="text-xs text-gray-400">
+                  {selectedContact.isOnline ? 'Online now' : ''}
+                </p>
+              </div>
+            </div>
 
-        <div className="flex-1 p-4 overflow-y-auto bg-gray-800">
-          {/* Sample messages here */}
-        </div>
+            <div className="flex-1 p-4 overflow-y-auto bg-gray-800">
+              {/* Display messages here */}
+            </div>
 
-        <div className="p-4 border-t border-gray-400">
-          <div className="flex items-center">
-            <button className="p-2 text-gray-500 rounded-full hover:bg-gray-200">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-              </svg>
-            </button>
-            <input 
-              type="text" 
-              placeholder="Type a message..." 
-              className="flex-1 mx-4 p-2 rounded-full border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button className="p-2 bg-blue-600 text-white rounded-full">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
-            </button>
+            <div className="p-4 border-t border-gray-400">
+              <div className="flex items-center">
+                <button className="p-2 text-gray-500 rounded-full hover:bg-gray-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                </button>
+                <input 
+                  type="text" 
+                  placeholder="Type a message..." 
+                  className="flex-1 mx-4 p-2 rounded-full border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button className="p-2 bg-blue-600 text-white rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-400">
+            Select a contact to start chatting
           </div>
-        </div>
+        )}
       </div>
-      
+
+      {/* Modal */}
       {isNewConversationModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6">
@@ -190,21 +193,43 @@ export default function ContactPage() {
 
             <div className="max-h-60 overflow-y-auto">
               {users.length > 0 ? (
-                users.map(user => (
-                  <div 
-                    key={user.id}
-                    className="flex items-center p-3 hover:bg-gray-700 rounded-lg cursor-pointer"
-                  >
-                    <div className="relative">
-                      <Image src={user.avatar} alt={user.name} width={40} height={40} className="rounded-full" />
-                      <div className={`w-3 h-3 ${user.status === 'online' ? 'bg-green-500' : 'bg-gray-500'} rounded-full absolute bottom-0 right-0 border-2 border-gray-800`}></div>
+                users.map(user => {
+                  const handleStartConversation = () => {
+                    const exists = contacts.some(contact => contact.id === user.id);
+                    if (!exists) {
+                      const newContact = {
+                        id: user.id,
+                        name: user.name,
+                        avatar: user.avatar,
+                        isOnline: user.status === 'online',
+                        time: 'Just now',
+                      };
+                      setContacts(prev => [newContact, ...prev]);
+                      setSelectedContact(newContact);
+                    } else {
+                      const existingContact = contacts.find(c => c.id === user.id);
+                      if (existingContact) setSelectedContact(existingContact);
+                    }
+                    closeNewConversationModal();
+                  };
+
+                  return (
+                    <div
+                      key={user.id}
+                      onClick={handleStartConversation}
+                      className="flex items-center p-3 hover:bg-gray-700 rounded-lg cursor-pointer"
+                    >
+                      <div className="relative">
+                        <Image src={user.avatar} alt={user.name} width={40} height={40} className="rounded-full" />
+                        <div className={`w-3 h-3 ${user.status === 'online' ? 'bg-green-500' : 'bg-gray-500'} rounded-full absolute bottom-0 right-0 border-2 border-gray-800`}></div>
+                      </div>
+                      <div className="ml-3">
+                        <p className="font-medium text-white">{user.name}</p>
+                        <p className="text-xs text-gray-400">{user.status === 'online' ? 'Online' : 'Offline'}</p>
+                      </div>
                     </div>
-                    <div className="ml-3">
-                      <p className="font-medium text-white">{user.name}</p>
-                      <p className="text-xs text-gray-400">{user.status === 'online' ? 'Online' : 'Offline'}</p>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="text-center py-4 text-gray-400">
                   {newConversationSearchTerm ? 'No users found' : 'Start typing to search for users'}
