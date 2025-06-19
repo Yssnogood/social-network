@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { UserProfile } from "../../../services/user";
+import ProfileTabs from "./ProfileTabs";
 
 export default function ClientProfile({
   profile,
@@ -188,12 +189,14 @@ export default function ClientProfile({
                   No friends found.
                 </p>
               )}
-            </div>
             <button className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
               View All Friends
             </button>
+            </div>
           </div>
         </div>
+        <ProfileTabs userId={profile.id} />
+
       </main>
     </>
   );

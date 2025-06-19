@@ -117,6 +117,42 @@ func (r *CommentRepository) GetComments(postID int64) ([]*models.Comment, error)
 	return comments, nil
 }
 
+func (r *CommentRepository) GetCommentsFromUserByID(userID int64)([]*models.Comment, error){
+		rows, err := r.db.Query(`
+		SELECT id, post_id, user_id, content, image_path, created_at, updated_at
+		FROM comments WHERE user_id = ?
+	`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var comments []*models.Comment
+
+	for rows.Next() {
+		c := &models.Comment{}
+		err := rows.Scan(
+			&c.ID,
+			&c.PostID,
+			&c.UserID,
+			&c.Content,
+			&c.ImagePath,
+			&c.CreatedAt,
+			&c.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		comments = append(comments, c)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return comments, nil
+}
+
 // Update a comment in the database
 func (r *CommentRepository) Update(comment *models.Comment) error {
 	stmt, err := r.db.Prepare(`

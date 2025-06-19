@@ -42,6 +42,39 @@ export async function getComments(postId: number, jwt?: string): Promise<Comment
     return comments;
 }
 
+export async function getCommentsByUserID(userID: number): Promise<Comment[]> {
+    let comments: Comment[] = [];
+
+    try {
+        const resp = await fetch(`${url}/comments_user`, {
+            method: "POST",
+            body: JSON.stringify({
+                user_id: userID
+            })
+        });
+
+        if (resp.ok) {
+            const commentsData = await resp.json();
+
+            console.log(commentsData)
+
+            comments = commentsData.map((comment: any) => ({
+                id: comment.id,
+                postId: comment.post_id,
+                userId: comment.user_id,
+                userName: comment.username || "User",
+                content: comment.content,
+                imageUrl: comment.image_path,
+                createdAt: new Date(Date.parse(comment.created_at))
+            }));
+        }
+    } catch (error) {
+        console.error("Failed to fetch comments:", error);
+    }
+
+    return comments;
+}
+
 export async function createComment(
     commentData: {
         postId: number;

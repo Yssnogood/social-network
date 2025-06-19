@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+	"fmt"
 
 	"social-network/backend/database/models"
 	repository "social-network/backend/database/repositories"
@@ -33,6 +34,10 @@ type createCommentRequest struct {
 
 type getCommentRequest struct {
 	ID int64 `json:"id"`
+}
+
+type getCommentsRequestByUserId struct{
+	ID int64 `json:"user_id"`
 }
 
 type updateCommentRequest struct {
@@ -98,6 +103,26 @@ func (h *CommentHandler) GetComment(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Comment not found", http.StatusNotFound)
 		return
 	}
+
+	json.NewEncoder(w).Encode(comment)
+}
+
+func (h *CommentHandler) GetCommentsFromUserByID(w http.ResponseWriter, r *http.Request){
+	var req getCommentsRequestByUserId
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println(req.ID)
+
+	comment, err := h.CommentRepository.GetCommentsFromUserByID(req.ID)
+	if err != nil {
+		http.Error(w, "Comment not found", http.StatusNotFound)
+		return
+	}
+
+	fmt.Println("commentaire : ", comment)
 
 	json.NewEncoder(w).Encode(comment)
 }
