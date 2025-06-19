@@ -1,4 +1,4 @@
-Fonctionnel
+jFonctionnel
 
     La contrainte concernant les packages autorisés a-t-elle été respectée ?
 

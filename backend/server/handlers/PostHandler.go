@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"social-network/backend/app/services"
@@ -92,14 +94,23 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := h.SessionRepository.GetBySessionToken(req.JWT)
+	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	id := 0
-	post, err := h.PostRepository.GetByID(int64(id))
+	user := h.SessionRepository.GetUserBySession(session)
+
+	// Extract ID from URL path, assuming /post/{id}
+	parts := strings.Split(r.URL.Path, "/")
+	postID, err := strconv.Atoi(parts[3])
+	if err != nil {
+		fmt.Println("Post ID:", postID)
+		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+		return
+	}
+	post, err := h.PostRepository.GetByID(int64(postID), h.PostService, user)
 	if err != nil {
 		http.Error(w, "Post not found", http.StatusNotFound)
 		return
@@ -159,33 +170,33 @@ type UpdatePostRequest struct {
 }
 
 // UpdatePost updates a post by ID from JSON body.
-func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
-	var req UpdatePostRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
+// func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
+// 	var req UpdatePostRequest
+// 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+// 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+// 		return
+// 	}
 
-	post, err := h.PostRepository.GetByID(req.ID)
-	if err != nil {
-		http.Error(w, "Post not found", http.StatusNotFound)
-		return
-	}
+// 	post, err := h.PostRepository.GetByID(req.ID, h.PostService)
+// 	if err != nil {
+// 		http.Error(w, "Post not found", http.StatusNotFound)
+// 		return
+// 	}
 
-	post.Content = req.Content
-	post.ImagePath = req.ImagePath
-	post.PrivacyType = req.PrivacyType
-	post.UpdatedAt = time.Now()
+// 	post.Content = req.Content
+// 	post.ImagePath = req.ImagePath
+// 	post.PrivacyType = req.PrivacyType
+// 	post.UpdatedAt = time.Now()
 
-	if err := h.PostRepository.Update(post); err != nil {
-		http.Error(w, "Failed to update post", http.StatusInternalServerError)
-		return
-	}
+// 	if err := h.PostRepository.Update(post); err != nil {
+// 		http.Error(w, "Failed to update post", http.StatusInternalServerError)
+// 		return
+// 	}
 
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Post updated successfully",
-	})
-}
+// 	json.NewEncoder(w).Encode(map[string]string{
+// 		"message": "Post updated successfully",
+// 	})
+// }
 
 // DeletePostRequest is the request body for deleting a post.
 type DeletePostRequest struct {

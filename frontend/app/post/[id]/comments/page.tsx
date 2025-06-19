@@ -3,31 +3,37 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useCookies } from "next-client-cookies";
-import { getPosts, Post } from "../../../../services/post";
+import { getSpecificPost, Post } from "../../../../services/post";
 import { formatRelativeTime } from "../../../../services/utils";
 import { getComments, createComment, Comment } from "../../../../services/comment";
+import { LikePost } from "../../../../services/post";
+import { use } from "react";
 
-export default function CommentsPage({ params }: { params: { id: string } }) {
+export default function CommentsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
     const cookies = useCookies();
     const [post, setPost] = useState<Post | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [commentContent, setCommentContent] = useState('');
-    const postId = parseInt(params.id);
+    const param = use(params)
+    const postId = parseInt(param.id);
 
     useEffect(() => {
         async function loadPostAndComments() {
             try {
-                // Fetch all posts and filter for the specific one, might need to be changed to fetch only the post by ID
-                const fetchedPosts = await getPosts(cookies.get("jwt"));
-                const foundPost = fetchedPosts.find(p => p.id === postId);
+                // Fetch the specific post and its comments
+                const foundPost = await getSpecificPost(postId, cookies.get("jwt"));
 
                 if (foundPost) {
                     setPost(foundPost);
 
                     // Fetch comments for the post
                     const postComments = await getComments(postId, cookies.get("jwt"));
-                    setComments(postComments);
+                    setComments(postComments.reverse());
                 }
             } catch (error) {
                 console.error("Failed to fetch post or comments:", error);
@@ -43,6 +49,9 @@ export default function CommentsPage({ params }: { params: { id: string } }) {
         e.preventDefault();
         if (!commentContent.trim()) return;
 
+        // Get the current username from cookie
+        const username = cookies.get("user");
+
         // Awaiting the async comment creation
         const newComment = await createComment({
             postId,
@@ -51,7 +60,12 @@ export default function CommentsPage({ params }: { params: { id: string } }) {
 
         if (newComment) {
             // Add the new comment to the existing list
-            setComments([...comments, newComment]);
+            const commentWithUsername = {
+                ...newComment,
+                userName: username || newComment.userName || "You"
+            };
+            
+            setComments([commentWithUsername, ...comments]);
             setCommentContent('');
 
             // Also update the comment count on the post
@@ -89,7 +103,7 @@ export default function CommentsPage({ params }: { params: { id: string } }) {
                     ) : post ? (
                         <div>
                             {/* Original Post */}
-                            <div className="bg-gray-800 p-4 rounded-lg shadow-md mb-4">
+                            <div id={String(postId)} className="bg-gray-800 p-4 rounded-lg shadow-md mb-4">
                                 <div className="flex items-center mb-3">
                                     <div className="w-10 h-10 bg-gray-700 rounded-full mr-3"></div>
                                     <div>
@@ -112,12 +126,14 @@ export default function CommentsPage({ params }: { params: { id: string } }) {
                                     </div>
                                 )}
                                 <div className="border-t border-gray-700 pt-3 mt-3 flex gap-4">
-                                    <button className="text-gray-400 hover:text-gray-200 text-sm flex items-center gap-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                                        </svg>
-                                        {post.likes} Like{post.likes !== 1 ? 's' : ''}
-                                    </button>
+                                    <button className="text-gray-400 hover:text-gray-200 text-sm flex items-center gap-1" onClick={() => {
+                                                                        LikePost(post.id,cookies.get("jwt"))
+                                                                    }}>
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" className={"h-5 w-5 like" + (post.liked ? " liked": "")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                                                        </svg>
+                                                                        <span id={`like ${post.id}`}>{post.likes}</span> Like{post.likes !== 1 ? 's' : ''}
+                                                                    </button>
                                     <span className="text-gray-400 text-sm flex items-center gap-1">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
