@@ -182,4 +182,5 @@ openapi.json
 # Exclure les fichiers de configuration de Webpack
 .webpack/
 
+tampon.go
 tampon.md
