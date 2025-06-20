@@ -3,6 +3,7 @@ import Image from "next/image";
 import { getUserProfile, UserProfile } from "../../../services/user";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
+import FollowersSection from "../../components/FollowersSection";
 
 interface Follower {
 	follower_id: number;
@@ -18,17 +19,14 @@ export default async function Profile({
 }) {
 	const { username } = await params;
 
-	// Récupération des cookies
 	const cookieStore = await cookies();
 
-	// On récupère le token JWT
 	const token = cookieStore.get("jwt")?.value || "";
 
 	let userId = "";
 
 	if (token) {
 		try {
-			// On décode le JWT sans vérifier la signature juste pour extraire le payload
 			const decoded = jwt.decode(token) as { user_id?: number } | null;
 			userId = decoded?.user_id?.toString() || "";
 		} catch (e) {
@@ -36,10 +34,8 @@ export default async function Profile({
 		}
 	}
 
-	// Récupération du cookie user pour afficher l’avatar dans le header
 	const usernameCookie = cookieStore.get("user")?.value || "";
 
-	// Données du profil utilisateur ciblé par l'URL
 	const profile: UserProfile = await getUserProfile(username, false);
 
 	const fetchFollowers = async (userId: string) => {
@@ -150,25 +146,12 @@ export default async function Profile({
 							</div>
 						</div>
 					</div>
-
-					{/* Section Followers*/}
+					{/* Section Followers */}
 					<div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-						<h3 className="text-lg font-semibold mb-4">Followers</h3>
-						{followers.length > 0 ? (
-							<div className="space-y-3">
-								{followers.map((follower: Follower) => (
-									<div key={follower.follower_id} className="flex items-center gap-3 p-2">
-										<p className="font-medium">
-											User ID: {follower.follower_id}
-										</p>
-									</div>
-								))}
-							</div>
-						) : (
-							<p className="text-gray-500 text-center py-4">
-								No followers yet
-							</p>
-						)}
+						<FollowersSection
+							followers={followers as Follower[]}
+							currentUserId={parseInt(userId)}
+						/>
 					</div>
 				</div>
 			</main >

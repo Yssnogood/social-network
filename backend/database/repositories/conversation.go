@@ -15,20 +15,19 @@ func NewConversationRepository(db *sql.DB) *ConversationRepository {
 	return &ConversationRepository{db: db}
 }
 
-// Create
+// Create a new conversation
 func (r *ConversationRepository) Create(convo *models.Conversation) (*models.Conversation, error) {
+	now := time.Now()
 	stmt, err := r.db.Prepare(`
-		INSERT INTO conversations(name, is_group, created_at)
-		VALUES (?, ?, ?)
+		INSERT INTO conversations(name, is_group, created_at, updated_at)
+		VALUES (?, ?, ?, ?)
 	`)
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
-	convo.CreatedAt = time.Now()
-
-	result, err := stmt.Exec(convo.Name, convo.IsGroup, convo.CreatedAt)
+	result, err := stmt.Exec(convo.Name, convo.IsGroup, now, now)
 	if err != nil {
 		return nil, err
 	}
@@ -39,13 +38,15 @@ func (r *ConversationRepository) Create(convo *models.Conversation) (*models.Con
 	}
 
 	convo.ID = id
+	convo.CreatedAt = now
+	convo.UpdatedAt = now
 	return convo, nil
 }
 
-// GetByID
+// GetByID retrieves a conversation by ID
 func (r *ConversationRepository) GetByID(id int64) (*models.Conversation, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT id, name, is_group, created_at
+		SELECT id, name, is_group, created_at, updated_at
 		FROM conversations WHERE id = ?
 	`)
 	if err != nil {
@@ -54,7 +55,13 @@ func (r *ConversationRepository) GetByID(id int64) (*models.Conversation, error)
 	defer stmt.Close()
 
 	convo := &models.Conversation{}
-	err = stmt.QueryRow(id).Scan(&convo.ID, &convo.Name, &convo.IsGroup, &convo.CreatedAt)
+	err = stmt.QueryRow(id).Scan(
+		&convo.ID,
+		&convo.Name,
+		&convo.IsGroup,
+		&convo.CreatedAt,
+		&convo.UpdatedAt,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -62,10 +69,10 @@ func (r *ConversationRepository) GetByID(id int64) (*models.Conversation, error)
 	return convo, nil
 }
 
-// GetByName
+// GetByName retrieves a conversation by name
 func (r *ConversationRepository) GetByName(name string) (*models.Conversation, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT id, name, is_group, created_at
+		SELECT id, name, is_group, created_at, updated_at
 		FROM conversations WHERE name = ?
 	`)
 	if err != nil {
@@ -74,7 +81,13 @@ func (r *ConversationRepository) GetByName(name string) (*models.Conversation, e
 	defer stmt.Close()
 
 	convo := &models.Conversation{}
-	err = stmt.QueryRow(name).Scan(&convo.ID, &convo.Name, &convo.IsGroup, &convo.CreatedAt)
+	err = stmt.QueryRow(name).Scan(
+		&convo.ID,
+		&convo.Name,
+		&convo.IsGroup,
+		&convo.CreatedAt,
+		&convo.UpdatedAt,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -82,11 +95,11 @@ func (r *ConversationRepository) GetByName(name string) (*models.Conversation, e
 	return convo, nil
 }
 
-// Update
+// UpdatedAt updates the updated_at timestamp
 func (r *ConversationRepository) UpdatedAt(id int64) (*models.Conversation, error) {
 	now := time.Now()
 	stmt, err := r.db.Prepare(`
-		UPDATE conversations SET created_at = ? WHERE id = ?
+		UPDATE conversations SET updated_at = ? WHERE id = ?
 	`)
 	if err != nil {
 		return nil, err
@@ -101,7 +114,7 @@ func (r *ConversationRepository) UpdatedAt(id int64) (*models.Conversation, erro
 	return r.GetByID(id)
 }
 
-// Delete
+// Delete removes a conversation
 func (r *ConversationRepository) Delete(id int64) error {
 	stmt, err := r.db.Prepare(`
 		DELETE FROM conversations WHERE id = ?
@@ -115,9 +128,7 @@ func (r *ConversationRepository) Delete(id int64) error {
 	return err
 }
 
-// Ajoute cette méthode à ton conversation.go
-
-// GetMembers récupère tous les membres d'une conversation
+// GetMembers retrieves all members of a conversation
 func (r *ConversationRepository) GetMembers(conversationID int64) ([]models.ConversationMembers, error) {
 	stmt, err := r.db.Prepare(`
 		SELECT id, conversation_id, user_id, joined_at
@@ -154,4 +165,61 @@ func (r *ConversationRepository) GetMembers(conversationID int64) ([]models.Conv
 	}
 
 	return members, nil
+}
+
+// Exists checks if a conversation already exists
+func (r *ConversationRepository) Exists(name string) (bool, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT COUNT(*) FROM conversations WHERE name = ?
+	`)
+	if err != nil {
+		return false, err
+	}
+	defer stmt.Close()
+
+	var count int
+	err = stmt.QueryRow(name).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+// CreateOrGetPrivateConversation creates or retrieves existing private conversation between two users
+func (r *ConversationRepository) CreateOrGetPrivateConversation(userID1, userID2 int64) (*models.Conversation, error) {
+	// Check if conversation already exists
+	membersRepo := NewConversationMembersRepository(r.db)
+	existingConv, err := membersRepo.AreUsersInSameConversation(userID1, userID2)
+	if err != nil {
+		return nil, err
+	}
+
+	if existingConv != nil {
+		return existingConv, nil
+	}
+
+	// Create new private conversation
+	conv := &models.Conversation{
+		Name:    "", // Private conversations don't need names
+		IsGroup: false,
+	}
+
+	newConv, err := r.Create(conv)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add both users to the conversation
+	err = membersRepo.AddMember(newConv.ID, userID1)
+	if err != nil {
+		return nil, err
+	}
+
+	err = membersRepo.AddMember(newConv.ID, userID2)
+	if err != nil {
+		return nil, err
+	}
+
+	return newConv, nil
 }

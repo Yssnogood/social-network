@@ -13,83 +13,26 @@ func NewConversationMembersRepository(db *sql.DB) *ConversationMembersRepository
 	return &ConversationMembersRepository{db: db}
 }
 
-// Create
-func (r *ConversationMembersRepository) Create(conversationMember *models.ConversationMembers) (*models.ConversationMembers, error) {
+// AddMember adds a user to a conversation
+func (r *ConversationMembersRepository) AddMember(conversationID, userID int64) error {
 	stmt, err := r.db.Prepare(`
-		INSERT INTO conversation_members(conversation_id, user_id, joined_at)
-		VALUES (?, ?, ?)
+		INSERT INTO conversation_members(conversation_id, user_id)
+		VALUES (?, ?)
 	`)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer stmt.Close()
 
-	result, err := stmt.Exec(conversationMember.ConversationID, conversationMember.UserID, conversationMember.JoinedAt)
-	if err != nil {
-		return nil, err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return nil, err
-	}
-
-	conversationMember.ID = id
-	return conversationMember, nil
+	_, err = stmt.Exec(conversationID, userID)
+	return err
 }
-// GetByID
-func (r *ConversationMembersRepository) GetByID(id int64) (*models.ConversationMembers, error) {
+
+// GetConversationsByUser retrieves all conversation IDs for a user
+func (r *ConversationMembersRepository) GetConversationsByUser(userID int64) ([]int64, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT id, conversation_id, user_id, joined_at
-		FROM conversation_members WHERE id = ?
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-
-	conversationMember := &models.ConversationMembers{}
-	err = stmt.QueryRow(id).Scan(&conversationMember.ID, &conversationMember.ConversationID, &conversationMember.UserID, &conversationMember.JoinedAt)
-	if err != nil {
-		return nil, err
-	}
-
-	return conversationMember, nil
-}
-// GetByConversationID
-func (r *ConversationMembersRepository) GetByConversationID(conversationID int64) ([]*models.ConversationMembers, error) {
-	stmt, err := r.db.Prepare(`
-		SELECT id, conversation_id, user_id, joined_at
-		FROM conversation_members WHERE conversation_id = ?
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-
-	rows, err := stmt.Query(conversationID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var members []*models.ConversationMembers
-	for rows.Next() {
-		member := &models.ConversationMembers{}
-		err = rows.Scan(&member.ID, &member.ConversationID, &member.UserID, &member.JoinedAt)
-		if err != nil {
-			return nil, err
-		}
-		members = append(members, member)
-	}
-
-	return members, nil
-}
-// GetByUserID
-func (r *ConversationMembersRepository) GetByUserID(userID int64) ([]*models.ConversationMembers, error) {
-	stmt, err := r.db.Prepare(`
-		SELECT id, conversation_id, user_id, joined_at
-		FROM conversation_members WHERE user_id = ?
+		SELECT conversation_id FROM conversation_members
+		WHERE user_id = ?
 	`)
 	if err != nil {
 		return nil, err
@@ -102,33 +45,40 @@ func (r *ConversationMembersRepository) GetByUserID(userID int64) ([]*models.Con
 	}
 	defer rows.Close()
 
-	var members []*models.ConversationMembers
+	var conversationIDs []int64
 	for rows.Next() {
-		member := &models.ConversationMembers{}
-		err = rows.Scan(&member.ID, &member.ConversationID, &member.UserID, &member.JoinedAt)
-		if err != nil {
+		var convID int64
+		if err := rows.Scan(&convID); err != nil {
 			return nil, err
 		}
-		members = append(members, member)
+		conversationIDs = append(conversationIDs, convID)
 	}
 
-	return members, nil
+	return conversationIDs, nil
 }
 
-// Delete
-func (r *ConversationMembersRepository) Delete(id int64) error {
+// AreUsersInSameConversation checks if two users are in the same conversation
+func (r *ConversationMembersRepository) AreUsersInSameConversation(userID1, userID2 int64) (*models.Conversation, error) {
 	stmt, err := r.db.Prepare(`
-		DELETE FROM conversation_members WHERE id = ?
+		SELECT c.id, c.name, c.is_group ,c.created_at
+		FROM conversations c
+		JOIN conversation_members cm1 ON cm1.conversation_id = c.id AND cm1.user_id = ?
+		JOIN conversation_members cm2 ON cm2.conversation_id = c.id AND cm2.user_id = ?
+		where c.is_group = false
 	`)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(id)
+	var conv models.Conversation
+	err = stmt.QueryRow(userID1, userID2).Scan(&conv.ID, &conv.Name, &conv.IsGroup, &conv.CreatedAt)
 	if err != nil {
-		return err
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
 	}
 
-	return nil
+	return &conv, nil
 }
