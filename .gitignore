@@ -10,6 +10,8 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+tampon.go
+
 # Exclure les fichiers de build
 build/
 dist/
