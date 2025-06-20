@@ -3,32 +3,33 @@
 import Link from "next/link";
 import { useState } from "react";
 import { redirect } from "next/navigation";
-import { url } from "../login/page"; 
+import { url } from "../login/page";
 import { useCookies } from "next-client-cookies";
 export default function Register() {
     const cookies = useCookies()
     if (cookies.get('jwt') != undefined) {
         redirect('/home')
     }
-    const [firstName,setFirstName] = useState('');
-    const [lastName,setLastName] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [userName, setUserName] = useState('');
     const [birthDate, setBirthDate] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword,setConfirmPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
 
-    const handleRegister = async (e:React.FormEvent) => {
+    const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         if (password !== confirmPassword) {
             console.error('Not Same Password')
             return
         }
         try {
-            const resp = await fetch(url+'/register',{
-                method:"POST",
-                body:JSON.stringify({
-                    first_name:firstName,
+            // Étape 1: Inscription
+            const resp = await fetch(url + '/register', {
+                method: "POST",
+                body: JSON.stringify({
+                    first_name: firstName,
                     last_name: lastName,
                     username: userName,
                     birth_date: birthDate,
@@ -36,15 +37,40 @@ export default function Register() {
                     password: password
                 })
             })
+
             if (resp.ok) {
                 const r = await resp.json()
                 console.log(r.message)
-                redirect("/login")
+
+                // Étape 2: Connexion automatique après inscription
+                const loginResp = await fetch(url + '/login', {
+                    method: "POST",
+                    body: JSON.stringify({
+                        email: email.toLowerCase(),
+                        password: password
+                    })
+                })
+
+                if (loginResp.ok) {
+                    const loginResult = await loginResp.json()
+                    console.log(loginResult.message)
+
+                    // Sauvegarder le JWT et les infos utilisateur dans les cookies
+                    cookies.set("jwt", loginResult.jwt)
+                    cookies.set("user", loginResult.user)
+
+                    // Redirection vers la page home
+                    redirect("/home")
+                } else {
+                    console.error("Login after registration failed")
+                    // Fallback: rediriger vers login si la connexion auto échoue
+                    redirect("/login")
+                }
             } else {
-                console.error("Internal Server Error")
+                console.error("Registration failed")
             }
-        } catch(err) {
-            console.log("Error Fetching",err)
+        } catch (err) {
+            console.log("Error Fetching", err)
         }
     }
     return (
@@ -95,7 +121,7 @@ export default function Register() {
                                 name="username"
                                 type="text"
                                 required
-                                    onChange={(e) => setUserName(e.target.value)}
+                                onChange={(e) => setUserName(e.target.value)}
                                 className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
                         </div>
