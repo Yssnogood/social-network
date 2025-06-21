@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useCookies } from "next-client-cookies";
 import { getSpecificPost, Post } from "../../../../services/post";
 import { formatRelativeTime } from "../../../../services/utils";
 import { getComments, createComment, Comment } from "../../../../services/comment";
 import { LikePost } from "../../../../services/post";
-import { use } from "react";
 
 export default function CommentsPage({
   params,
@@ -67,34 +66,31 @@ export default function CommentsPage({
             
             setComments([commentWithUsername, ...comments]);
             setCommentContent('');
-
-            // Also update the comment count on the post
-            if (post) {
-                setPost({
-                    ...post,
-                    comments: post.comments + 1
-                });
-            }
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-900">
-            <header className="fixed top-0 left-0 right-0 h-12 bg-gray-900 shadow-sm z-50 flex items-center px-4">
+        <div className="min-h-screen bg-gray-900 text-white">
+            <header className="fixed top-0 left-0 right-0 h-12 bg-blue-600 shadow-sm z-50 flex items-center px-4">
                 <div className="container mx-auto flex justify-between items-center">
                     <Link href="/home" className="font-bold text-lg text-white">
                         Social Network
                     </Link>
-                    <nav className="flex gap-4 items-center">
-                        <Link href="/home" className="text-sm text-white hover:text-gray-300">
-                            Back to Feed
-                        </Link>
-                    </nav>
+                    <Link href="/logout" className="text-sm text-white hover:text-blue-200">
+                        Logout
+                    </Link>
                 </div>
             </header>
 
-            <div className="pt-16 px-4 flex justify-center">
-                <div className="w-full max-w-xl mx-auto">
+            <main className="container mx-auto px-4 pt-16 pb-8">
+                <div className="max-w-2xl mx-auto">
+                    <Link
+                        href="/home"
+                        className="inline-flex items-center text-blue-400 hover:text-blue-300 mb-6"
+                    >
+                        ← Back to Feed
+                    </Link>
+
                     {isLoading ? (
                         <div className="text-center py-10">
                             <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-500"></div>
@@ -135,10 +131,7 @@ export default function CommentsPage({
                                                                         <span id={`like ${post.id}`}>{post.likes}</span> Like{post.likes !== 1 ? 's' : ''}
                                                                     </button>
                                     <span className="text-gray-400 text-sm flex items-center gap-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                                        </svg>
-                                        {comments.length} Comment{comments.length !== 1 ? 's' : ''}
+                                        💬 {comments.length} Comment{comments.length !== 1 ? 's' : ''}
                                     </span>
                                 </div>
                             </div>
@@ -175,40 +168,40 @@ export default function CommentsPage({
                                     No comments yet. Be the first to comment!
                                 </div>
                             ) : (
-                                comments.map((comment) => (
-                                    <div key={comment.id} className="bg-gray-800 p-4 rounded-lg shadow-md mb-4">
-                                        <div className="flex items-center mb-2">
-                                            <div className="w-8 h-8 bg-gray-700 rounded-full mr-2"></div>
-                                            <div>
-                                                <div className="font-semibold text-white">{comment.userName}</div>
-                                                <div className="text-xs text-gray-400">
-                                                    {formatRelativeTime(new Date(comment.createdAt))}
+                                <div className="space-y-4">
+                                    {comments.map((comment) => (
+                                        <div key={comment.id} className="bg-gray-800 p-4 rounded-lg shadow-md">
+                                            <div className="flex items-center mb-2">
+                                                <div className="w-8 h-8 bg-gray-700 rounded-full mr-3"></div>
+                                                <div>
+                                                    <div className="font-semibold text-white text-sm">{comment.userName}</div>
+                                                    <div className="text-xs text-gray-400">
+                                                        {formatRelativeTime(new Date(comment.createdAt))}
+                                                    </div>
                                                 </div>
                                             </div>
+                                            <div className="text-gray-300">{comment.content}</div>
+                                            {comment.imageUrl && (
+                                                <div className="mt-2">
+                                                    <img
+                                                        src={comment.imageUrl}
+                                                        alt="Comment image"
+                                                        className="max-h-48 rounded-lg"
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="text-gray-300 pl-10">
-                                            {comment.content}
-                                        </div>
-                                        {comment.imageUrl && (
-                                            <div className="mt-2 pl-10">
-                                                <img
-                                                    src={comment.imageUrl}
-                                                    alt="Comment image"
-                                                    className="max-h-60 rounded-lg"
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                ))
+                                    ))}
+                                </div>
                             )}
                         </div>
                     ) : (
-                        <div className="bg-gray-800 p-4 rounded-lg text-center text-gray-400">
-                            Post not found or you don't have permission to view it.
+                        <div className="text-center py-10">
+                            <p className="text-gray-400">Post not found</p>
                         </div>
                     )}
                 </div>
-            </div>
+            </main>
         </div>
     );
 }

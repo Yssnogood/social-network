@@ -6,13 +6,18 @@ import { useState, useEffect } from "react";
 import { getPosts, createPost, Post, LikePost } from "../../services/post";
 import { formatRelativeTime } from "../../services/utils";
 import { useCookies } from "next-client-cookies";
+import { CldUploadButton } from "next-cloudinary";
+
+
+const cloudPresetName = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET_NAME;
+console.log(cloudPresetName)
 
 export default function Home() {
     const cookies = useCookies()
     const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
     const [postPrivacy, setPostPrivacy] = useState(0);
     const [postContent, setPostContent] = useState('');
-    const [postImage, setPostImage] = useState<File | null>(null);
+    const [imageURL, setPostImage] = useState<string>('');
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -39,7 +44,7 @@ export default function Home() {
         setIsCreatePostModalOpen(false);
         setPostPrivacy(0);
         setPostContent('');
-        setPostImage(null);
+        setPostImage('');
     };
 
     const handleSubmitPost = async (e: React.FormEvent) => {
@@ -48,9 +53,9 @@ export default function Home() {
         try {
             // In a real app, you'd upload the image first and get a URL
             let imageUrl;
-            if (postImage) {
+            if (imageURL != '') {
                 // This would be replaced with actual image upload logic
-                imageUrl = URL.createObjectURL(postImage);
+                imageUrl = imageURL;
             }
 
             const newPost = await createPost({
@@ -257,14 +262,13 @@ export default function Home() {
                             </div>
                             
                             <div className="mb-4">
-                                <label htmlFor="postImage" className="block text-sm font-medium text-gray-300 mb-1">Upload Image</label>
-                                <input
-                                    id="postImage"
-                                    type="file"
-                                    accept="image/*"
-                                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 text-white"
-                                    onChange={(e) => setPostImage(e.target.files?.[0] || null)}
-                                />
+                                <CldUploadButton options={{ sources: ['local', 'url'], }} uploadPreset={cloudPresetName} onSuccess={(result) => {
+                                    if (result.info && typeof result.info != "string") {
+                                        setPostImage(result.info.secure_url)
+                                    }
+                                }}>
+                                    <span>Upload Image</span>
+                                </CldUploadButton>
                             </div>
                             
                             <div className="flex justify-end gap-2">
