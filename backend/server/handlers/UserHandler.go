@@ -186,6 +186,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := &models.User{
+		AvatarPath:   "https://res.cloudinary.com/dc2729t5d/image/upload/v1750498050/olqkqou632nntamawsuk.webp",
 		Email:        req.Email,
 		PasswordHash: hashedPassword,
 		FirstName:    req.FirstName,
