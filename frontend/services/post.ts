@@ -238,3 +238,41 @@ export async function getPostsByUserID(userID: number): Promise<Post[]> {
   return posts;
 }
 
+export async function getLikedPostsByUserID(userID: number): Promise<Post[]> {
+  let posts: Post[] = [];
+  try {
+    const resp = await fetch(url + "/liked_posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: userID
+      })
+    });
+
+    if (resp.ok) {
+      const r = await resp.json();
+      const likedPosts = r.liked_posts;
+
+      for (const postData of likedPosts) {
+        const newPost: Post = {
+          id: postData.post.id,
+          userId: postData.post.user_id,
+          userName: postData.user,
+          imageUrl: postData.post.image_path,
+          privacy: postData.post.privacy_type,
+          createdAt: new Date(Date.parse(postData.post.created_at)),
+          content: postData.post.content,
+          likes: postData.like,
+          liked: true,
+          comments: postData.comments_count
+        };
+        posts.push(newPost);
+      }
+    }
+  } catch (err) {
+    console.log("Erreur lors de la récupération des posts likés :", err);
+  }
+
+  return posts;
+}
+

@@ -17,14 +17,16 @@ type PostHandler struct {
 	PostService       *services.PostService
 	PostRepository    *repository.PostRepository
 	SessionRepository *repository.SessionRepository
+	UserRepository    *repository.UserRepository
 }
 
-func NewPostHandler(ps *services.PostService, pr *repository.PostRepository, sr *repository.SessionRepository) *PostHandler {
-	return &PostHandler{
-		PostService:       ps,
-		PostRepository:    pr,
-		SessionRepository: sr,
-	}
+func NewPostHandler(ps *services.PostService, pr *repository.PostRepository, sr *repository.SessionRepository, ur *repository.UserRepository) *PostHandler {
+    return &PostHandler{
+        PostService:       ps,
+        PostRepository:    pr,
+        SessionRepository: sr,
+        UserRepository:    ur,
+    }
 }
 
 type CreatePostRequest struct {
@@ -241,22 +243,44 @@ func (h *PostHandler) GetPostsFromUserByID(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	
 	posts, err := h.PostRepository.GetPostsFromUserByID(req.ID)
 	if err != nil {
 		http.Error(w, "Failed to retrieve posts", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("ID", req.ID,"Posts : ", posts)
-	
+
 	var response []PostResponse
 	for _, post := range posts {
+		// Récupérer les infos de l'utilisateur (username)
+		user, err := h.UserRepository.GetByID(post.UserID)
+		if err != nil {
+			http.Error(w, "Failed to retrieve user info", http.StatusInternalServerError)
+			return
+		}
+
+		// Nombre de likes pour ce post
+		likesCount, err := h.PostRepository.GetLikesCountByPostID(post.ID)
+		if err != nil {
+			http.Error(w, "Failed to count likes", http.StatusInternalServerError)
+			return
+		}
+
+		// Vérifier si l'utilisateur (req.ID) a liké ce post
+		userLiked := true
+
+		// Nombre de commentaires pour ce post
+		commentsCount, err := h.PostRepository.GetCommentsCountByPostID(post.ID)
+			if err != nil {
+				http.Error(w, "Error retrieving comment count", http.StatusInternalServerError)
+				return
+			}
+
 		response = append(response, PostResponse{
 			Post:          post,
-			User:          "mocked_username", // A remplacer par la vraie valeur
-			Like:          5,                // Mock: nombre de likes
-			UserLiked:     true,             // Mock: l'utilisateur a liké ?
-			CommentsCount: 3,                // Mock: nombre de commentaires
+			User:          user.Username,
+			Like:          likesCount,
+			UserLiked:     userLiked,
+			CommentsCount: commentsCount,
 		})
 	}
 
@@ -264,3 +288,73 @@ func (h *PostHandler) GetPostsFromUserByID(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(response)
 }
 
+
+
+func (h *PostHandler) GetLikedPostsByUserId(w http.ResponseWriter, r *http.Request) {
+	type Request struct {
+		UserID int64 `json:"user_id"`
+	}
+
+	var req Request
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	likedPostIDs, err := h.PostRepository.GetLikedPostsByUserId(req.UserID)
+	if err != nil {
+		http.Error(w, "Failed to get liked posts", http.StatusInternalServerError)
+		return
+	}
+
+	type PostWithDetails struct {
+		Post          *models.Post `json:"post"`
+		Username      string       `json:"user"`
+		LikesCount    int          `json:"like"`
+		CommentsCount int          `json:"comments_count"`
+	}
+
+	var likedPosts []PostWithDetails
+
+	for _, postID := range likedPostIDs {
+		post, err := h.PostRepository.GetPostById(postID)
+		if err != nil {
+			http.Error(w, "Error retrieving post data", http.StatusInternalServerError)
+			return
+		}
+		if post != nil {
+			user, err := h.UserRepository.GetByID(post.UserID)
+			if err != nil {
+				http.Error(w, "Error retrieving user data", http.StatusInternalServerError)
+				return
+			}
+
+			likeCount, err := h.PostRepository.GetLikesCountByPostID(post.ID)
+			if err != nil {
+				http.Error(w, "Error retrieving like count", http.StatusInternalServerError)
+				return
+			}
+
+			commentCount, err := h.PostRepository.GetCommentsCountByPostID(post.ID)
+			if err != nil {
+				http.Error(w, "Error retrieving comment count", http.StatusInternalServerError)
+				return
+			}
+
+			likedPosts = append(likedPosts, PostWithDetails{
+				Post:          post,
+				Username:      user.Username,
+				LikesCount:    likeCount,
+				CommentsCount: commentCount,
+			})
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(map[string]any{
+		"liked_posts": likedPosts,
+	}); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
+}

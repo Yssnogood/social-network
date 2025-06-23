@@ -282,3 +282,80 @@ func (r *PostRepository) GetPostsFromUserByID(id int64) ([]*models.Post, error) 
 
 	return posts, nil
 }
+
+func (r *PostRepository) GetLikedPostsByUserId(userID int64) ([]int64, error) {
+	query := `
+		SELECT post_id 
+		FROM post_like 
+		WHERE user_id = ?
+	`
+
+	rows, err := r.db.Query(query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var likedPosts []int64
+
+	for rows.Next() {
+		var postID int64
+		if err := rows.Scan(&postID); err != nil {
+			return nil, err
+		}
+		likedPosts = append(likedPosts, postID)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return likedPosts, nil
+}
+
+
+func (r *PostRepository) GetPostById(postID int64) (*models.Post, error) {
+	query := `
+		SELECT id, user_id, content, image_path, privacy_type, created_at, updated_at
+		FROM posts
+		WHERE id = ?
+	`
+
+	row := r.db.QueryRow(query, postID)
+
+	post := &models.Post{}
+
+	err := row.Scan(
+		&post.ID,
+		&post.UserID,
+		&post.Content,
+		&post.ImagePath,
+		&post.PrivacyType,
+		&post.CreatedAt,
+		&post.UpdatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // pas d'erreur mais post non trouvé
+		}
+		return nil, err // autre erreur (DB, etc.)
+	}
+
+	return post, nil
+}
+
+// GetLikesCountByPostID retourne le nombre de likes pour un post
+func (r *PostRepository) GetLikesCountByPostID(postID int64) (int, error) {
+	var count int
+	err := r.db.QueryRow(`SELECT COUNT(*) FROM post_like WHERE post_id = ?`, postID).Scan(&count)
+	return count, err
+}
+
+// GetCommentsCountByPostID retourne le nombre de commentaires pour un post
+func (r *PostRepository) GetCommentsCountByPostID(postID int64) (int, error) {
+	var count int
+	err := r.db.QueryRow(`SELECT COUNT(*) FROM comments WHERE post_id = ?`, postID).Scan(&count)
+	return count, err
+}
+

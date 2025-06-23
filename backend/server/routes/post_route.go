@@ -15,4 +15,6 @@ func PostRoutes(r *mux.Router, postHandler *handlers.PostHandler) {
 	r.HandleFunc("/api/posts/{id}", postHandler.GetPost).Methods("POST")
 	// r.HandleFunc("/api/posts/{id}", postHandler.UpdatePost).Methods("PUT")
 	r.HandleFunc("/api/posts/{id}", postHandler.DeletePost).Methods("DELETE")
+	r.HandleFunc("/api/liked_posts", postHandler.GetLikedPostsByUserId).Methods("POST")
+
 }

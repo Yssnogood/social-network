@@ -50,7 +50,7 @@ func main() {
 
 	// Handlers
 	userHandler := appHandlers.NewUserHandler(userService, userRepo, sessionRepo)
-	postHandler := appHandlers.NewPostHandler(postService, postRepo, sessionRepo)
+	postHandler := appHandlers.NewPostHandler(postService, postRepo, sessionRepo, userRepo)
 	commentHandler := appHandlers.NewCommentHandler(commentRepo, sessionRepo)
 
 	// Routes

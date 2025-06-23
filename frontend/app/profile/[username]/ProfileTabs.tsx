@@ -3,25 +3,28 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getCommentsByUserID, Comment } from "@/services/comment";
-import { getPostsByUserID, Post } from "@/services/post";
+import { getPostsByUserID, getLikedPostsByUserID, Post } from "@/services/post";
 import { MessageSquare, PencilLine, ThumbsUp } from "lucide-react";
 
 export default function ProfileTabs({ userId }: { userId: number }) {
   const [activeTab, setActiveTab] = useState("activities");
   const [comments, setComments] = useState<Comment[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [likedPosts, setLikedPosts] = useState<Post[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!userId) return;
 
-      const [fetchedComments, fetchedPosts] = await Promise.all([
+      const [fetchedComments, fetchedPosts, fetchedLikedPosts] = await Promise.all([
         getCommentsByUserID(userId),
-        getPostsByUserID(userId)
+        getPostsByUserID(userId),
+        getLikedPostsByUserID(userId)
       ]);
 
       setComments(fetchedComments);
       setPosts(fetchedPosts);
+      setLikedPosts(fetchedLikedPosts);
     };
 
     fetchData();
@@ -37,6 +40,11 @@ export default function ProfileTabs({ userId }: { userId: number }) {
       type: "comment" as const,
       date: comment.createdAt,
       item: comment
+    })),
+    ...likedPosts.map(likedPost => ({
+      type: "like" as const,
+      date: likedPost.createdAt, // Suppose la date de création du post liké
+      item: likedPost
     }))
   ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
@@ -65,28 +73,22 @@ export default function ProfileTabs({ userId }: { userId: number }) {
               activities.map((activity, index) => (
                 <Link
                   key={index}
-                  href={
-                    activity.type === "post"
-                      ? `/post/${activity.item.id}/comments`
-                      : `/post/${activity.item.postId}/comments`
-                  }
+                  href={`/post/${activity.type === "comment" ? activity.item.postId : activity.item.id}/comments`}
                   className="flex items-center space-x-4 p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer"
                 >
-                  {activity.type === "post" ? (
-                    <PencilLine className="text-blue-500 w-6 h-6" />
-                  ) : (
-                    <MessageSquare className="text-green-500 w-6 h-6" />
-                  )}
+                  {activity.type === "post" && <PencilLine className="text-blue-500 w-6 h-6" />}
+                  {activity.type === "comment" && <MessageSquare className="text-green-500 w-6 h-6" />}
+                  {activity.type === "like" && <ThumbsUp className="text-red-500 w-6 h-6" />}
                   <div>
                     <p className="text-gray-800 dark:text-gray-200">
-                      {activity.item.content}
+                      {activity.type === "comment" ? activity.item.content : activity.item.content}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {activity.type === "post"
-                        ? `New Post • ${activity.date.toLocaleString()}`
-                        : `Comment on Post ID: ${activity.item.postId} • ${activity.date.toLocaleString()}`}
+                      {activity.type === "post" && `New Post • ${activity.date.toLocaleString()}`}
+                      {activity.type === "comment" && `Comment on Post ID: ${activity.item.postId} • ${activity.date.toLocaleString()}`}
+                      {activity.type === "like" && `Liked Post • ${activity.date.toLocaleString()}`}
                     </p>
-                    {activity.type === "post" && (
+                    {activity.type !== "comment" && (
                       <p className="flex items-center space-x-2 text-xs text-gray-400 mt-1">
                         <ThumbsUp className="w-4 h-4" /> 
                         <span>{activity.item.likes} likes</span>
@@ -109,7 +111,7 @@ export default function ProfileTabs({ userId }: { userId: number }) {
               posts.map((post) => (
                 <Link
                   key={post.id}
-                  href={`/post/${post.id}`}
+                  href={`/post/${post.id}/comments`}
                   className="block p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer"
                 >
                   <p className="text-gray-800 dark:text-gray-200">{post.content}</p>
@@ -131,7 +133,30 @@ export default function ProfileTabs({ userId }: { userId: number }) {
         )}
 
         {activeTab === "likes" && (
-          <p className="text-center text-gray-500">Here are the likes...</p>
+          <>
+            {likedPosts.length > 0 ? (
+              likedPosts.map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/post/${post.id}/comments`}
+                  className="block p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer"
+                >
+                  <p className="text-gray-800 dark:text-gray-200">{post.content}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {post.createdAt.toLocaleString()}
+                  </p>
+                  <p className="flex items-center space-x-2 text-xs text-gray-400 mt-1">
+                    <ThumbsUp className="w-4 h-4" /> 
+                    <span>{post.likes} likes</span>
+                    <MessageSquare className="w-4 h-4 ml-4" />
+                    <span>{post.comments} comments</span>
+                  </p>
+                </Link>
+              ))
+            ) : (
+              <p className="text-center text-gray-500">No liked posts found.</p>
+            )}
+          </>
         )}
       </div>
     </div>
