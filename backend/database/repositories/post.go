@@ -248,3 +248,37 @@ func (r *PostRepository) Delete(id int64) error {
 
 	return nil
 }
+
+func (r *PostRepository) GetPostsFromUserByID(id int64) ([]*models.Post, error) {
+	rows, err := r.db.Query(`
+		SELECT id, user_id, content, image_path, privacy_type, created_at, updated_at
+		FROM posts WHERE user_id = ?
+	`, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []*models.Post
+	for rows.Next() {
+		post := &models.Post{}
+		if err := rows.Scan(
+			&post.ID,
+			&post.UserID,
+			&post.Content,
+			&post.ImagePath,
+			&post.PrivacyType,
+			&post.CreatedAt,
+			&post.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return posts, nil
+}

@@ -85,6 +85,10 @@ type GetPostRequest struct {
 	JWT string `json:"jwt"`
 }
 
+type GetPostRequestFromUserByID struct{
+	ID int64 `json:"jwt"`
+}
+
 // GetPost retrieves a post by ID from JSON body.
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -220,3 +224,23 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		"message": "Post deleted successfully",
 	})
 }
+
+func (h *PostHandler) GetPostsFromUserByID(w http.ResponseWriter, r *http.Request) {
+	var req GetPostRequestFromUserByID
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	posts, err := h.PostRepository.GetPostsFromUserByID(req.ID)
+	if err != nil {
+		http.Error(w, "Failed to retrieve posts", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"posts": posts,
+	})
+}
+

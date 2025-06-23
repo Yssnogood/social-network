@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { getCommentsByUserID } from "@/services/comment";
 import { Comment } from "@/services/comment";// Assure-toi que ce type existe
 
@@ -43,16 +44,20 @@ export default function ProfileTabs({ userId}: { userId: number }) {
         {activeTab === "posts" && (
           <div>
             {comments.length > 0 ? (
-              comments.map((comment) => (
-                <div key={comment.id} className="mb-2 p-2 border rounded bg-gray-100 dark:bg-gray-700">
-                  <p className="text-sm text-gray-800 dark:text-gray-200">{comment.content}</p>
-                  <p className="text-xs text-gray-500">
-                    Post ID: {comment.postId} | {comment.createdAt.toLocaleString()}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p>No comments found.</p>
+                comments.map((comment) => (
+                  <Link
+                    key={comment.id}
+                    href={`/post/${comment.postId}/comments`} // 👈 lien direct vers le post
+                    className="block mb-2 p-2 border rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                  >
+                    <p className="text-sm text-gray-800 dark:text-gray-200">{comment.content}</p>
+                    <p className="text-xs text-gray-500">
+                      Post ID: {comment.postId} | {comment.createdAt.toLocaleString()}
+                    </p>
+                  </Link>
+                ))
+              ) : (
+                <p>No comments found.</p>
             )}
           </div>
         )}

@@ -204,3 +204,36 @@ export async function createPost(postData: {
   return newPost;
 }
 
+export async function getPostsByUserID(userID: number): Promise<Post[]> {
+  let posts: Post[] = [];
+  try {
+    const resp = await fetch(url + "/posts_user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ID: userID
+      })
+    });
+    if (resp.ok) {
+      const r = await resp.json();
+      for (const postData of r) {
+        const newPost: Post = {
+          id: postData.post.id,
+          userId: postData.post.user_id,
+          userName: postData.user,
+          imageUrl: postData.post.image_path,
+          privacy: postData.post.privacy_type,
+          createdAt: new Date(Date.parse(postData.post.created_at)),
+          content: postData.post.content,
+          likes: postData.like,
+          liked: postData.user_liked,
+          comments: postData.comments_count
+        };
+        posts.push(newPost);
+      }
+    }
+  } catch (err) {
+    console.log(err);
+  }
+  return posts;
+}
