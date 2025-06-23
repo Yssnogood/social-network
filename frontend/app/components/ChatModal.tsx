@@ -41,7 +41,7 @@ export default function ChatModal({
 					method: "GET",
 					credentials: "include",
 				});
-								if (!historyRes.ok) {
+				if (!historyRes.ok) {
 					console.error("❌ Failed to fetch conversation history:", historyRes.statusText);
 					return;
 				}
@@ -49,7 +49,8 @@ export default function ChatModal({
 				console.log("✅ Fetched conversation history:", history);
 
 				if (isMounted) {
-					setMessages(history);
+					// S'assurer que history est un tableau
+					setMessages(Array.isArray(history) ? history : []);
 				}
 
 				ws.current = new WebSocket("ws://localhost:8080/ws");
@@ -110,6 +111,7 @@ export default function ChatModal({
 		try {
 			console.log("📤 Envoi du message:", message);
 			ws.current.send(JSON.stringify(message));
+			setInput(""); // Vider le champ après envoi
 		} catch (error) {
 			console.error("❌ Failed to send message:", error);
 		}
