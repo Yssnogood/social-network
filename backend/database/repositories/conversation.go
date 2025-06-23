@@ -16,13 +16,13 @@ func NewConversationRepository(db *sql.DB) *ConversationRepository {
 }
 
 // Create
-func (r *ConversationRepository) Create(convo *models.Conversation) (*models.Conversation, error) {
+func (r *ConversationRepository) Create(convo *models.Conversation) (int64, error) {
 	stmt, err := r.db.Prepare(`
 		INSERT INTO conversations(name, is_group, created_at)
 		VALUES (?, ?, ?)
 	`)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	defer stmt.Close()
 
@@ -30,16 +30,16 @@ func (r *ConversationRepository) Create(convo *models.Conversation) (*models.Con
 
 	result, err := stmt.Exec(convo.Name, convo.IsGroup, convo.CreatedAt)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	convo.ID = id
-	return convo, nil
+	return id, nil
 }
 
 // GetByID
