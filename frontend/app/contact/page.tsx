@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { fetchUsersByUsername } from '@/services/contact';
+import { fetchUsersByUsername } from "../../services/contact"
 import Link from 'next/link';
 
 export default function ContactPage() {
@@ -77,7 +77,7 @@ export default function ContactPage() {
             </svg>
           </div>
 
-          <button 
+          <button
             onClick={openNewConversationModal}
             className="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center"
           >
@@ -107,7 +107,7 @@ export default function ContactPage() {
                   <span className="text-xs text-gray-100">{contact.time}</span>
                 </div>
               </div>
-            </div> 
+            </div>
           ))}
         </div>
       </div>
@@ -142,9 +142,9 @@ export default function ContactPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                   </svg>
                 </button>
-                <input 
-                  type="text" 
-                  placeholder="Type a message..." 
+                <input
+                  type="text"
+                  placeholder="Type a message..."
                   className="flex-1 mx-4 p-2 rounded-full border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <button className="p-2 bg-blue-600 text-white rounded-full">
