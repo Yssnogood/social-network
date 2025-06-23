@@ -157,6 +157,43 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	return user, nil
 }
 
+func (r *UserRepository) GetUsersForContact(query string) ([]*models.User, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT id, username, avatar_path
+		FROM users
+		WHERE LOWER(username) LIKE LOWER(?)
+		ORDER BY username
+		LIMIT 5
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	likeQuery := "%" + query + "%"
+	rows, err := stmt.Query(likeQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*models.User
+	for rows.Next() {
+		user := &models.User{}
+		err := rows.Scan(&user.ID, &user.Username, &user.AvatarPath)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
 // update a user in the database
 func (r *UserRepository) Update(user *models.User) error {
 	stmt, err := r.db.Prepare(`

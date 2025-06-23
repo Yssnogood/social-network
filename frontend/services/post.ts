@@ -77,7 +77,7 @@ export async function getPosts(jwt?:string): Promise<Post[]> {
                   content: post.post.content,
                   likes: post.like,
                   liked: post.user_liked,
-                  comments: 0
+                  comments: post.post.comments_count
 
                 }
         posts.push(newPost)
@@ -117,6 +117,36 @@ export async function LikePost(post_id:number, jwt?:string) {
   }
 }
 
+export async function getSpecificPost(post_id: number, jwt?: string): Promise<Post | null> {
+  let newPost: Post | null = null;
+  try {
+    const resp = await fetch(url+`/posts/${post_id}`, {
+      method: "POST",
+      body: JSON.stringify({ jwt })
+    });
+    if (resp.ok) {
+      const r = await resp.json();
+      newPost = {
+        id: r.post.id,
+        userId: r.post.user_id,
+        userName: r.user,
+        imageUrl: r.post.image_path,
+        privacy: r.post.privacy_type,
+        createdAt: new Date(Date.parse(r.post.created_at)),
+        content: r.post.content,
+        likes:r.likes, // needs to be changed to get the proper like count
+        liked: r.liked, // same, doesn't know if the user liked the post
+        comments: r.post.comments_count
+      };
+      console.log(newPost)
+    }
+  } catch (err) {
+    console.log(err);
+  }
+  return newPost;
+}
+
+
 /**
  * Creates a new post
  * @param postData New post data
@@ -138,12 +168,14 @@ export async function createPost(postData: {
     liked:false,
     comments: 0
   };
+  console.log(postData.imageUrl)
         try {
             const resp = await fetch(url+"/post",{
                 method: "POST",
                 body: JSON.stringify({
                     jwt: jwt,
                     content: postData.content,
+                    image_path: postData.imageUrl,
                     privacy_type: postData.privacy
                 })
             })
@@ -162,6 +194,7 @@ export async function createPost(postData: {
                   comments: 0
 
                 }
+                console.log(newPost)
             } else {
                 console.log(resp.status)
             }

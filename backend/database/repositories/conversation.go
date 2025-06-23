@@ -18,6 +18,7 @@ func NewConversationRepository(db *sql.DB) *ConversationRepository {
 // Create a new conversation
 func (r *ConversationRepository) Create(convo *models.Conversation) (*models.Conversation, error) {
 	now := time.Now()
+
 	stmt, err := r.db.Prepare(`
 		INSERT INTO conversations(name, is_group, created_at, updated_at)
 		VALUES (?, ?, ?, ?)
@@ -41,6 +42,7 @@ func (r *ConversationRepository) Create(convo *models.Conversation) (*models.Con
 	convo.CreatedAt = now
 	convo.UpdatedAt = now
 	return convo, nil
+
 }
 
 // GetByID retrieves a conversation by ID

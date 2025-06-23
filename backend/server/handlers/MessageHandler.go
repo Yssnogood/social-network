@@ -31,6 +31,7 @@ func NewMessageHandler(
 // Request DTOs
 
 type createMessageRequest struct {
+	ConversationID int64     `json:"conversation_id"`
 	SenderID   int64     `json:"sender_id"`
 	ReceiverID int64     `json:"receiver_id"`
 	GroupID    *int64    `json:"group_id,omitempty"`
@@ -67,6 +68,7 @@ func (h *MessageHandler) CreateMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	message := &models.Message{
+		ConversationID: req.ConversationID,
 		SenderID:   req.SenderID,
 		ReceiverID: req.ReceiverID,
 		GroupID:    req.GroupID,
