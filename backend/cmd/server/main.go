@@ -8,12 +8,13 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 
+	"social-network/backend/app/services"
 	repository "social-network/backend/database/repositories"
 	"social-network/backend/database/sqlite"
 	"social-network/backend/server/handlers"
-	"social-network/backend/app/services"
-	"social-network/backend/server/routes"
 	"social-network/backend/server/middlewares"
+	"social-network/backend/server/routes"
+	"social-network/backend/websocket"
 )
 
 func main() {
@@ -33,56 +34,52 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	postRepo := repository.NewPostRepository(db)
 	commentRepo := repository.NewCommentRepository(db)
-	// notificationRepo := repository.NewNotificationRepository(db)
-	// messageRepo := repository.NewMessageRepository(db)
 	sessionRepo := repository.NewSessionRepository(db)
-	// followerRepo := repository.NewFollowerRepository(db)
-	// groupRepo := repository.NewGroupRepository(db)
-	// eventRepo := repository.NewEventRepository(db)
+	followerRepo := repository.NewFollowerRepository(db)
+	messageRepo := repository.NewMessageRepository(db)
+	conversationRepo := repository.NewConversationRepository(db)
+	conversationMembersRepo := repository.NewConversationMembersRepository(db)
 
 	// Services
 	userService := services.NewUserService(db)
 	postService := services.NewPostService(db)
-	// commentService := services.NewCommentService(db)
-	// notificationService := services.NewNotificationService(db)
-	// messageService := services.NewMessageService(db)
-	// sessionService := services.NewSessionService(db)
-	// followerService := services.NewFollowerService(db)
-	// groupService := services.NewGroupService(db)
-	// eventService := services.NewEventService(db)
 
 	// Handlers
 	userHandler := handlers.NewUserHandler(userService, userRepo, sessionRepo)
 	postHandler := handlers.NewPostHandler(postService, postRepo, sessionRepo)
 	commentHandler := handlers.NewCommentHandler(commentRepo, sessionRepo)
-	// notificationHandler := handlers.NewNotificationHandler(notificationRepo)
-	// messageHandler := handlers.NewMessageHandler(messageRepo)
-	// sessionHandler := handlers.NewSessionHandler(sessionRepo)
-	// followerHandler := handlers.NewFollowerHandler(followerRepo)
-	// groupHandler := handlers.NewGroupHandler(groupRepo)
-	// eventHandler := handlers.NewEventHandler(eventRepo)
+	followerHandler := handlers.NewFollowerHandler(followerRepo)
+	messageHandler := handlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
+	websocketHandler := websocket.NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo)
 
-	// Create a new router
+	// Router
 	r := mux.NewRouter()
 
-	//routes
+	// CORS
+	r.Use(middlewares.CORSMiddleware)
+
+	// Routes
 	routes.UserRoutes(r, userHandler)
 	routes.PostRoutes(r, postHandler)
 	routes.CommentsRoutes(r, commentHandler)
-	//routes.NotificationRoutes(r, notificationHandler)
-	//routes.MessageRoutes(r, messageHandler)
-	// routes.SessionRoutes(r, sessionHandler)
-	//routes.FollowerRoutes(r, followerHandler)
-	//routes.GroupRoutes(r, groupHandler)
-	//routes.EventRoutes(r, eventHandler)
+	routes.FollowersRoutes(r, followerHandler)
 
-	// Middleware
-	r.Handle("/api/posts", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.CreatePost))).Methods("POST")
+	r.Handle("/api/posts", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.CreatePost))).Methods("POST", "OPTIONS")
 
-	// start serveur
+	// WebSocket
+	wsHandler := middlewares.JWTMiddleware(http.HandlerFunc(websocketHandler.HandleWebSocket))
+	r.Handle("/ws", wsHandler).Methods("GET", "OPTIONS")
+
+	r.Handle("/api/messages/conversation", middlewares.CORSMiddleware(
+		http.HandlerFunc(websocketHandler.HandleGetConversation),
+	)).Methods("POST", "OPTIONS")
+
+	routes.MessageRoutes(r, messageHandler)
+
+	// Lancement du serveur HTTP
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8090" // Port par défaut si la variable d'environnement n'est pas définie
+		port = "8080"
 	}
 	log.Println("Serveur en écoute sur :" + port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {

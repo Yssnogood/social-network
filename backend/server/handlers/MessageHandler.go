@@ -1,25 +1,32 @@
 package handlers
 
 import (
+    "social-network/backend/database/repositories"
+	"social-network/backend/database/models"
+	"strconv"
 	"encoding/json"
 	"net/http"
 	"time"
-
-	"social-network/backend/database/models"
-	"social-network/backend/database/repositories"
 )
 
-// MessageHandler handles HTTP requests related to messages.
 type MessageHandler struct {
-	MessageRepository *repository.MessageRepository
+    MessageRepository          *repository.MessageRepository
+    ConversationRepository     *repository.ConversationRepository
+    ConversationMembersRepository *repository.ConversationMembersRepository
 }
 
-// NewMessageHandler creates a new MessageHandler.
-func NewMessageHandler(mr *repository.MessageRepository) *MessageHandler {
-	return &MessageHandler{
-		MessageRepository: mr,
-	}
+func NewMessageHandler(
+    mr *repository.MessageRepository,
+    cr *repository.ConversationRepository,
+    cmr *repository.ConversationMembersRepository,
+) *MessageHandler {
+    return &MessageHandler{
+        MessageRepository:              mr,
+        ConversationRepository:         cr,
+        ConversationMembersRepository:  cmr,
+    }
 }
+
 
 // Request DTOs
 
@@ -152,3 +159,27 @@ func (h *MessageHandler) DeleteMessage(w http.ResponseWriter, r *http.Request) {
 		"message": "Message deleted successfully",
 	})
 }
+
+func (h *MessageHandler) GetMessagesByConversationID(w http.ResponseWriter, r *http.Request) {
+	conversationID := r.URL.Query().Get("conversation_id")
+	if conversationID == "" {
+		http.Error(w, "Missing conversation_id", http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.ParseInt(conversationID, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid conversation_id", http.StatusBadRequest)
+		return
+	}
+
+	messages, err := h.MessageRepository.GetMessagesByConversationID(id)
+	if err != nil {
+		http.Error(w, "Error fetching messages", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(messages)
+}
+

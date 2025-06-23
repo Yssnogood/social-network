@@ -39,3 +39,8 @@ func JWTMiddleware(next http.Handler) http.Handler {
 
 	})
 }
+
+func GetUserID(r *http.Request) (int64, bool) {
+	userID, ok := r.Context().Value(UserIDKey).(int64)
+	return userID, ok
+}

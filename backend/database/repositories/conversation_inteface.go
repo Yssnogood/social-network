@@ -8,4 +8,7 @@ type ConversationRepositoryInterface interface {
 	GetByName(name string) (*models.Conversation, error)
 	UpdatedAt(id int64) (*models.Conversation, error)
 	Delete(id int64) error
+	GetMembers(conversationID int64) ([]models.ConversationMembers, error)
+	Exists(name string) (bool, error)
+	CreateOrGetPrivateConversation(userID1, userID2 int64) (*models.Conversation, error)
 }
