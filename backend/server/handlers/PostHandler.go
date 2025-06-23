@@ -86,8 +86,17 @@ type GetPostRequest struct {
 }
 
 type GetPostRequestFromUserByID struct{
-	ID int64 `json:"jwt"`
+	ID int64 `json:"user_id"`
 }
+
+type PostResponse struct {
+	Post         *models.Post `json:"post"`
+	User         string       `json:"user"`
+	Like         int          `json:"like"`
+	UserLiked    bool         `json:"user_liked"`
+	CommentsCount int         `json:"comments_count"`
+}
+
 
 // GetPost retrieves a post by ID from JSON body.
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
@@ -232,15 +241,26 @@ func (h *PostHandler) GetPostsFromUserByID(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	
 	posts, err := h.PostRepository.GetPostsFromUserByID(req.ID)
 	if err != nil {
 		http.Error(w, "Failed to retrieve posts", http.StatusInternalServerError)
 		return
 	}
+	fmt.Println("ID", req.ID,"Posts : ", posts)
+	
+	var response []PostResponse
+	for _, post := range posts {
+		response = append(response, PostResponse{
+			Post:          post,
+			User:          "mocked_username", // A remplacer par la vraie valeur
+			Like:          5,                // Mock: nombre de likes
+			UserLiked:     true,             // Mock: l'utilisateur a liké ?
+			CommentsCount: 3,                // Mock: nombre de commentaires
+		})
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
-		"posts": posts,
-	})
+	json.NewEncoder(w).Encode(response)
 }
 

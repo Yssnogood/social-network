@@ -211,7 +211,7 @@ export async function getPostsByUserID(userID: number): Promise<Post[]> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        ID: userID
+        user_id: userID
       })
     });
     if (resp.ok) {
@@ -237,3 +237,4 @@ export async function getPostsByUserID(userID: number): Promise<Post[]> {
   }
   return posts;
 }
+

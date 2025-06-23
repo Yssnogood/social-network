@@ -2,67 +2,137 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getCommentsByUserID } from "@/services/comment";
-import { Comment } from "@/services/comment";// Assure-toi que ce type existe
+import { getCommentsByUserID, Comment } from "@/services/comment";
+import { getPostsByUserID, Post } from "@/services/post";
+import { MessageSquare, PencilLine, ThumbsUp } from "lucide-react";
 
-export default function ProfileTabs({ userId}: { userId: number }) {
+export default function ProfileTabs({ userId }: { userId: number }) {
   const [activeTab, setActiveTab] = useState("activities");
   const [comments, setComments] = useState<Comment[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
 
   useEffect(() => {
-    const fetchComments = async () => {
+    const fetchData = async () => {
       if (!userId) return;
-      console.log(userId)
-      const fetchedComments = await getCommentsByUserID(userId);
+
+      const [fetchedComments, fetchedPosts] = await Promise.all([
+        getCommentsByUserID(userId),
+        getPostsByUserID(userId)
+      ]);
+
       setComments(fetchedComments);
+      setPosts(fetchedPosts);
     };
 
-    if (activeTab === "posts") {
-      fetchComments();
-    }
-  }, [activeTab, userId]);
+    fetchData();
+  }, [userId]);
+
+  const activities = [
+    ...posts.map(post => ({
+      type: "post" as const,
+      date: post.createdAt,
+      item: post
+    })),
+    ...comments.map(comment => ({
+      type: "comment" as const,
+      date: comment.createdAt,
+      item: comment
+    }))
+  ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   return (
-    <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
       <div className="flex justify-around border-b border-gray-200 dark:border-gray-700">
         {["activities", "posts", "likes"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`py-2 px-4 font-medium ${
-              activeTab === tab ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-600"
+            className={`py-2 px-4 font-medium transition ${
+              activeTab === tab
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-gray-600 hover:text-blue-600"
             }`}
           >
-            {tab === "activities" ? "Latest Activities" : tab === "posts" ? "Posts" : "Like"}
+            {tab === "activities" ? "Latest Activities" : tab === "posts" ? "Posts" : "Likes"}
           </button>
         ))}
       </div>
 
-      <div className="mt-4">
-        {activeTab === "activities" && <p>Here are the latest activities...</p>}
-
-        {activeTab === "posts" && (
-          <div>
-            {comments.length > 0 ? (
-                comments.map((comment) => (
-                  <Link
-                    key={comment.id}
-                    href={`/post/${comment.postId}/comments`} // 👈 lien direct vers le post
-                    className="block mb-2 p-2 border rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition"
-                  >
-                    <p className="text-sm text-gray-800 dark:text-gray-200">{comment.content}</p>
-                    <p className="text-xs text-gray-500">
-                      Post ID: {comment.postId} | {comment.createdAt.toLocaleString()}
+      <div className="mt-6 space-y-4">
+        {activeTab === "activities" && (
+          <>
+            {activities.length > 0 ? (
+              activities.map((activity, index) => (
+                <Link
+                  key={index}
+                  href={
+                    activity.type === "post"
+                      ? `/post/${activity.item.id}/comments`
+                      : `/post/${activity.item.postId}/comments`
+                  }
+                  className="flex items-center space-x-4 p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer"
+                >
+                  {activity.type === "post" ? (
+                    <PencilLine className="text-blue-500 w-6 h-6" />
+                  ) : (
+                    <MessageSquare className="text-green-500 w-6 h-6" />
+                  )}
+                  <div>
+                    <p className="text-gray-800 dark:text-gray-200">
+                      {activity.item.content}
                     </p>
-                  </Link>
-                ))
-              ) : (
-                <p>No comments found.</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {activity.type === "post"
+                        ? `New Post • ${activity.date.toLocaleString()}`
+                        : `Comment on Post ID: ${activity.item.postId} • ${activity.date.toLocaleString()}`}
+                    </p>
+                    {activity.type === "post" && (
+                      <p className="flex items-center space-x-2 text-xs text-gray-400 mt-1">
+                        <ThumbsUp className="w-4 h-4" /> 
+                        <span>{activity.item.likes} likes</span>
+                        <MessageSquare className="w-4 h-4 ml-4" />
+                        <span>{activity.item.comments} comments</span>
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <p className="text-center text-gray-500">No recent activity found.</p>
             )}
-          </div>
+          </>
         )}
 
-        {activeTab === "likes" && <p>Here are the likes...</p>}
+        {activeTab === "posts" && (
+          <>
+            {posts.length > 0 ? (
+              posts.map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/post/${post.id}`}
+                  className="block p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer"
+                >
+                  <p className="text-gray-800 dark:text-gray-200">{post.content}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {post.createdAt.toLocaleString()}
+                  </p>
+                  <p className="flex items-center space-x-2 text-xs text-gray-400 mt-1">
+                    <ThumbsUp className="w-4 h-4" /> 
+                    <span>{post.likes} likes</span>
+                    <MessageSquare className="w-4 h-4 ml-4" />
+                    <span>{post.comments} comments</span>
+                  </p>
+                </Link>
+              ))
+            ) : (
+              <p className="text-center text-gray-500">No posts found.</p>
+            )}
+          </>
+        )}
+
+        {activeTab === "likes" && (
+          <p className="text-center text-gray-500">Here are the likes...</p>
+        )}
       </div>
     </div>
   );
