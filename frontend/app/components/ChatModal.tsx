@@ -87,14 +87,15 @@ export default function ChatModal({
 		}
 
 		const message = {
+			type: "message_send",
 			sender_id: currentUserId,
+			receiver_id: targetUserId,
 			content: input.trim(),
 		};
 
 		try {
+			console.log("📤 Envoi du message:", message);
 			ws.current.send(JSON.stringify(message));
-			setMessages((prev) => [...prev, message]);
-			setInput("");
 		} catch (error) {
 			console.error("❌ Failed to send message:", error);
 		}
