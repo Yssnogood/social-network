@@ -121,8 +121,7 @@ func (r *MessageRepository) GetMessagesBetweenUsers(user1ID, user2ID int64) ([]*
 	return messages, nil
 }
 
-// Get messages by conversation ID (recommended approach)
-func (r *MessageRepository) GetMessagesByConversation(conversationID int64) ([]*models.Message, error) {
+func (r *MessageRepository) GetMessagesByConversationID(conversationID int64) ([]*models.Message, error) {
 	stmt, err := r.db.Prepare(`
 		SELECT id, conversation_id, sender_id, receiver_id, group_id, content, created_at, read_at
 		FROM messages

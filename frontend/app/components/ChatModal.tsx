@@ -38,6 +38,22 @@ export default function ChatModal({
 				const convo = await res.json();
 				console.log("✅ Conversation ID:", convo.id);
 
+				// history messages
+				const historyRes = await fetch(`http://localhost:8080/api/messages?conversation_id=${convo.id}`, {
+					method: "GET",
+					credentials: "include",
+				});
+								if (!historyRes.ok) {
+					console.error("❌ Failed to fetch conversation history:", historyRes.statusText);
+					return;
+				}
+				const history = await historyRes.json();
+				console.log("✅ Fetched conversation history:", history);
+
+				if (isMounted) {
+					setMessages(history);
+				}
+
 				ws.current = new WebSocket("ws://localhost:8080/ws");
 
 				ws.current.onopen = () => {

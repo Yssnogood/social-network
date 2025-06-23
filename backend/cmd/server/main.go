@@ -1,5 +1,3 @@
-// backend/main.go
-
 package main
 
 import (
@@ -54,6 +52,7 @@ func main() {
 	commentHandler := handlers.NewCommentHandler(commentRepo, sessionRepo)
 	followerHandler := handlers.NewFollowerHandler(followerRepo)
 	messageHandler := handlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
+	websocketHandler := websocket.NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo)
 
 	// Router
 	r := mux.NewRouter()
@@ -70,11 +69,17 @@ func main() {
 	// Route protégée JWT pour créer un post
 	r.Handle("/api/posts", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.CreatePost))).Methods("POST", "OPTIONS")
 
-	// Routes messages REST
-	routes.MessageRoutes(r, messageHandler)
+	// WebSocket protégée
+	wsHandler := middlewares.JWTMiddleware(http.HandlerFunc(websocketHandler.HandleWebSocket))
+	r.Handle("/ws", wsHandler).Methods("GET", "OPTIONS")
 
-	// WebSocket + conversation (CORS inclus dans le router WebSocket)
-	websocket.SetupWebSocketRoutes(r, messageRepo, conversationRepo, conversationMembersRepo)
+	r.Handle("/api/messages/conversation", middlewares.CORSMiddleware(
+		http.HandlerFunc(websocketHandler.HandleGetConversation),
+	)).Methods("POST", "OPTIONS")
+
+
+	// ✅ Ajout des routes de messages avec middlewares
+	routes.MessageRoutes(r, messageHandler)
 
 	// Lancement du serveur HTTP
 	port := os.Getenv("PORT")

@@ -3,6 +3,7 @@ package handlers
 import (
     "social-network/backend/database/repositories"
 	"social-network/backend/database/models"
+	"strconv"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -158,3 +159,28 @@ func (h *MessageHandler) DeleteMessage(w http.ResponseWriter, r *http.Request) {
 		"message": "Message deleted successfully",
 	})
 }
+
+func (h *MessageHandler) GetMessagesByConversationID(w http.ResponseWriter, r *http.Request) {
+	conversationID := r.URL.Query().Get("conversation_id")
+	if conversationID == "" {
+		http.Error(w, "Missing conversation_id", http.StatusBadRequest)
+		return
+	}
+
+	// Convertir en int64
+	id, err := strconv.ParseInt(conversationID, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid conversation_id", http.StatusBadRequest)
+		return
+	}
+
+	messages, err := h.MessageRepository.GetMessagesByConversationID(id)
+	if err != nil {
+		http.Error(w, "Error fetching messages", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(messages)
+}
+

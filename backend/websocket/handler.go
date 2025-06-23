@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"log"
+	"strconv"
 	"social-network/backend/database/repositories"
 	"social-network/backend/server/middlewares"
 )
@@ -85,4 +86,40 @@ func (h *WebSocketHandler) HandleGetConversation(w http.ResponseWriter, r *http.
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(conversation)
+}
+
+// GetConversationMessages retrieves messages for a conversation
+func (h *WebSocketHandler) GetConversationMessages(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("🔥 Panic récupérée: %+v\n", r)
+		}
+	}()
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	conversationID := r.URL.Query().Get("conversation_id")
+	if conversationID == "" {
+		http.Error(w, "Conversation ID is required", http.StatusBadRequest)
+		return
+	}
+
+	cid, err := strconv.ParseInt(conversationID, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid conversation ID", http.StatusBadRequest)
+		return
+	}
+
+	messages, err := h.messageRepo.GetMessagesByConversationID(cid)
+		if err != nil {
+		log.Println("❌ Erreur GetMessagesByConversationID:", err)
+		http.Error(w, "Failed to retrieve messages", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(messages)
 }
