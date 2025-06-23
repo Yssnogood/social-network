@@ -187,10 +187,10 @@ func (r *ConversationRepository) Exists(name string) (bool, error) {
 }
 
 // CreateOrGetPrivateConversation creates or retrieves existing private conversation between two users
-func (r *ConversationRepository) CreateOrGetPrivateConversation(userID1, userID2 int64) (*models.Conversation, error) {
+func (r *ConversationRepository) CreateOrGetPrivateConversation(initiator, recipient int64) (*models.Conversation, error) {
 	// Check if conversation already exists
 	membersRepo := NewConversationMembersRepository(r.db)
-	existingConv, err := membersRepo.AreUsersInSameConversation(userID1, userID2)
+	existingConv, err := membersRepo.AreUsersInSameConversation(initiator, recipient)
 	if err != nil {
 		return nil, err
 	}
@@ -211,12 +211,12 @@ func (r *ConversationRepository) CreateOrGetPrivateConversation(userID1, userID2
 	}
 
 	// Add both users to the conversation
-	err = membersRepo.AddMember(newConv.ID, userID1)
+	err = membersRepo.AddMember(newConv.ID, initiator)
 	if err != nil {
 		return nil, err
 	}
 
-	err = membersRepo.AddMember(newConv.ID, userID2)
+	err = membersRepo.AddMember(newConv.ID, recipient)
 	if err != nil {
 		return nil, err
 	}

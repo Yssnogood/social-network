@@ -2,6 +2,8 @@ package websocket
 
 import (
 	"social-network/backend/database/repositories"
+	"net/http"
+	"social-network/backend/server/middlewares"
 
 	"github.com/gorilla/mux"
 )
@@ -17,13 +19,10 @@ func SetupWebSocketRoutes(
 	wsHandler := NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo)
 
 	// WebSocket endpoint
-	router.HandleFunc("/ws", wsHandler.HandleWebSocket).Methods("GET")
+	router.Handle("/ws", middlewares.JWTMiddleware(http.HandlerFunc(wsHandler.HandleWebSocket))).Methods("GET")
 
-	// API endpoints for message history and conversation management
+
 	apiRouter := router.PathPrefix("/api/messages").Subrouter()
-
-	// Get message history between two users
-	apiRouter.HandleFunc("/history", wsHandler.HandleGetMessages).Methods("GET")
 
 	// Get or create conversation between two users
 	apiRouter.HandleFunc("/conversation", wsHandler.HandleGetConversation).Methods("POST")

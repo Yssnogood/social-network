@@ -1,3 +1,5 @@
+// backend/main.go
+
 package main
 
 import (
@@ -8,13 +10,13 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 
+	"social-network/backend/app/services"
 	repository "social-network/backend/database/repositories"
 	"social-network/backend/database/sqlite"
 	"social-network/backend/server/handlers"
 	"social-network/backend/server/middlewares"
 	"social-network/backend/server/routes"
 	"social-network/backend/websocket"
-	"social-network/backend/app/services"
 )
 
 func main() {
@@ -51,25 +53,28 @@ func main() {
 	postHandler := handlers.NewPostHandler(postService, postRepo, sessionRepo)
 	commentHandler := handlers.NewCommentHandler(commentRepo, sessionRepo)
 	followerHandler := handlers.NewFollowerHandler(followerRepo)
-	websocketHandler := websocket.NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo)
-
+	messageHandler := handlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
 
 	// Router
 	r := mux.NewRouter()
 
-	// Routes API
+	// Appliquer CORS globalement
+	r.Use(middlewares.CORSMiddleware)
+
+	// Routes API principales
 	routes.UserRoutes(r, userHandler)
 	routes.PostRoutes(r, postHandler)
 	routes.CommentsRoutes(r, commentHandler)
 	routes.FollowersRoutes(r, followerHandler)
 
-	r.Handle("/api/posts", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.CreatePost))).Methods("POST")
+	// Route protégée JWT pour créer un post
+	r.Handle("/api/posts", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.CreatePost))).Methods("POST", "OPTIONS")
 
-	// Route WebSocket sécurisée avec middleware JWT
-	r.Handle("/ws", middlewares.JWTMiddleware(http.HandlerFunc(websocketHandler.HandleWebSocket))).Methods("GET")
+	// Routes messages REST
+	routes.MessageRoutes(r, messageHandler)
 
-	r.Use(middlewares.CORSMiddleware)
-
+	// WebSocket + conversation (CORS inclus dans le router WebSocket)
+	websocket.SetupWebSocketRoutes(r, messageRepo, conversationRepo, conversationMembersRepo)
 
 	// Lancement du serveur HTTP
 	port := os.Getenv("PORT")

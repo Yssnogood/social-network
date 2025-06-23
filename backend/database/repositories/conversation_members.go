@@ -60,7 +60,7 @@ func (r *ConversationMembersRepository) GetConversationsByUser(userID int64) ([]
 // AreUsersInSameConversation checks if two users are in the same conversation
 func (r *ConversationMembersRepository) AreUsersInSameConversation(userID1, userID2 int64) (*models.Conversation, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT c.id, c.name, c.is_group ,c.created_at
+		SELECT c.id, c.name, c.is_group, c.created_at, c.updated_at
 		FROM conversations c
 		JOIN conversation_members cm1 ON cm1.conversation_id = c.id AND cm1.user_id = ?
 		JOIN conversation_members cm2 ON cm2.conversation_id = c.id AND cm2.user_id = ?
@@ -72,7 +72,7 @@ func (r *ConversationMembersRepository) AreUsersInSameConversation(userID1, user
 	defer stmt.Close()
 
 	var conv models.Conversation
-	err = stmt.QueryRow(userID1, userID2).Scan(&conv.ID, &conv.Name, &conv.IsGroup, &conv.CreatedAt)
+	err = stmt.QueryRow(userID1, userID2).Scan(&conv.ID, &conv.Name, &conv.IsGroup, &conv.CreatedAt, &conv.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil

@@ -19,10 +19,18 @@ export default function ChatModal({
 		const fetchOrCreateConversation = async () => {
 			console.log("Fetching or creating conversation between", currentUserId, "and", targetUserId);
 			try {
-				const res = await fetch(
-					`/api/conversations?user1=${currentUserId}&user2=${targetUserId}`,
-					{ credentials: "include" } // important si JWT est dans les cookies
-				);
+				const res = await fetch("http://localhost:8080/api/messages/conversation", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					// juste avant le fetch, change le body comme suit :
+					body: JSON.stringify({
+						initiator_id: currentUserId,
+						recipient_id: targetUserId,
+					}),
+
+				});
 				if (!res.ok) {
 					console.error("❌ Failed to fetch conversation:", res.statusText);
 					return;
@@ -30,7 +38,6 @@ export default function ChatModal({
 				const convo = await res.json();
 				console.log("✅ Conversation ID:", convo.id);
 
-				// Connexion WebSocket
 				ws.current = new WebSocket("ws://localhost:8080/ws");
 
 				ws.current.onopen = () => {
