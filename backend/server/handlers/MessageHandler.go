@@ -167,7 +167,6 @@ func (h *MessageHandler) GetMessagesByConversationID(w http.ResponseWriter, r *h
 		return
 	}
 
-	// Convertir en int64
 	id, err := strconv.ParseInt(conversationID, 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid conversation_id", http.StatusBadRequest)

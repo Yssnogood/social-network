@@ -18,7 +18,6 @@ import (
 )
 
 func main() {
-	// Chargement des variables d’environnement
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Erreur loading .env")
@@ -26,7 +25,6 @@ func main() {
 
 	log.Println("DB_PATH =", os.Getenv("DB_PATH"))
 
-	// Initialisation de la base de données
 	db := sqlite.InitDBAndMigrate()
 	defer db.Close()
 
@@ -57,19 +55,18 @@ func main() {
 	// Router
 	r := mux.NewRouter()
 
-	// Appliquer CORS globalement
+	// CORS
 	r.Use(middlewares.CORSMiddleware)
 
-	// Routes API principales
+	// Routes
 	routes.UserRoutes(r, userHandler)
 	routes.PostRoutes(r, postHandler)
 	routes.CommentsRoutes(r, commentHandler)
 	routes.FollowersRoutes(r, followerHandler)
 
-	// Route protégée JWT pour créer un post
 	r.Handle("/api/posts", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.CreatePost))).Methods("POST", "OPTIONS")
 
-	// WebSocket protégée
+	// WebSocket
 	wsHandler := middlewares.JWTMiddleware(http.HandlerFunc(websocketHandler.HandleWebSocket))
 	r.Handle("/ws", wsHandler).Methods("GET", "OPTIONS")
 
@@ -77,8 +74,6 @@ func main() {
 		http.HandlerFunc(websocketHandler.HandleGetConversation),
 	)).Methods("POST", "OPTIONS")
 
-
-	// ✅ Ajout des routes de messages avec middlewares
 	routes.MessageRoutes(r, messageHandler)
 
 	// Lancement du serveur HTTP

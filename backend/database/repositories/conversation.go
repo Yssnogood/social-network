@@ -201,7 +201,7 @@ func (r *ConversationRepository) CreateOrGetPrivateConversation(initiator, recip
 
 	// Create new private conversation
 	conv := &models.Conversation{
-		Name:    "", // Private conversations don't need names
+		Name:    "",
 		IsGroup: false,
 	}
 
@@ -210,7 +210,6 @@ func (r *ConversationRepository) CreateOrGetPrivateConversation(initiator, recip
 		return nil, err
 	}
 
-	// Add both users to the conversation
 	err = membersRepo.AddMember(newConv.ID, initiator)
 	if err != nil {
 		return nil, err

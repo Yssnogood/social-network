@@ -9,7 +9,6 @@ import (
 )
 
 func MessageRoutes(r *mux.Router, messageHandler *handlers.MessageHandler) {
-	// Protection JWT + CORS pour chaque route
 	r.Handle("/api/messages", middlewares.CORSMiddleware(middlewares.JWTMiddleware(
 		http.HandlerFunc(messageHandler.CreateMessage)))).Methods("POST", "OPTIONS")
 

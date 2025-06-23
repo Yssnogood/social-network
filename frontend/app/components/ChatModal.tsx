@@ -24,7 +24,6 @@ export default function ChatModal({
 					headers: {
 						"Content-Type": "application/json",
 					},
-					// juste avant le fetch, change le body comme suit :
 					body: JSON.stringify({
 						initiator_id: currentUserId,
 						recipient_id: targetUserId,
@@ -38,7 +37,6 @@ export default function ChatModal({
 				const convo = await res.json();
 				console.log("✅ Conversation ID:", convo.id);
 
-				// history messages
 				const historyRes = await fetch(`http://localhost:8080/api/messages?conversation_id=${convo.id}`, {
 					method: "GET",
 					credentials: "include",
