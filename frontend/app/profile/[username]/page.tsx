@@ -15,12 +15,11 @@ interface Follower {
 export default async function Profile({
 	params
 }: {
-	params: Promise<{ username: string }>
+	params: Promise<{ username: string }>;
 }) {
 	const { username } = await params;
 
 	const cookieStore = await cookies();
-
 	const token = cookieStore.get("jwt")?.value || "";
 
 	let userId = "";
@@ -35,18 +34,12 @@ export default async function Profile({
 	}
 
 	const usernameCookie = cookieStore.get("user")?.value || "";
-
 	const profile: UserProfile = await getUserProfile(username, false);
 
-	const fetchFollowers = async (userId: string) => {
-		console.log('⚡️ Début de fetchFollowers - userId:', userId); // Log 1
-
+	const fetchFollowers = async (userId: string): Promise<Follower[]> => {
 		try {
 			const apiUrl = `http://localhost:8080/api/followers?user_id=${userId}`;
-			console.log('🔗 URL appelée:', apiUrl); // Log 2
-
 			const response = await fetch(apiUrl);
-			console.log('📡 Réponse reçue - Status:', response.status); // Log 3
 
 			if (!response.ok) {
 				console.error('❌ Erreur HTTP:', response.status, response.statusText);
@@ -54,24 +47,15 @@ export default async function Profile({
 			}
 
 			const data = await response.json();
-			console.log('📦 Données reçues:', { // Log 4
-				type: typeof data,
-				count: Array.isArray(data) ? data.length : 'N/A',
-				sample: Array.isArray(data) && data.length > 0 ? data[0] : 'Aucune donnée'
-			});
-
-			return data;
+			return Array.isArray(data) ? data : [];
 		} catch (error) {
-			console.error('💥 Erreur lors du fetch:', error); // Log 5
+			console.error('💥 Erreur lors du fetch:', error);
 			return [];
 		}
 	};
 
-	const followers = await fetchFollowers(userId);
-	console.log('👥 Followers à afficher:', { // Log 6
-		userId,
-		followersCount: followers.length,
-	});
+	const rawFollowers = await fetchFollowers(userId);
+	const followers: Follower[] = Array.isArray(rawFollowers) ? rawFollowers : [];
 
 	return (
 		<>
@@ -146,15 +130,16 @@ export default async function Profile({
 							</div>
 						</div>
 					</div>
+
 					{/* Section Followers */}
 					<div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
 						<FollowersSection
-							followers={followers as Follower[]}
+							followers={followers}
 							currentUserId={parseInt(userId)}
 						/>
 					</div>
 				</div>
-			</main >
+			</main>
 		</>
 	);
 }

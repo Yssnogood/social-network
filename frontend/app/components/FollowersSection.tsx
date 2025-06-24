@@ -11,10 +11,10 @@ interface Follower {
 }
 
 export default function FollowersSection({
-	followers,
+	followers = [],
 	currentUserId,
 }: {
-	followers: Follower[];
+	followers?: Follower[];
 	currentUserId: number;
 }) {
 	const [isChatOpen, setIsChatOpen] = useState(false);
@@ -25,15 +25,17 @@ export default function FollowersSection({
 		setSelectedFollower(null);
 	};
 
+	const safeFollowers = Array.isArray(followers) ? followers : [];
+
 	return (
 		<div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
 			<div className="flex justify-between items-center mb-4">
 				<h3 className="text-lg font-semibold">Followers</h3>
 			</div>
 
-			{followers.length > 0 ? (
+			{safeFollowers.length > 0 ? (
 				<div className="space-y-3">
-					{followers.map((follower) => (
+					{safeFollowers.map((follower) => (
 						<div key={follower.follower_id} className="flex items-center gap-3 p-2">
 							<p className="font-medium">User ID: {follower.follower_id}</p>
 							<button
