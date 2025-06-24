@@ -5,13 +5,25 @@ import Image from "next/image";
 import { useState } from "react";
 import { UserProfile } from "../../../services/user";
 import ProfileTabs from "./ProfileTabs";
+import FollowersSection from "../../components/FollowersSection";
+
+interface Follower {
+  follower_id: number;
+  followed_id: number;
+  accepted: boolean;
+  followed_at: string;
+}
 
 export default function ClientProfile({
   profile,
   loggedInUser,
+  followers,
+  currentUserId
 }: {
   profile: UserProfile;
   loggedInUser: string;
+  followers: Follower[];
+  currentUserId: number;
 }) {
   const isOwnProfile = profile.username === loggedInUser;
   const [aboutMe, setAboutMe] = useState(profile.about_me || "");
@@ -30,7 +42,7 @@ export default function ClientProfile({
         username: profile.username,
         about_me: aboutMe,
         is_public: profile.is_public,
-        password: "", // empty as not changing password
+        password: "",
       }),
     });
 
@@ -67,8 +79,8 @@ export default function ClientProfile({
 
       <main className="pt-16 px-4 mx-auto max-w-6xl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Left section */}
           <div className="md:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            {/* Profile Infos */}
             <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
               <div className="flex-shrink-0">
                 <Image
@@ -90,30 +102,23 @@ export default function ClientProfile({
               </div>
             </div>
 
-            {/* More Information */}
             <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
               <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
                 More Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Email
-                  </p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
                   <p className="text-gray-900 dark:text-white">{profile.email}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Birth Date
-                  </p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Birth Date</p>
                   <p className="text-gray-900 dark:text-white">
-                    {new Date(profile.birth_date).toLocaleDateString("FR")}
+                    {new Date(profile.birth_date).toLocaleDateString("fr-FR")}
                   </p>
                 </div>
                 <div className="md:col-span-2">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    About Me
-                  </p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">About Me</p>
                   {isOwnProfile ? (
                     isEditing ? (
                       <>
@@ -123,12 +128,7 @@ export default function ClientProfile({
                           onChange={(e) => setAboutMe(e.target.value)}
                         />
                         <div className="mt-2 space-x-2">
-                          <button
-                            onClick={handleSave}
-                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                          >
-                            Save
-                          </button>
+                          <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
                           <button
                             onClick={() => {
                               setIsEditing(false);
@@ -142,15 +142,8 @@ export default function ClientProfile({
                       </>
                     ) : (
                       <>
-                        <p className="text-gray-900 dark:text-white mt-2">
-                          {aboutMe}
-                        </p>
-                        <button
-                          onClick={() => setIsEditing(true)}
-                          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        >
-                          Edit
-                        </button>
+                        <p className="text-gray-900 dark:text-white mt-2">{aboutMe}</p>
+                        <button onClick={() => setIsEditing(true)} className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Edit</button>
                       </>
                     )
                   ) : (
@@ -161,42 +154,13 @@ export default function ClientProfile({
             </div>
           </div>
 
-          {/* Right section: Friends */}
+          {/* Followers Section */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-              Friends
-            </h3>
-            <div className="space-y-4">
-              {profile.friends && profile.friends.length > 0 ? (
-                profile.friends.map((friend) => (
-                  <div key={friend.id} className="flex items-center space-x-3">
-                    <Image
-                      src={friend.avatarPath || "/social-placeholder.png"}
-                      alt={`${friend.name}'s avatar`}
-                      width={40}
-                      height={40}
-                      className="rounded-full"
-                    />
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {friend.name}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  No friends found.
-                </p>
-              )}
-            <button className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
-              View All Friends
-            </button>
-            </div>
+            <FollowersSection followers={followers} currentUserId={currentUserId} />
           </div>
         </div>
-        <ProfileTabs userId={profile.id} />
 
+        <ProfileTabs userId={profile.id} />
       </main>
     </>
   );

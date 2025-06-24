@@ -168,12 +168,14 @@ export async function createPost(postData: {
     liked:false,
     comments: 0
   };
+  console.log(postData.imageUrl)
         try {
             const resp = await fetch(url+"/post",{
                 method: "POST",
                 body: JSON.stringify({
                     jwt: jwt,
                     content: postData.content,
+                    image_path: postData.imageUrl,
                     privacy_type: postData.privacy
                 })
             })
@@ -192,6 +194,7 @@ export async function createPost(postData: {
                   comments: 0
 
                 }
+                console.log(newPost)
             } else {
                 console.log(resp.status)
             }

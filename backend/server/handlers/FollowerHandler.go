@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+	"strconv"
 
 	"social-network/backend/database/models"
 	"social-network/backend/database/repositories"
@@ -84,20 +85,29 @@ func (h *FollowerHandler) AcceptFollowRequest(w http.ResponseWriter, r *http.Req
 
 // GetFollowers retrieves all followers for a user.
 func (h *FollowerHandler) GetFollowers(w http.ResponseWriter, r *http.Request) {
-	var req getFollowersRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	// Lire depuis l'URL : /api/followers?user_id=1
+	userIDStr := r.URL.Query().Get("user_id")
+	if userIDStr == "" {
+		http.Error(w, "user_id is required", http.StatusBadRequest)
 		return
 	}
 
-	followers, err := h.FollowerRepository.GetFollowers(req.UserID)
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "invalid user_id", http.StatusBadRequest)
+		return
+	}
+
+	followers, err := h.FollowerRepository.GetFollowers(userID)
 	if err != nil {
 		http.Error(w, "Failed to retrieve followers", http.StatusInternalServerError)
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(followers)
 }
+
 
 // UnCreateFollower removes a follower relationship.
 func (h *FollowerHandler) DeleteFollower(w http.ResponseWriter, r *http.Request) {

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getCommentsByUserID, Comment } from "@/services/comment";
-import { getPostsByUserID, getLikedPostsByUserID, Post } from "@/services/post";
+import { getCommentsByUserID, Comment } from "../../../services/comment";
+import { getPostsByUserID, getLikedPostsByUserID, Post } from "../../../services/post";
 import { MessageSquare, PencilLine, ThumbsUp } from "lucide-react";
 
 export default function ProfileTabs({ userId }: { userId: number }) {

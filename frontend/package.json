@@ -9,15 +9,18 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.522.0",
     "next": "^15.1.8",
     "next-client-cookies": "^2.1.0",
+    "next-cloudinary": "^6.16.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.17.50",
     "@types/react": "^19.1.5",
     "@types/react-dom": "^19",

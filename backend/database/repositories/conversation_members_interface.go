@@ -2,10 +2,8 @@ package repository
 
 import "social-network/backend/database/models"
 
-type ConversationMembersRepositoryInterface interface {
-	Create(conversationMember *models.ConversationMembers) (*models.ConversationMembers, error)
-	GetByID(id int64) (*models.ConversationMembers, error)
-	GetByConversationID(conversationID int64) ([]*models.ConversationMembers, error)
-	GetByUserID(userID int64) ([]*models.ConversationMembers, error)
-	Delete(id int64) error
+type ConversationMemberRepositoryInterface interface {
+	AddMember(conversationID, userID int64) error
+	GetConversationsByUser(userID int64) ([]int64, error)
+	AreUsersInSameConversation(userID1, userID2 int64) (*models.Conversation, error)
 }

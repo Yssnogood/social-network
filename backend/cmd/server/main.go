@@ -9,12 +9,14 @@ import (
 	"github.com/joho/godotenv"
 	gorillaHandlers "github.com/gorilla/handlers" // alias pour le package externe handlers
 
+	"social-network/backend/app/services"
 	repository "social-network/backend/database/repositories"
 	"social-network/backend/database/sqlite"
 	appHandlers "social-network/backend/server/handlers" // alias pour ton propre package handlers
-	"social-network/backend/app/services"
-	"social-network/backend/server/routes"
+	
 	"social-network/backend/server/middlewares"
+	"social-network/backend/server/routes"
+	"social-network/backend/websocket"
 )
 
 func main() {
@@ -43,6 +45,10 @@ func main() {
 	postRepo := repository.NewPostRepository(db)
 	commentRepo := repository.NewCommentRepository(db)
 	sessionRepo := repository.NewSessionRepository(db)
+	followerRepo := repository.NewFollowerRepository(db)
+	messageRepo := repository.NewMessageRepository(db)
+	conversationRepo := repository.NewConversationRepository(db)
+	conversationMembersRepo := repository.NewConversationMembersRepository(db)
 
 	// Services
 	userService := services.NewUserService(db)
@@ -53,17 +59,44 @@ func main() {
 	postHandler := appHandlers.NewPostHandler(postService, postRepo, sessionRepo, userRepo)
 	commentHandler := appHandlers.NewCommentHandler(commentRepo, sessionRepo)
 
+	followerHandler := appHandlers.NewFollowerHandler(followerRepo)
+	messageHandler := appHandlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
+	websocketHandler := websocket.NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo)
+
+
+	// CORS
+	r.Use(middlewares.CORSMiddleware)
+
 	// Routes
 	routes.UserRoutes(r, userHandler)
 	routes.PostRoutes(r, postHandler)
 	routes.CommentsRoutes(r, commentHandler)
+	routes.FollowersRoutes(r, followerHandler)
 
-	// Middleware
-	r.Handle("/api/posts", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.CreatePost))).Methods("POST")
+	r.Handle("/api/posts", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.CreatePost))).Methods("POST", "OPTIONS")
 
 	// Start server
 	log.Println("Server start on http://localhost:8080/")
 	if err := http.ListenAndServe(":8080", gorillaHandlers.CORS(originsOk, headersOk, methodsOk, credentialsOk)(r)); err != nil {
 		log.Fatalf("Error starting server: %v", err)
+	}
+	// WebSocket
+	wsHandler := middlewares.JWTMiddleware(http.HandlerFunc(websocketHandler.HandleWebSocket))
+	r.Handle("/ws", wsHandler).Methods("GET", "OPTIONS")
+
+	r.Handle("/api/messages/conversation", middlewares.CORSMiddleware(
+		http.HandlerFunc(websocketHandler.HandleGetConversation),
+	)).Methods("POST", "OPTIONS")
+
+	routes.MessageRoutes(r, messageHandler)
+
+	// Lancement du serveur HTTP
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	log.Println("Serveur en écoute sur :" + port)
+	if err := http.ListenAndServe(":"+port, r); err != nil {
+		log.Fatal("Erreur au lancement du serveur :", err)
 	}
 }
