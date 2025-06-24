@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 	"fmt"
 
 	"social-network/backend/database/models"
@@ -115,15 +114,12 @@ func (h *CommentHandler) GetCommentsFromUserByID(w http.ResponseWriter, r *http.
 		return
 	}
 
-	fmt.Println(req.ID)
-
 	comment, err := h.CommentRepository.GetCommentsFromUserByID(req.ID)
 	if err != nil {
 		http.Error(w, "Comment not found", http.StatusNotFound)
 		return
 	}
 
-	fmt.Println("commentaire : ", comment)
 
 	json.NewEncoder(w).Encode(comment)
 }

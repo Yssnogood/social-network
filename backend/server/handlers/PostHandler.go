@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -46,7 +45,6 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	var req CreatePostRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
-		fmt.Println(req, err)
 		return
 	}
 
@@ -121,7 +119,6 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	parts := strings.Split(r.URL.Path, "/")
 	postID, err := strconv.Atoi(parts[3])
 	if err != nil {
-		fmt.Println("Post ID:", postID)
 		http.Error(w, "Invalid post ID", http.StatusBadRequest)
 		return
 	}
