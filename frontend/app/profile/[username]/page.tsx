@@ -10,8 +10,8 @@ interface Follower {
   followed_at: string;
 }
 
-export default async function Profile(props: { params: { username: string } }) {
-  const { username } = props.params;
+export default async function Profile(props: { params: Promise<{ username: string }> }) {
+  const { username } = await props.params; 
 
   const cookieStore =  await cookies();
   const token = cookieStore.get("jwt")?.value || "";
