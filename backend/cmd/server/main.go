@@ -8,12 +8,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 
+	"social-network/backend/app/services"
 	repository "social-network/backend/database/repositories"
 	"social-network/backend/database/sqlite"
 	"social-network/backend/server/handlers"
-	"social-network/backend/app/services"
-	"social-network/backend/server/routes"
 	"social-network/backend/server/middlewares"
+	"social-network/backend/server/routes"
 )
 
 func main() {
@@ -43,7 +43,7 @@ func main() {
 	// Services
 	userService := services.NewUserService(db)
 	postService := services.NewPostService(db)
-	// commentService := services.NewCommentService(db)
+	commentService := services.NewCommentService(db)
 	// notificationService := services.NewNotificationService(db)
 	// messageService := services.NewMessageService(db)
 	// sessionService := services.NewSessionService(db)
@@ -54,7 +54,7 @@ func main() {
 	// Handlers
 	userHandler := handlers.NewUserHandler(userService, userRepo, sessionRepo)
 	postHandler := handlers.NewPostHandler(postService, postRepo, sessionRepo)
-	commentHandler := handlers.NewCommentHandler(commentRepo, sessionRepo)
+	commentHandler := handlers.NewCommentHandler(commentService, commentRepo, sessionRepo)
 	// notificationHandler := handlers.NewNotificationHandler(notificationRepo)
 	// messageHandler := handlers.NewMessageHandler(messageRepo)
 	// sessionHandler := handlers.NewSessionHandler(sessionRepo)

@@ -5,19 +5,22 @@ import (
 	"net/http"
 	"time"
 
+	"social-network/backend/app/services"
 	"social-network/backend/database/models"
 	repository "social-network/backend/database/repositories"
 )
 
 // CommentHandler handles comment-related HTTP requests.
 type CommentHandler struct {
+	CommentService    *services.CommentService
 	CommentRepository *repository.CommentRepository
 	SessionRepository *repository.SessionRepository
 }
 
 // NewCommentHandler creates a new CommentHandler.
-func NewCommentHandler(cr *repository.CommentRepository, sr *repository.SessionRepository) *CommentHandler {
+func NewCommentHandler(cs *services.CommentService, cr *repository.CommentRepository, sr *repository.SessionRepository) *CommentHandler {
 	return &CommentHandler{
+		CommentService:    cs,
 		CommentRepository: cr,
 		SessionRepository: sr,
 	}
@@ -53,6 +56,7 @@ type getPostCommentsRequest struct {
 
 // CreateComment handles creating a new comment.
 func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req createCommentRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
@@ -81,8 +85,14 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	comment.ID = id
+
+	user, _ := h.CommentService.GetCommentAuthor(comment)
+	comment.Username = user.Username
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(comment)
+	json.NewEncoder(w).Encode(map[string]any{
+		"comment": comment,
+		"avatar":  user.AvatarPath,
+	})
 }
 
 // GetComment returns a single comment by ID.

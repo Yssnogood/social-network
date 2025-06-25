@@ -31,16 +31,17 @@ export async function getComments(postId: number, jwt?: string): Promise<Comment
                 return comments
             }
             
-            comments = commentsData.map((comment: any) => ({
-                id: comment.id,
-                postId: comment.post_id,
-                userId: comment.user_id,
-                userName: comment.username || "User",
-                userAvatarPath: "",
-                content: comment.content,
-                imageUrl: comment.image_path,
-                createdAt: new Date(Date.parse(comment.created_at))
+            comments = commentsData.map((c: any) => ({
+                id: c.comment.id,
+                postId: c.comment.post_id,
+                userId: c.comment.user_id,
+                userName: c.comment.username || "User",
+                userAvatarPath: c.avatar_path || defaultPP,
+                content: c.comment.content,
+                imageUrl: c.comment.image_path,
+                createdAt: new Date(Date.parse(c.comment.created_at))
             }));
+            console.log(comments)
         }
     } catch (error) {
         console.error("Failed to fetch comments:", error);
@@ -84,8 +85,8 @@ export async function createComment(
                 id: r.comment.id,
                 postId: r.comment.post_id,
                 userId: r.comment.user_id,
-                userName: r.user.username || "User",
-                userAvatarPath: r.user.avatar_path ? r.user.avatar_path : defaultPP,
+                userName: r.comment.username || "User",
+                userAvatarPath: r.avatar_path || defaultPP,
                 content: r.comment.content,
                 imageUrl: r.comment.image_path,
                 createdAt: new Date(Date.parse(r.comment.created_at))

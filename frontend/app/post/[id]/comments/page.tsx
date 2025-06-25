@@ -172,7 +172,7 @@ export default function CommentsPage({
                                     {comments.map((comment) => (
                                         <div key={comment.id} className="bg-gray-800 p-4 rounded-lg shadow-md">
                                             <div className="flex items-center mb-2">
-                                                <div className="w-8 h-8 bg-gray-700 rounded-full mr-3"></div>
+                                                <div className="w-8 h-8 bg-gray-700 rounded-full mr-3"><img className="rounded-full" src={comment.userAvatarPath} alt={`${comment.userName}'s Avatar`} /></div>
                                                 <div>
                                                     <div className="font-semibold text-white text-sm">{comment.userName}</div>
                                                     <div className="text-xs text-gray-400">
