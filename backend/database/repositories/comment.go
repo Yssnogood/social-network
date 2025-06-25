@@ -81,9 +81,9 @@ func (r *CommentRepository) GetByID(id int64) (*models.Comment, error) {
 }
 
 // GetComments retrieves the list of comments for a post
-func (r *CommentRepository) GetComments(postID int64) ([]*models.Comment, error) {
+func (r *CommentRepository) GetComments(postID int64) ([]map[string]any, error) {
 	rows, err := r.db.Query(`
-		SELECT c.id, c.post_id, c.user_id, u.username, c.content, c.image_path, c.created_at, c.updated_at
+		SELECT c.id, c.post_id, c.user_id, u.username, u.avatar_path, c.content, c.image_path, c.created_at, c.updated_at
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
 		WHERE c.post_id = ?
@@ -94,15 +94,17 @@ func (r *CommentRepository) GetComments(postID int64) ([]*models.Comment, error)
 	}
 	defer rows.Close()
 
-	var comments []*models.Comment
+	var comments []map[string]any
 
 	for rows.Next() {
 		c := &models.Comment{}
+		var a string
 		err := rows.Scan(
 			&c.ID,
 			&c.PostID,
 			&c.UserID,
 			&c.Username,
+			&a,
 			&c.Content,
 			&c.ImagePath,
 			&c.CreatedAt,
@@ -111,7 +113,10 @@ func (r *CommentRepository) GetComments(postID int64) ([]*models.Comment, error)
 		if err != nil {
 			return nil, err
 		}
-		comments = append(comments, c)
+		comments = append(comments, map[string]any{
+			"comment":     c,
+			"avatar_path": a,
+		})
 	}
 
 	if err = rows.Err(); err != nil {

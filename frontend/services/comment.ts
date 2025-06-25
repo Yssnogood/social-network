@@ -1,3 +1,5 @@
+import { defaultPP } from "./post";
+
 const url = "http://localhost:8080/api";
 
 export interface Comment {
@@ -5,6 +7,7 @@ export interface Comment {
     postId: number;
     userId: string;
     userName: string;
+    userAvatarPath: string;
     content: string;
     imageUrl?: string;
     createdAt: Date;
@@ -33,6 +36,7 @@ export async function getComments(postId: number, jwt?: string): Promise<Comment
                 postId: comment.post_id,
                 userId: comment.user_id,
                 userName: comment.username || "User",
+                userAvatarPath: "",
                 content: comment.content,
                 imageUrl: comment.image_path,
                 createdAt: new Date(Date.parse(comment.created_at))
@@ -57,6 +61,7 @@ export async function createComment(
         postId: commentData.postId,
         userId: "",
         userName: "",
+        userAvatarPath: "",
         content: commentData.content,
         imageUrl: commentData.imageUrl,
         createdAt: new Date()
@@ -79,7 +84,8 @@ export async function createComment(
                 id: r.comment.id,
                 postId: r.comment.post_id,
                 userId: r.comment.user_id,
-                userName: r.username || "User",
+                userName: r.user.username || "User",
+                userAvatarPath: r.user.avatar_path ? r.user.avatar_path : defaultPP,
                 content: r.comment.content,
                 imageUrl: r.comment.image_path,
                 createdAt: new Date(Date.parse(r.comment.created_at))

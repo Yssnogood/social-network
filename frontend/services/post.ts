@@ -1,10 +1,13 @@
 import { getCookies } from "next-client-cookies/server";
 
+export const defaultPP = "https://res.cloudinary.com/dc2729t5d/image/upload/v1750498050/olqkqou632nntamawsuk.webp"
+
 const url = "http://localhost:8080/api"
 export interface Post {
   id: number;
   userId: string;
   userName: string;
+  userAvatar:string;
   content: string;
   privacy: number;
   imageUrl?: string;
@@ -20,6 +23,7 @@ const MOCK_POSTS: Post[] = [
     id: 1,
     userId: 'user1',
     userName: 'Jane Doe',
+    userAvatar:"",
     content: 'Just joined this amazing social network! Looking forward to connecting with everyone.',
     privacy: 0,
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
@@ -31,6 +35,7 @@ const MOCK_POSTS: Post[] = [
     id: 2,
     userId: 'user2',
     userName: 'John Smith',
+    userAvatar:"",
     content: 'Hello everyone! This is my first post. I\'m excited to share my journey with all of you.',
     privacy: 0,
     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
@@ -42,6 +47,7 @@ const MOCK_POSTS: Post[] = [
     id: 3,
     userId: 'user3',
     userName: 'Alex Johnson',
+    userAvatar:"",
     content: 'Just read about the latest advancements in AI. The future looks promising! What do you think?',
     privacy: 0,
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
@@ -70,7 +76,8 @@ export async function getPosts(jwt?:string): Promise<Post[]> {
         const newPost : Post = {
                   id: post.post.id,
                   userId: post.post.user_id,
-                  userName: post.user,
+                  userName: post.user.username,
+                  userAvatar:post.user.avatar_path ? post.user.avatar_path : defaultPP,
                   imageUrl: post.post.image_path,
                   privacy: post.post.privacy_type,
                   createdAt: new Date(Date.parse(post.post.created_at)),
@@ -129,7 +136,8 @@ export async function getSpecificPost(post_id: number, jwt?: string): Promise<Po
       newPost = {
         id: r.post.id,
         userId: r.post.user_id,
-        userName: r.user,
+        userName: r.user.username,
+        userAvatar:r.user.avatar_path ? r.user.avatar_path : defaultPP,
         imageUrl: r.post.image_path,
         privacy: r.post.privacy_type,
         createdAt: new Date(Date.parse(r.post.created_at)),
@@ -160,6 +168,7 @@ export async function createPost(postData: {
   let newPost: Post = {
     userId: "",
     userName: "",
+    userAvatar:"",
     content:"",
     privacy:0,
     id: 0,
@@ -168,7 +177,6 @@ export async function createPost(postData: {
     liked:false,
     comments: 0
   };
-  console.log(postData.imageUrl)
         try {
             const resp = await fetch(url+"/post",{
                 method: "POST",
@@ -184,7 +192,8 @@ export async function createPost(postData: {
                 newPost = {
                   id: r.post.id,
                   userId: r.post.user_id,
-                  userName: r.username,
+                  userName: r.user.username,
+                  userAvatar:r.user.avatar_path,
                   imageUrl: r.post.image_path,
                   privacy: r.post.privacy_type,
                   createdAt: new Date(Date.parse(r.post.created_at)),
@@ -194,7 +203,6 @@ export async function createPost(postData: {
                   comments: 0
 
                 }
-                console.log(newPost)
             } else {
                 console.log(resp.status)
             }

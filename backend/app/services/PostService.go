@@ -17,8 +17,7 @@ func NewPostService(db *sql.DB) *PostService {
 
 func (s *PostService) GetPostAuthor(post *models.Post) (*models.User, error) {
 	stmt, err := s.db.Prepare(`
-		SELECT id, email, password_hash, first_name, last_name, birth_date,
-			avatar_path, username, about_me, is_public, created_at, updated_at
+		SELECT id, avatar_path, username
 		FROM users WHERE id = ?
 	`)
 	if err != nil {
@@ -29,17 +28,8 @@ func (s *PostService) GetPostAuthor(post *models.Post) (*models.User, error) {
 	user := &models.User{}
 	err = stmt.QueryRow(post.UserID).Scan(
 		&user.ID,
-		&user.Email,
-		&user.PasswordHash,
-		&user.FirstName,
-		&user.LastName,
-		&user.BirthDate,
 		&user.AvatarPath,
 		&user.Username,
-		&user.AboutMe,
-		&user.IsPublic,
-		&user.CreatedAt,
-		&user.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err

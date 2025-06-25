@@ -101,7 +101,7 @@ export default function CommentsPage({
                             {/* Original Post */}
                             <div id={String(postId)} className="bg-gray-800 p-4 rounded-lg shadow-md mb-4">
                                 <div className="flex items-center mb-3">
-                                    <div className="w-10 h-10 bg-gray-700 rounded-full mr-3"></div>
+                                    <div className="w-10 h-10 bg-gray-700 rounded-full mr-3"><img className="rounded-full" src={post.userAvatar} alt={`${post.userName}'s Avatar`} /></div>
                                     <div>
                                         <div className="font-semibold text-white">{post.userName}</div>
                                         <div className="text-xs text-gray-400">
