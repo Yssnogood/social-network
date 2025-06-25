@@ -37,6 +37,7 @@ func (r *ConversationMembersRepository) Create(conversationMember *models.Conver
 	conversationMember.ID = id
 	return conversationMember, nil
 }
+
 // GetByID
 func (r *ConversationMembersRepository) GetByID(id int64) (*models.ConversationMembers, error) {
 	stmt, err := r.db.Prepare(`
@@ -56,6 +57,7 @@ func (r *ConversationMembersRepository) GetByID(id int64) (*models.ConversationM
 
 	return conversationMember, nil
 }
+
 // GetByConversationID
 func (r *ConversationMembersRepository) GetByConversationID(conversationID int64) ([]*models.ConversationMembers, error) {
 	stmt, err := r.db.Prepare(`
@@ -85,6 +87,7 @@ func (r *ConversationMembersRepository) GetByConversationID(conversationID int64
 
 	return members, nil
 }
+
 // GetByUserID
 func (r *ConversationMembersRepository) GetByUserID(userID int64) ([]*models.ConversationMembers, error) {
 	stmt, err := r.db.Prepare(`
