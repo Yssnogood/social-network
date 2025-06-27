@@ -7,7 +7,7 @@ import { getPosts, createPost, Post, LikePost } from "../../services/post";
 import { formatRelativeTime } from "../../services/utils";
 import { useCookies } from "next-client-cookies";
 import { CldUploadButton } from "next-cloudinary";
-
+import CreateGroupModal from "../components/GroupModal";
 
 const cloudPresetName = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET_NAME;
 console.log(cloudPresetName)
@@ -20,6 +20,7 @@ export default function Home() {
     const [imageURL, setPostImage] = useState<string>('');
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+	const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
 
     useEffect(() => {
         async function loadPosts() {
@@ -35,7 +36,7 @@ export default function Home() {
 
         loadPosts();
     }, []);
- 
+
     const handleOpenModal = () => {
         setIsCreatePostModalOpen(true);
     };
@@ -49,7 +50,7 @@ export default function Home() {
 
     const handleSubmitPost = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         try {
             // In a real app, you'd upload the image first and get a URL
             let imageUrl;
@@ -72,6 +73,47 @@ export default function Home() {
             // Here you would show an error notification to the user
         }
     };
+
+	const handleOpenGroupModal = () => {
+		setIsCreateGroupModalOpen(true);
+	};
+
+	const handleCloseGroupModal = () => {
+		setIsCreateGroupModalOpen(false);
+	}
+
+	const handleSubmitGroup = async (groupData: { title: string; description: string }) => {
+		try {
+			const response = await fetch('http://localhost:8080/api/groups', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${cookies.get("jwt")}`
+				},
+				body: JSON.stringify({
+					title: groupData.title,
+					description: groupData.description
+				})
+			});
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				throw new Error(`Failed to create group: ${errorText}`);
+			}
+
+			const data = await response.json();
+			console.log('Group created successfully:', data);
+
+			// You can add a success notification here
+			alert('Groupe créé avec succès !');
+
+			handleCloseGroupModal();
+		} catch (error) {
+			console.error('Error creating group:', error);
+			// You can add an error notification here
+			alert('Erreur lors de la création du groupe');
+		}
+	}
 
     return (
         <>
@@ -104,8 +146,8 @@ export default function Home() {
                                 />
                             </svg>
                         </button>
-                        
-                    </Link>                        
+
+                    </Link>
                         <button
                             className="text-sm text-white hover:text-blue-200 cursor-pointer flex items-center"
                             aria-label="Notifications"
@@ -121,7 +163,7 @@ export default function Home() {
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     strokeWidth={2}
-                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0018 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                                 />
                             </svg>
                         </button>
@@ -160,6 +202,17 @@ export default function Home() {
                 </svg>
             </button>
 
+            {/* Create Group Button - Fixed to middle-right */}
+            <button
+			    onClick={handleOpenGroupModal}
+                className="fixed right-5 top-1/2 transform -translate-y-1/2 bg-green-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-green-700 transition-colors z-40"
+                aria-label="Create group"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.196-2.121M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.196-2.121M7 20v-2m5-10a3 3 0 11-6 0 3 3 0 016 0zM7 16a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+
             <div className="pt-16 px-4 flex justify-center">
                 {/* Main Content Area - Posts more centered */}
                 <div className="w-full max-w-xl mx-auto">
@@ -195,8 +248,8 @@ export default function Home() {
                             </div>
                             {post.imageUrl && (
                                 <div className="mb-3">
-                                    <img 
-                                        src={post.imageUrl} 
+                                    <img
+                                        src={post.imageUrl}
                                         alt="Post image"
                                         className="max-h-96 rounded-lg mx-auto"
                                     />
@@ -211,7 +264,7 @@ export default function Home() {
                                     </svg>
                                     <span id={`like ${post.id}`}>{post.likes}</span> Like{post.likes !== 1 ? 's' : ''}
                                 </button>
-                                <Link 
+                                <Link
                                     href={`/post/${post.id}/comments`}
                                     className="text-gray-400 hover:text-gray-200 text-sm flex items-center gap-1"
                                 >
@@ -238,14 +291,14 @@ export default function Home() {
                                 </svg>
                             </button>
                         </div>
-                        
+
                         <form onSubmit={handleSubmitPost}>
                             <div className="mb-4">
                                 <label htmlFor="postPrivacy" className="block text-sm font-medium text-gray-300 mb-1">Privacy</label>
-                                <select 
-                                    name="postPrivacy" 
-                                    id="postPrivacy" 
-                                    value={postPrivacy} 
+                                <select
+                                    name="postPrivacy"
+                                    id="postPrivacy"
+                                    value={postPrivacy}
                                     onChange={(e) => setPostPrivacy(Number(e.target.value))}
                                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
                                 >
@@ -254,7 +307,7 @@ export default function Home() {
                                     <option value="2">🔒 Private</option>
                                 </select>
                             </div>
-                            
+
                             <div className="mb-4">
                                 <label htmlFor="postContent" className="block text-sm font-medium text-gray-300 mb-1">Content</label>
                                 <textarea
@@ -265,7 +318,7 @@ export default function Home() {
                                     required
                                 />
                             </div>
-                            
+
                             <div className="mb-4">
                                 <CldUploadButton options={{ sources: ['local', 'url'], }} uploadPreset={cloudPresetName} onSuccess={(result) => {
                                     if (result.info && typeof result.info != "string") {
@@ -275,7 +328,7 @@ export default function Home() {
                                     <span>Upload Image</span>
                                 </CldUploadButton>
                             </div>
-                            
+
                             <div className="flex justify-end gap-2">
                                 <button
                                     type="button"
@@ -295,6 +348,13 @@ export default function Home() {
                     </div>
                 </div>
             )}
+
+            {/* Create Group Modal */}
+            <CreateGroupModal
+                isOpen={isCreateGroupModalOpen}
+                onClose={handleCloseGroupModal}
+                onSubmit={handleSubmitGroup}
+            />
         </>
     );
 }

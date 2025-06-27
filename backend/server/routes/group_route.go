@@ -1,15 +1,13 @@
 package routes
 
 import (
-	"social-network/backend/server/handlers"
+	"net/http"
+
 	"github.com/gorilla/mux"
+	"social-network/backend/server/handlers"
+	"social-network/backend/server/middlewares"
 )
-// UserRoutes
 
-func GroupsRoutes(r *mux.Router, groupHandler *handlers.GroupHandler) {
-	r.HandleFunc("/api/groups", groupHandler.CreateGroup).Methods("POST")
-	r.HandleFunc("/api/groups/{id}", groupHandler.GetGroupByID).Methods("GET")
-	r.HandleFunc("/api/groups/{id}", groupHandler.UpdateGroup).Methods("PUT")
-	r.HandleFunc("/api/groups/{id}", groupHandler.DeleteGroup).Methods("DELETE")
+func GroupRoutes(r *mux.Router, groupHandler *handlers.GroupHandler) {
+	r.Handle("/api/groups", middlewares.JWTMiddleware(http.HandlerFunc(groupHandler.CreateGroup))).Methods("POST", "OPTIONS")
 }
-
