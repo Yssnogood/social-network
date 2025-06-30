@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"time"
 
 	"social-network/backend/database/models"
 )
@@ -48,3 +49,19 @@ func (r *GroupRepository) Create(group *models.Group) (int64, error) {
 	group.ID = id
 	return id, nil
 }
+
+// AddMember ajoute un utilisateur dans un groupe
+func (r *GroupRepository) AddMember(groupID, userID int64, accepted bool, createdAt time.Time) error {
+	stmt, err := r.db.Prepare(`
+		INSERT INTO group_members (group_id, user_id, accepted, created_at)
+		VALUES (?, ?, ?, ?)
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(groupID, userID, accepted, createdAt)
+	return err
+}
+

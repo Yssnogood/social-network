@@ -8,7 +8,6 @@ import (
 	"social-network/backend/database/models"
 	"social-network/backend/database/repositories"
 	"social-network/backend/server/middlewares"
-
 )
 
 // GroupHandler handles HTTP requests for groups.
@@ -75,6 +74,12 @@ func (h *GroupHandler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	id, err := h.GroupRepository.Create(group)
 	if err != nil {
 		http.Error(w, "Failed to create group: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = h.GroupRepository.AddMember(group.ID, userID, true, time.Now())
+	if err != nil {
+		http.Error(w, "Failed to add group creator as member: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
