@@ -103,3 +103,33 @@ func (h *GroupHandler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
+
+func (h *GroupHandler) GetGroupsByUserID(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	groups, err := h.GroupRepository.GetGroupsByUserID(userID)
+	if err != nil {
+		http.Error(w, "Failed to retrieve groups: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var response []GroupResponse
+	for _, group := range groups {
+		response = append(response, GroupResponse{
+			ID:          group.ID,
+			CreatorID:   group.CreatorID,
+			Title:       group.Title,
+			Description: *group.Description,
+			CreatedAt:   group.CreatedAt.Format(time.RFC3339),
+			UpdatedAt:   group.UpdatedAt.Format(time.RFC3339),
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+
+}

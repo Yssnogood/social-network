@@ -10,4 +10,5 @@ import (
 
 func GroupRoutes(r *mux.Router, groupHandler *handlers.GroupHandler) {
 	r.Handle("/api/groups", middlewares.JWTMiddleware(http.HandlerFunc(groupHandler.CreateGroup))).Methods("POST", "OPTIONS")
+	r.Handle("/api/groups", middlewares.JWTMiddleware(http.HandlerFunc(groupHandler.GetGroupsByUserID))).Methods("GET")
 }

@@ -65,3 +65,32 @@ func (r *GroupRepository) AddMember(groupID, userID int64, accepted bool, create
 	return err
 }
 
+func (r *GroupRepository) GetGroupsByUserID(userID int64) ([]models.Group, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT g.id, g.creator_id, g.title, g.description, g.created_at, g.updated_at
+		FROM groups g
+		JOIN group_members gm ON g.id = gm.group_id
+		WHERE gm.user_id = ?
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var groups []models.Group
+	for rows.Next() {
+		var group models.Group
+		if err := rows.Scan(&group.ID, &group.CreatorID, &group.Title, &group.Description, &group.CreatedAt, &group.UpdatedAt); err != nil {
+			return nil, err
+		}
+		groups = append(groups, group)
+	}
+
+	return groups, nil
+}
