@@ -94,3 +94,27 @@ func (r *GroupRepository) GetGroupsByUserID(userID int64) ([]models.Group, error
 
 	return groups, nil
 }
+
+func (r* GroupRepository) GetGroupByID(groupID int64) (*models.Group, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT id, creator_id, title, description, created_at, updated_at
+		FROM groups
+		WHERE id = ?
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	var group models.Group
+	err = stmt.QueryRow(groupID).Scan(&group.ID, &group.CreatorID, &group.Title, &group.Description, &group.CreatedAt, &group.UpdatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &group, nil
+
+}

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+	"strconv"
+	"github.com/gorilla/mux"
 
 	"social-network/backend/database/models"
 	"social-network/backend/database/repositories"
@@ -132,4 +134,42 @@ func (h *GroupHandler) GetGroupsByUserID(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 
+}
+
+
+func (h *GroupHandler) GetGroupByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	groupIDStr, ok := vars["id"]
+	if !ok {
+		http.Error(w, "Missing group ID in path", http.StatusBadRequest)
+		return
+	}
+
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	group, err := h.GroupRepository.GetGroupByID(groupID)
+	if err != nil {
+		http.Error(w, "Failed to retrieve group: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if group == nil {
+		http.Error(w, "Group not found", http.StatusNotFound)
+		return
+	}
+
+	response := GroupResponse{
+		ID:          group.ID,
+		CreatorID:   group.CreatorID,
+		Title:       group.Title,
+		Description: *group.Description,
+		CreatedAt:   group.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:   group.UpdatedAt.Format(time.RFC3339),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
