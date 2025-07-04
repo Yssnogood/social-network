@@ -15,13 +15,22 @@ const UserIDKey contextKey = "userID"
 
 func JWTMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("jwt")
-		if err != nil {
-			http.Error(w, "Token JWT manquant", http.StatusUnauthorized)
-			return
-		}
+		var tokenString string
 
-		tokenString := cookie.Value
+		// Essaye d'abord de lire le token depuis le cookie
+		cookie, err := r.Cookie("jwt")
+		if err == nil {
+			tokenString = cookie.Value
+		} else {
+			// Sinon, essaie de lire depuis l'en-tête Authorization
+			authHeader := r.Header.Get("Authorization")
+			if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				tokenString = authHeader[7:]
+			} else {
+				http.Error(w, "Token JWT manquant", http.StatusUnauthorized)
+				return
+			}
+		}
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			return JwtSecret, nil
@@ -36,7 +45,6 @@ func JWTMiddleware(next http.Handler) http.Handler {
 
 		ctx := context.WithValue(r.Context(), UserIDKey, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
-
 	})
 }
 

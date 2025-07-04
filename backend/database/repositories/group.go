@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"time"
 
 	"social-network/backend/database/models"
 )
@@ -33,6 +34,7 @@ func (r *GroupRepository) Create(group *models.Group) (int64, error) {
 		group.Title,
 		group.Description,
 		group.CreatedAt,
+		group.UpdatedAt,
 	)
 
 	if err != nil {
@@ -48,62 +50,43 @@ func (r *GroupRepository) Create(group *models.Group) (int64, error) {
 	return id, nil
 }
 
-// Get a group by ID
-func (r *GroupRepository) GetByID(id int64) (*models.Group, error) {
+// AddMember ajoute un utilisateur dans un groupe
+func (r *GroupRepository) AddMember(groupID, userID int64, accepted bool, createdAt time.Time) error {
 	stmt, err := r.db.Prepare(`
-		SELECT id, creator_id, title, description, created_at, updated_at
-		FROM groups WHERE id = ?
+		INSERT INTO group_members (group_id, user_id, accepted, created_at)
+		VALUES (?, ?, ?, ?)
 	`)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer stmt.Close()
 
-	group := &models.Group{}
-	err = stmt.QueryRow(id).Scan(
-		&group.ID,
-		&group.CreatorID,
-		&group.Title,
-		&group.Description,
-		&group.CreatedAt,
-		&group.UpdatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return group, nil
+	_, err = stmt.Exec(groupID, userID, accepted, createdAt)
+	return err
 }
 
-// Get all groups created by a user
-func (r *GroupRepository) GetByCreatorID(creatorID int64) ([]*models.Group, error) {
+func (r *GroupRepository) GetGroupsByUserID(userID int64) ([]models.Group, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT id, creator_id, title, description, created_at, updated_at
-		FROM groups WHERE creator_id = ?
+		SELECT g.id, g.creator_id, g.title, g.description, g.created_at, g.updated_at
+		FROM groups g
+		JOIN group_members gm ON g.id = gm.group_id
+		WHERE gm.user_id = ?
 	`)
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.Query(creatorID)
+	rows, err := stmt.Query(userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var groups []*models.Group
+	var groups []models.Group
 	for rows.Next() {
-		group := &models.Group{}
-		err = rows.Scan(
-			&group.ID,
-			&group.CreatorID,
-			&group.Title,
-			&group.Description,
-			&group.CreatedAt,
-			&group.UpdatedAt,
-		)
-		if err != nil {
+		var group models.Group
+		if err := rows.Scan(&group.ID, &group.CreatorID, &group.Title, &group.Description, &group.CreatedAt, &group.UpdatedAt); err != nil {
 			return nil, err
 		}
 		groups = append(groups, group)
@@ -112,39 +95,26 @@ func (r *GroupRepository) GetByCreatorID(creatorID int64) ([]*models.Group, erro
 	return groups, nil
 }
 
-// update a group in the database
-func (r *GroupRepository) Update(group *models.Group) error {
+func (r* GroupRepository) GetGroupByID(groupID int64) (*models.Group, error) {
 	stmt, err := r.db.Prepare(`
-		UPDATE groups SET
-			title = ?, description = ?, updated_at = ?
+		SELECT id, creator_id, title, description, created_at, updated_at
+		FROM groups
 		WHERE id = ?
 	`)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(
-		group.Title,
-		group.Description,
-		group.UpdatedAt,
-		group.ID,
-	)
-	return err
-}
+	var group models.Group
+	err = stmt.QueryRow(groupID).Scan(&group.ID, &group.CreatorID, &group.Title, &group.Description, &group.CreatedAt, &group.UpdatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
 
-// Delete a group from the database
-func (r *GroupRepository) Delete(id int64) error {
-	stmt, err := r.db.Prepare(`
-		DELETE FROM groups WHERE id = ?
-	`)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-	_, err = stmt.Exec(id)
-	if err != nil {
-		return err
-	}
-	return nil
+	return &group, nil
+
 }
