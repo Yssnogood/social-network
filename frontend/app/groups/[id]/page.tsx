@@ -26,7 +26,15 @@ export default function GroupPage() {
 					credentials: 'include',
 				})
 				if (!res.ok) throw new Error(await res.text())
-				const data = await res.json()
+				const raw = await res.json()
+				const data: Group = {
+					id: raw.id,
+					creatorId: raw.creator_id,
+					title: raw.title,
+					description: raw.description,
+					createdAt: raw.created_at,
+					updatedAt: raw.updated_at,
+				}
 				setGroup(data)
 			} catch (err: any) {
 				setError(err.message)
