@@ -1,5 +1,6 @@
 'use client';
-
+import Notifications from "../components/NotificationPanel";
+import { fetchNotifications } from "../../services/notifications";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
@@ -22,6 +23,30 @@ export default function Home() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
 	const [groups, setGroups] = useState([]);
+	const [showNotifications, setShowNotifications] = useState(false);
+	const [notifications, setNotifications] = useState<string[]>([]); // Commence vide
+
+	useEffect(() => {
+		async function getNotif() {
+			try {
+				const userId = cookies.get("user");
+				if (userId) {
+					const fetchedNotifications = await fetchNotifications(userId);
+					
+					const notifStrings = fetchedNotifications.map((notif: any) => notif.content); 
+					
+					setNotifications(notifStrings);
+				}
+			} catch (error) {
+				console.error("Failed to fetch notifications:", error);
+			}
+		}
+
+		getNotif();
+	});
+
+
+
 
 
 	useEffect(() => {
@@ -172,24 +197,33 @@ export default function Home() {
 
 						</Link>
 						<button
-							className="text-sm text-white hover:text-blue-200 cursor-pointer flex items-center"
+							onClick={() => setShowNotifications(!showNotifications)}
+							className="relative text-sm text-white hover:text-blue-200 cursor-pointer flex items-center"
 							aria-label="Notifications"
 						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								className="h-5 w-5 mr-1"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth={2}
-									d="M15 17h5l-1.405-1.405A2.032 2.032 0 0018 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-								/>
-							</svg>
-						</button>
+	<svg
+		xmlns="http://www.w3.org/2000/svg"
+		className="h-5 w-5 mr-1"
+		fill="none"
+		viewBox="0 0 24 24"
+		stroke="currentColor"
+	>
+		<path
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			strokeWidth={2}
+			d="M15 17h5l-1.405-1.405A2.032 2.032 0 0018 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+		/>
+	</svg>
+
+	{/* Panneau notifications */}
+	{showNotifications && (
+		<div className="absolute right-0 top-6 z-50">
+			<Notifications notifications={notifications} />
+		</div>
+	)}
+</button>
+
 
 						<Link
 							href="/logout"
