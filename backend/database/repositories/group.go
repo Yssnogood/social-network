@@ -118,3 +118,33 @@ func (r* GroupRepository) GetGroupByID(groupID int64) (*models.Group, error) {
 	return &group, nil
 
 }
+
+func (r *GroupRepository) GetMembersByGroupID(groupID int64) ([]models.GroupMember, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT gm.id, gm.group_id, gm.user_id, gm.accepted, gm.created_at
+		FROM group_members gm
+		JOIN users u ON gm.user_id = u.id
+		WHERE gm.group_id = ?
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var members []models.GroupMember
+	for rows.Next() {
+		var member models.GroupMember
+		if err := rows.Scan(&member.ID, &member.GroupID, &member.UserID, &member.Accepted, &member.CreatedAt); err != nil {
+			return nil, err
+		}
+		members = append(members, member)
+	}
+
+	return members, nil
+}

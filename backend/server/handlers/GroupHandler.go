@@ -173,3 +173,27 @@ func (h *GroupHandler) GetGroupByID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
+
+func (h *GroupHandler) GetMembersByGroupID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	groupIDStr, ok := vars["id"]
+	if !ok {
+		http.Error(w, "Missing group ID in path", http.StatusBadRequest)
+		return
+	}
+
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	members, err := h.GroupRepository.GetMembersByGroupID(groupID)
+	if err != nil {
+		http.Error(w, "Failed to retrieve group members: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(members)
+}

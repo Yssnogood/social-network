@@ -12,14 +12,24 @@ type Group = {
 	updatedAt: string
 }
 
+type GroupMember = {
+	id: number
+	groupId: number
+	userId: number
+	accepted: boolean
+	createdAt: string
+}
+
 export default function GroupPage() {
 	const { id } = useParams()
 	const [group, setGroup] = useState<Group | null>(null)
+	const [members, setMembers] = useState<GroupMember[]>([])
 	const [error, setError] = useState<string | null>(null)
 
 	useEffect(() => {
 		if (!id) return
 
+		// Récupération du groupe
 		const fetchGroup = async () => {
 			try {
 				const res = await fetch(`http://localhost:8080/api/groups/${id}`, {
@@ -41,7 +51,29 @@ export default function GroupPage() {
 			}
 		}
 
+		// Récupération des membres
+		const fetchMembers = async () => {
+			try {
+				const res = await fetch(`http://localhost:8080/api/groups/${id}/members`, {
+					credentials: 'include',
+				})
+				if (!res.ok) throw new Error(await res.text())
+				const raw = await res.json()
+				const mapped = raw.map((m: any) => ({
+					id: m.id,
+					groupId: m.group_id,
+					userId: m.user_id,
+					accepted: m.accepted,
+					createdAt: m.created_at,
+				}))
+				setMembers(mapped)
+			} catch (err: any) {
+				console.error('Error fetching members:', err.message)
+			}
+		}
+
 		fetchGroup()
+		fetchMembers()
 	}, [id])
 
 	if (error) return <p className="text-red-500">Erreur : {error}</p>
@@ -51,8 +83,28 @@ export default function GroupPage() {
 		<div className="max-w-xl mx-auto mt-8 p-4 border rounded-xl shadow bg-white">
 			<h1 className="text-2xl font-bold mb-2">{group.title}</h1>
 			<p className="text-gray-600 mb-4">{group.description}</p>
-			<p className="text-sm text-gray-400">Créé le {new Date(group.createdAt).toLocaleDateString()}</p>
+			<p className="text-sm text-gray-400">
+				Créé le {new Date(group.createdAt).toLocaleDateString()}
+			</p>
 			<p className="text-sm text-gray-400">Par utilisateur #{group.creatorId}</p>
+
+			<div className="mt-6">
+				<h2 className="text-xl font-semibold mb-2">Membres du groupe :</h2>
+				{members.length === 0 ? (
+					<p className="text-gray-500">Aucun membre pour ce groupe.</p>
+				) : (
+					<ul className="list-disc list-inside space-y-1">
+						{members.map((member) => (
+							<li key={member.id}>
+								Utilisateur #{member.userId}{' '}
+								<span className="text-xs text-gray-500">
+									{member.accepted ? '(accepté)' : '(en attente)'}
+								</span>
+							</li>
+						))}
+					</ul>
+				)}
+			</div>
 		</div>
 	)
 }
