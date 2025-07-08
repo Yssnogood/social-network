@@ -1,19 +1,18 @@
-import { getCurrentUser } from "./user";
-
-export async function fetchNotifications() {
-  var currentUser = await getCurrentUser()
+export async function fetchNotifications(token: string | undefined, user_id: string | null) {
   const res = await fetch(`http://localhost:8080/api/notifications/get`, {
     method: "POST",
     headers: {
+      "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ user_id: currentUser.id }),
+    // user_id = Erreur lors de la récupération des notifications.
+    // UserID = Cannot read properties of null (reading 'map')
+    body: JSON.stringify({ user_id: user_id }),
   });
 
   if (!res.ok) {
     throw new Error("Erreur lors de la récupération des notifications.");
   }
-
   return res.json();
 }
 

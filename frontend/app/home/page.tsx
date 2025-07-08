@@ -9,6 +9,7 @@ import { formatRelativeTime } from "../../services/utils";
 import { useCookies } from "next-client-cookies";
 import { CldUploadButton } from "next-cloudinary";
 import CreateGroupModal from "../components/GroupModal";
+import { getUserIdFromToken} from "../../services/user";
 
 const cloudPresetName = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET_NAME;
 console.log(cloudPresetName)
@@ -27,27 +28,23 @@ export default function Home() {
 	const [notifications, setNotifications] = useState<string[]>([]); // Commence vide
 
 	useEffect(() => {
-		async function getNotif() {
+		const getNotif = async () => {
+			const token = cookies.get("jwt");
+			const userId = await getUserIdFromToken(token);
+			if (!token) return;
+
 			try {
-				const userId = cookies.get("user");
-				if (userId) {
-					const fetchedNotifications = await fetchNotifications();
-					
-					const notifStrings = fetchedNotifications.map((notif: any) => notif.content); 
-					
-					setNotifications(notifStrings);
-				}
+				console.log("Fetching notifications for user:", token);
+				const fetchedNotifications = await fetchNotifications(token, userId);
+				const notifStrings = fetchedNotifications.map((notif: any) => notif.content);
+				setNotifications(notifStrings);
 			} catch (error) {
 				console.error("Failed to fetch notifications:", error);
 			}
-		}
+		};
 
 		getNotif();
-	});
-
-
-
-
+	}, [cookies]);
 
 	useEffect(() => {
 		async function loadPosts() {
