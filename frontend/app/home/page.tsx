@@ -31,7 +31,7 @@ export default function Home() {
 			try {
 				const userId = cookies.get("user");
 				if (userId) {
-					const fetchedNotifications = await fetchNotifications(userId);
+					const fetchedNotifications = await fetchNotifications();
 					
 					const notifStrings = fetchedNotifications.map((notif: any) => notif.content); 
 					

@@ -74,3 +74,19 @@ export async function getUserProfile(userName?: string, useMockData: boolean = f
         notFound()
     }
 }
+
+export async function getCurrentUser(): Promise<UserProfile> {
+    const cookies = await getCookies();
+    try {
+        const response = await fetch("http://localhost:8080/api/user", {
+            method: "POST",
+            body: JSON.stringify({
+                jwt: cookies.get("jwt")
+            })
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching current user:', error);
+        notFound();
+    }
+}

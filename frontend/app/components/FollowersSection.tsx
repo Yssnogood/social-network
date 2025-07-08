@@ -13,9 +13,11 @@ interface Follower {
 export default function FollowersSection({
 	followers = [],
 	currentUserId,
+	currentUsername
 }: {
 	followers?: Follower[];
 	currentUserId: number;
+	currentUsername: string;
 }) {
 	const [isChatOpen, setIsChatOpen] = useState(false);
 	const [selectedFollower, setSelectedFollower] = useState<number | null>(null);
@@ -57,6 +59,7 @@ export default function FollowersSection({
 			{isChatOpen && selectedFollower !== null && (
 				<ChatModal
 					currentUserId={currentUserId}
+					currentUsername={currentUsername}
 					targetUserId={selectedFollower}
 					onClose={handleCloseModal}
 				/>

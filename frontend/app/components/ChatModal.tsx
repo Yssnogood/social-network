@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import { createNotification } from "../../services/notifications";
 
 export default function ChatModal({
 	currentUserId,
+	currentUsername,
 	targetUserId,
 	onClose,
 }: {
 	currentUserId: number;
+	currentUsername: string;
 	targetUserId: number;
 	onClose: () => void;
 }) {
@@ -93,7 +96,7 @@ export default function ChatModal({
 		};
 	}, [currentUserId, targetUserId]);
 
-	const sendMessage = () => {
+	const sendMessage = async () => {
 		if (!input.trim()) return;
 
 		if (ws.current?.readyState !== WebSocket.OPEN) {
@@ -114,6 +117,19 @@ export default function ChatModal({
 			setInput(""); // Vider le champ après envoi
 		} catch (error) {
 			console.error("❌ Failed to send message:", error);
+		}
+
+		try {
+			createNotification({
+				userId: targetUserId,
+				type: "message",
+				content: `Nouveau message de ${currentUsername	}`,
+				referenceId: currentUserId,
+				referenceType: "user",
+			})
+			console.log("✅ Notification created for user", targetUserId);
+		} catch (error) {
+			console.error("❌ Failed to create notification:", error);
 		}
 	};
 

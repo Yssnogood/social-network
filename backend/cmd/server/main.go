@@ -50,6 +50,7 @@ func main() {
 	conversationRepo := repository.NewConversationRepository(db)
 	conversationMembersRepo := repository.NewConversationMembersRepository(db)
 	groupRepo := repository.NewGroupRepository(db)
+	notificationRepo := repository.NewNotificationRepository(db)
 
 	// Services
 	userService := services.NewUserService(db)
@@ -62,6 +63,7 @@ func main() {
 	followerHandler := appHandlers.NewFollowerHandler(followerRepo)
 	messageHandler := appHandlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
 	websocketHandler := websocket.NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo)
+	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo)
 
 	groupHandler := appHandlers.NewGroupHandler(groupRepo, sessionRepo, userRepo)
 
@@ -75,6 +77,7 @@ func main() {
 	routes.FollowersRoutes(r, followerHandler)
 	routes.GroupRoutes(r, groupHandler)
 	routes.MessageRoutes(r, messageHandler)
+	routes.NotificationsRoutes(r, notificationHandler)
 
 	// WebSocket
 	wsHandler := middlewares.JWTMiddleware(http.HandlerFunc(websocketHandler.HandleWebSocket))

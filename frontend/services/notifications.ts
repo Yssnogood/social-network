@@ -1,10 +1,13 @@
-export async function fetchNotifications(userId: string) {
-  const res = await fetch(`/api/notifications/get`, {
-    method: "POST", // CORRIGÉ : POST au lieu de GET
+import { getCurrentUser } from "./user";
+
+export async function fetchNotifications() {
+  var currentUser = await getCurrentUser()
+  const res = await fetch(`http://localhost:8080/api/notifications/get`, {
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ userId }), // CORRIGÉ : ajout du body
+    body: JSON.stringify({ user_id: currentUser.id }),
   });
 
   if (!res.ok) {
@@ -22,7 +25,7 @@ export async function createNotification(notification: {
   referenceId?: number;
   referenceType?: string;
 }) {
-  const res = await fetch("/api/notifications", {
+  const res = await fetch("http://localhost:8080/api/notifications", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

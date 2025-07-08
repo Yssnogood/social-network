@@ -156,7 +156,7 @@ export default function ClientProfile({
 
           {/* Followers Section */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <FollowersSection followers={followers} currentUserId={currentUserId} />
+            <FollowersSection followers={followers} currentUserId={currentUserId} currentUsername={profile.username} />
           </div>
         </div>
 
