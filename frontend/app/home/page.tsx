@@ -31,12 +31,11 @@ export default function Home() {
 		const getNotif = async () => {
 			const token = cookies.get("jwt");
 			const userId = await getUserIdFromToken(token);
-			if (!token) return;
+			if (!token || !userId) return;
 
 			try {
-				console.log("Fetching notifications for user:", token);
 				const fetchedNotifications = await fetchNotifications(token, userId);
-				const notifStrings = fetchedNotifications.map((notif: any) => notif.content);
+				const notifStrings = Array.isArray(fetchedNotifications) ? fetchedNotifications?.map((notif: any) => notif.content) : [];
 				setNotifications(notifStrings);
 			} catch (error) {
 				console.error("Failed to fetch notifications:", error);

@@ -1,13 +1,11 @@
-export async function fetchNotifications(token: string | undefined, user_id: string | null) {
+export async function fetchNotifications(token: string, user_id: string) {
   const res = await fetch(`http://localhost:8080/api/notifications/get`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    // user_id = Erreur lors de la récupération des notifications.
-    // UserID = Cannot read properties of null (reading 'map')
-    body: JSON.stringify({ user_id: user_id }),
+    body: JSON.stringify({ user_id: parseInt(user_id) }),
   });
 
   if (!res.ok) {
