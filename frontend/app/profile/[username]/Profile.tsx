@@ -27,14 +27,31 @@ export default function ClientProfile({
   currentUserId: number;
 }) {
   const isOwnProfile = profile.username === loggedInUser;
+
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [updatedAvatar, setUpdatedAvatar] = useState(profile.avatar_path);
   const [aboutMe, setAboutMe] = useState(profile.about_me);
+  const [isPublic, setIsPublic] = useState(profile.is_public);
 
   const handleProfileUpdate = () => {
     setIsEditingProfile(false);
-    // Idéalement, on re-fetch les données du profil ici
   };
+
+  // Si le profil est privé et ce n'est pas le profil de l'utilisateur connecté
+  if (!isPublic && !isOwnProfile) {
+    return (
+      <main className="pt-16 px-4 mx-auto max-w-6xl">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            This profile is private 🔒
+          </h2>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            You are not authorized to view this profile.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <>
@@ -69,6 +86,7 @@ export default function ClientProfile({
                 onSave={handleProfileUpdate}
                 setAvatarPath={setUpdatedAvatar}
                 setAboutMeText={setAboutMe}
+                setIsPublic={setIsPublic}
               />
             ) : (
               <>
@@ -91,6 +109,12 @@ export default function ClientProfile({
                     <h2 className="text-xl text-gray-700 dark:text-gray-300 mt-2">
                       {profile.first_name} {profile.last_name}
                     </h2>
+
+                    <span className={`mt-2 inline-block text-sm font-semibold px-3 py-1 rounded-full 
+                      ${isPublic ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                      {isPublic ? "🔓 Profil public" : "🔒 Profil privé"}
+                    </span>
+
                     {isOwnProfile && (
                       <button
                         onClick={() => setIsEditingProfile(true)}
@@ -113,7 +137,7 @@ export default function ClientProfile({
                       <p className="text-gray-900 dark:text-white">{profile.email}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Birth Date</p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Date de naissance</p>
                       <p className="text-gray-900 dark:text-white">
                         {new Date(profile.birth_date).toLocaleDateString("fr-FR")}
                       </p>

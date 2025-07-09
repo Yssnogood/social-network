@@ -36,14 +36,14 @@ export default async function Profile(props: { params: Promise<{ username: strin
       const response = await fetch(apiUrl);
 
       if (!response.ok) {
-        console.error('❌ Erreur HTTP:', response.status, response.statusText);
+        console.error(' Erreur HTTP:', response.status, response.statusText);
         return [];
       }
 
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     } catch (error) {
-      console.error('💥 Erreur lors du fetch:', error);
+      console.error(' Erreur lors du fetch:', error);
       return [];
     }
   };

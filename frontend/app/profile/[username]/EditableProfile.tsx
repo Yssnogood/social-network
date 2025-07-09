@@ -17,6 +17,7 @@ interface EditableProfileProps {
   onSave: () => void;
   setAvatarPath: (url: string) => void;
   setAboutMeText: (about: string) => void;
+  setIsPublic: (value: boolean) => void;
 }
 
 const cloudPresetName = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET_NAME;
@@ -29,7 +30,9 @@ const EditableProfile: React.FC<EditableProfileProps> = ({
 }) => {
   const [aboutMe, setAboutMe] = useState(profile.about_me || '');
   const [imageURL, setPostImage] = useState<string>(profile.avatar_path || '');
+  const [isPublic, setIsPublic] = useState<boolean>(profile.is_public);
   const [isSaving, setIsSaving] = useState(false);
+  
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -46,7 +49,7 @@ const EditableProfile: React.FC<EditableProfileProps> = ({
           last_name: profile.last_name,
           username: profile.username,
           about_me: aboutMe,
-          is_public: profile.is_public,
+          is_public: isPublic,
           birth_date: profile.birth_date,
           avatar_path: imageURL,
           password: '',
@@ -55,10 +58,9 @@ const EditableProfile: React.FC<EditableProfileProps> = ({
 
       if (!response.ok) throw new Error('Erreur lors de la sauvegarde');
 
-      // MAJ visuelle dans le parent
       setAvatarPath(imageURL);
       setAboutMeText(aboutMe);
-
+      setIsPublic(isPublic);
       onSave();
     } catch (err) {
       console.error('Erreur :', err);
@@ -69,7 +71,7 @@ const EditableProfile: React.FC<EditableProfileProps> = ({
 
   return (
     <>
-      {/* Top section - Avatar & Infos */}
+      {/* Avatar & Name */}
       <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
         <div className="flex-shrink-0">
           {imageURL && (
@@ -88,8 +90,8 @@ const EditableProfile: React.FC<EditableProfileProps> = ({
               }
             }}
           >
-            <span className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
-              Change Image
+            <span className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-block cursor-pointer">
+              Changer l’image
             </span>
           </CldUploadButton>
         </div>
@@ -104,12 +106,11 @@ const EditableProfile: React.FC<EditableProfileProps> = ({
         </div>
       </div>
 
-      {/* More Info Section */}
+      {/* More Info */}
       <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-
         {/* À propos de moi */}
         <div className="mb-4">
-          <label className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+          <label className="text-lg font-semibold mb-2 text-gray-900 dark:text-white block">
             À propos de moi
           </label>
           <textarea
@@ -120,11 +121,24 @@ const EditableProfile: React.FC<EditableProfileProps> = ({
           />
         </div>
 
-        {/* Sauvegarder */}
+        {/* Toggle Public/Privé */}
+        <div className="mb-6">
+          <label className="flex items-center gap-3 text-sm font-medium text-gray-800 dark:text-white">
+            <input
+              type="checkbox"
+              checked={isPublic}
+              onChange={() => setIsPublic(!isPublic)}
+              className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+            />
+            Profil {isPublic ? "Public" : "Privé"}
+          </label>
+        </div>
+
+        {/* Bouton Sauvegarder */}
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
         >
           {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
         </button>
