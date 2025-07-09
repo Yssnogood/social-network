@@ -32,21 +32,32 @@ export default function ClientProfile({
   const [updatedAvatar, setUpdatedAvatar] = useState(profile.avatar_path);
   const [aboutMe, setAboutMe] = useState(profile.about_me);
   const [isPublic, setIsPublic] = useState(profile.is_public);
+  const [isFollowing, setIsFollowing] = useState(false); // TODO: init via prop ou fetch
 
   const handleProfileUpdate = () => {
     setIsEditingProfile(false);
   };
 
-  // Si le profil est privé et ce n'est pas le profil de l'utilisateur connecté
+  const handleFollow = async () => {
+    try {
+      // Exécuter un appel API ici pour envoyer la requête de follow
+      // await followUser(profile.id);
+      setIsFollowing(true);
+    } catch (error) {
+      console.error("Erreur lors du follow :", error);
+    }
+  };
+
+  // Masquer profil s'il est privé et pas celui de l'utilisateur
   if (!isPublic && !isOwnProfile) {
     return (
       <main className="pt-16 px-4 mx-auto max-w-6xl">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            This profile is private 🔒
+            Ce profil est privé 🔒
           </h2>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            You are not authorized to view this profile.
+            Vous ne pouvez pas afficher les informations de ce profil.
           </p>
         </div>
       </main>
@@ -110,17 +121,27 @@ export default function ClientProfile({
                       {profile.first_name} {profile.last_name}
                     </h2>
 
-                    <span className={`mt-2 inline-block text-sm font-semibold px-3 py-1 rounded-full 
-                      ${isPublic ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                    <span
+                      className={`mt-2 inline-block text-sm font-semibold px-3 py-1 rounded-full 
+                      ${isPublic ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                    >
                       {isPublic ? "🔓 Profil public" : "🔒 Profil privé"}
                     </span>
 
-                    {isOwnProfile && (
+                    {isOwnProfile ? (
                       <button
                         onClick={() => setIsEditingProfile(true)}
                         className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                       >
                         Modifier le profil
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleFollow}
+                        disabled={isFollowing || !isPublic}
+                        className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {isFollowing ? "Abonné" : "Suivre"}
                       </button>
                     )}
                   </div>
