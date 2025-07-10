@@ -31,7 +31,7 @@ export default function FollowersSection({
 				<h3 className="text-lg font-semibold">Followers</h3>
 			</div>
 
-			{followers.length > 0 ? (
+			{followers && followers.length > 0 ? (
 				<div className="space-y-3">
 					{followers.map((follower) => (
 						<div key={follower.follower_id} className="flex items-center gap-3 p-2">
