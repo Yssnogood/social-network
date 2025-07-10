@@ -14,51 +14,55 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            const resp = await fetch(url + "/login", {
-                method: "POST",
-                body: JSON.stringify({
-                    email: email.toLowerCase(),
-                    password: password
-                })
-            })
-            if (resp.ok) {
-                console.log("OK")
-                const r = await resp.json()
-                cookies.set('jwt', r.jwt, {
-                    expires: 1,
-                    path: '/',
-                })
-                cookies.set('user', r.user, {
-                    expires: 1,
-                    path: '/',
-                })
-                redirect('/home')
-            } else {
-                console.error('Invalid Credentials')
-            }
-        } catch (error) {
-            if (error) {
-                console.log("Fetch error")
-            }
-        }
-
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const resp = await fetch(url+"/login",{
+        method:"POST",
+        body:JSON.stringify({
+          email:email.toLowerCase(),
+          password:password
+        })
+      })
+      if (resp.ok) {
+        console.log("OK")
+        const r = await resp.json()
+        cookies.set('jwt',r.jwt,{
+          expires:1,
+          path: '/',
+        })
+        cookies.set('user',r.username,{
+          expires:1,
+          path: '/',
+      })
+      cookies.set('userID',r.userID,{
+          expires:1,
+          path: '/',
+      })
+        redirect('/home')
+      } else {
+        console.error('Invalid Credentials')
+      }
+    } catch (error) {
+      if (error) {
+      console.log("Fetch error")
+      }
     }
-    return (
-        <>
-            <Head>
-                <title>Login</title>
-            </Head>
-            <div className="flex min-h-screen flex-col items-center justify-center p-4">
-
-
-                <div className="w-full max-w-md space-y-8 bg-gray-800 p-8 rounded-xl shadow-md">
-                    <div className="text-center">
-                        <h1 className="text-3xl font-bold text-white">Login</h1>
-                        <p className="mt-2 text-gray-400">Sign in to your account</p>
-                    </div>
+  
+  }
+  return (
+    <>
+    <Head>
+      <title>Login</title>
+    </Head>
+    <div className="flex min-h-screen flex-col items-center justify-center p-4">
+      
+        
+      <div className="w-full max-w-md space-y-8 bg-gray-800 p-8 rounded-xl shadow-md">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-white">Login</h1>
+          <p className="mt-2 text-gray-400">Sign in to your account</p>
+        </div>
 
                     <form onSubmit={handleLogin} className="mt-8 space-y-6">
                         <div className="space-y-4">

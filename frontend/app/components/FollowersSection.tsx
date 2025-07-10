@@ -35,6 +35,7 @@ export default function FollowersSection({
 				<h3 className="text-lg font-semibold">Followers</h3>
 			</div>
 
+<<<<<<< HEAD
 {safeFollowers.length > 0 ? (
   <div className="space-y-3">
     {safeFollowers.map((follower) => (
@@ -80,6 +81,28 @@ export default function FollowersSection({
 ) : (
   <p className="text-gray-500">Aucun follower pour le moment.</p>
 )}
+=======
+			{followers && followers.length > 0 ? (
+				<div className="space-y-3">
+					{followers.map((follower) => (
+						<div key={follower.follower_id} className="flex items-center gap-3 p-2">
+							<p className="font-medium">User ID: {follower.follower_id}</p>
+							<button
+								className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+								onClick={() => {
+									setSelectedFollower(follower.follower_id);
+									setIsChatOpen(true);
+								}}
+							>
+								Chat
+							</button>
+						</div>
+					))}
+				</div>
+			) : (
+				<p className="text-gray-500 text-center py-4">No followers yet</p>
+			)}
+>>>>>>> ac38a5d (init)
 
 			{isChatOpen && selectedFollower !== null && (
 				<ChatModal
