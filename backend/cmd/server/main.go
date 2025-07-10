@@ -76,9 +76,12 @@ func main() {
 	routes.GroupRoutes(r, groupHandler)
 	routes.MessageRoutes(r, messageHandler)
 
+
 	// WebSocket
 	wsHandler := middlewares.JWTMiddleware(http.HandlerFunc(websocketHandler.HandleWebSocket))
 	r.Handle("/ws", wsHandler).Methods("GET", "OPTIONS")
+	
+	r.Handle("/ws/groups", middlewares.JWTMiddleware(http.HandlerFunc(appHandlers.HandleGroupWebSocket)))
 
 	r.Handle("/api/messages/conversation", middlewares.CORSMiddleware(
 		http.HandlerFunc(websocketHandler.HandleGetConversation),

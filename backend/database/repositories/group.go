@@ -148,3 +148,54 @@ func (r *GroupRepository) GetMembersByGroupID(groupID int64) ([]models.GroupMemb
 
 	return members, nil
 }
+
+func (r *GroupRepository) CreateGroupMessage(groupMessage *models.GroupMessage) (int64, error) {
+	stmt, err := r.db.Prepare(`
+		INSERT INTO group_messages (group_id, user_id, content, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?)
+	`)
+	if err != nil {
+		return 0, err
+	}
+	defer stmt.Close()
+	result, err := stmt.Exec(
+		groupMessage.GroupID,
+		groupMessage.UserID,
+		groupMessage.Content,
+		groupMessage.CreatedAt,
+		groupMessage.UpdatedAt,
+	)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	groupMessage.ID = id
+	return id, nil
+}
+
+func (r *GroupRepository) GetMessagesByGroupID(groupID int64) ([]models.GroupMessage, error) {
+	rows, err := r.db.Query(`
+		SELECT id, group_id, user_id, content, created_at, updated_at
+		FROM group_messages
+		WHERE group_id = ?
+		ORDER BY created_at ASC
+	`, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var messages []models.GroupMessage
+	for rows.Next() {
+		var msg models.GroupMessage
+		if err := rows.Scan(&msg.ID, &msg.GroupID, &msg.UserID, &msg.Content, &msg.CreatedAt, &msg.UpdatedAt); err != nil {
+			return nil, err
+		}
+		messages = append(messages, msg)
+	}
+
+	return messages, nil
+}
