@@ -63,7 +63,7 @@ func main() {
 	followerHandler := appHandlers.NewFollowerHandler(followerRepo)
 	messageHandler := appHandlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
 	websocketHandler := websocket.NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo)
-	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo)
+	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo, followerRepo)
 
 	groupHandler := appHandlers.NewGroupHandler(groupRepo, sessionRepo, userRepo)
 
@@ -79,11 +79,10 @@ func main() {
 	routes.MessageRoutes(r, messageHandler)
 	routes.NotificationsRoutes(r, notificationHandler)
 
-
 	// WebSocket
 	wsHandler := middlewares.JWTMiddleware(http.HandlerFunc(websocketHandler.HandleWebSocket))
 	r.Handle("/ws", wsHandler).Methods("GET", "OPTIONS")
-	
+
 	r.Handle("/ws/groups", middlewares.JWTMiddleware(http.HandlerFunc(appHandlers.HandleGroupWebSocket)))
 
 	r.Handle("/api/messages/conversation", middlewares.CORSMiddleware(

@@ -1,6 +1,6 @@
 'use client';
 import Notifications from "../components/NotificationPanel";
-import { fetchNotifications } from "../../services/notifications";
+import { createNotification, fetchNotifications } from "../../services/notifications";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
@@ -87,6 +87,14 @@ export default function Home() {
 				privacy: postPrivacy,
 				imageUrl
 			}, cookies.get("jwt"));
+			
+			createNotification({
+				userId: parseInt(newPost.userId),
+				type: 'post_created',
+				content: `New post created by ${newPost.userName}`,
+				referenceId: newPost.id,
+				referenceType: 'post'
+			})
 
 			// Add the new post to the top of the list
 			setPosts([newPost, ...posts]);
