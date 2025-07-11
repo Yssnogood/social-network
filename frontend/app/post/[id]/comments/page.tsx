@@ -7,6 +7,7 @@ import { getSpecificPost, Post } from "../../../../services/post";
 import { formatRelativeTime } from "../../../../services/utils";
 import { getComments, createComment, Comment } from "../../../../services/comment";
 import { LikePost } from "../../../../services/post";
+import { createNotification } from "@/services/notifications";
 
 export default function CommentsPage({
   params,
@@ -66,6 +67,23 @@ export default function CommentsPage({
             
             setComments([commentWithUsername, ...comments]);
             setCommentContent('');
+
+            // Don't create a notification if the comment is by the post owner
+            if (post?.userName !== username) {
+                try {
+                    if (!post) return;
+                    createNotification({
+                        userId: parseInt(post.userId),
+                        type: "comment",
+                        content: `${username || "You"} commented on your post`,
+                        // The referenceId is the post ID where the comment was made
+                        referenceId: post.id,
+                        referenceType: "post"
+                    });
+                } catch (error) {
+                    console.error("Failed to create notification for comment:", error);
+                }
+            }
         }
     };
 

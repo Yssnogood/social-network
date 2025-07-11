@@ -11,6 +11,7 @@ yarn-error.log*
 .env.production.local
 
 tampon.go
+tree.md
 
 # Exclure les fichiers de build
 build/

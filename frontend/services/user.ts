@@ -1,5 +1,6 @@
 import { getCookies } from "next-client-cookies/server";
 import { notFound } from "next/navigation";
+import jwt from "jsonwebtoken";
 
 export interface Friend {
     id: string | number;
@@ -73,4 +74,38 @@ export async function getUserProfile(userName?: string, useMockData: boolean = f
         // Fallback to mock data if the API call fails
         notFound()
     }
+}
+
+export async function getCurrentUser(): Promise<UserProfile> {
+    const cookies = await getCookies();
+    try {
+        const response = await fetch("http://localhost:8080/api/user", {
+            method: "POST",
+            body: JSON.stringify({
+                jwt: cookies.get("jwt")
+            })
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching current user:', error);
+        notFound();
+    }
+}
+
+export async function getUserIdFromToken(token: string | undefined): Promise<string | null> {
+  try {
+
+    if (!token) return null;
+
+    const decoded = jwt.decode(token) as { user_id?: number } | null;
+    if (decoded?.user_id !== undefined) {
+      return decoded.user_id.toString();
+    } else {
+      console.warn("Le token ne contient pas de user_id");
+      return null;
+    }
+  } catch (e) {
+    console.error("Erreur lors du décodage du JWT :", e);
+    return null;
+  }
 }
