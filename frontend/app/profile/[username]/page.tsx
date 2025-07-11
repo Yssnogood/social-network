@@ -1,6 +1,5 @@
 import { getUserProfile, UserProfile } from "../../../services/user";
 import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
 import ClientProfile from "./Profile";
 
 interface Follower {
@@ -11,52 +10,48 @@ interface Follower {
 }
 
 export default async function Profile(props: { params: Promise<{ username: string }> }) {
-  const { username } = await props.params; 
+  const { username } = await props.params;
 
-  const cookieStore =  await cookies();
-  const token = cookieStore.get("jwt")?.value || "";
-
-  let userId = "";
-
-  if (token) {
-    try {
-      const decoded = jwt.decode(token) as { user_id?: number } | null;
-      userId = decoded?.user_id?.toString() || "";
-    } catch (e) {
-      console.error("Erreur lors du décodage du JWT :", e);
-    }
-  }
-
+  const cookieStore = await cookies();
   const loggedInUser = cookieStore.get("user")?.value || "";
+
   const profile: UserProfile = await getUserProfile(username, false);
 
-  const fetchFollowers = async (userId: string): Promise<Follower[]> => {
-    try {
-      const apiUrl = `http://localhost:8080/api/followers?user_id=${userId}`;
-      const response = await fetch(apiUrl);
+  const fetchFollowers = async (): Promise<Follower[]> => {
+	try {
+	  const cookieHeader = cookieStore
+		.getAll()
+		.map(c => `${c.name}=${c.value}`)
+		.join("; ");
 
-      if (!response.ok) {
-        console.error('❌ Erreur HTTP:', response.status, response.statusText);
-        return [];
-      }
+	  const response = await fetch("http://localhost:8080/api/followers", {
+		headers: {
+		  Cookie: cookieHeader,
+		},
+		cache: "no-store",
+	  });
 
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
-    } catch (error) {
-      console.error('💥 Erreur lors du fetch:', error);
-      return [];
-    }
+	  if (!response.ok) {
+		console.error("❌ Erreur HTTP:", response.status, response.statusText);
+		return [];
+	  }
+
+	  const data = await response.json();
+	  return Array.isArray(data) ? data : [];
+	} catch (error) {
+	  console.error("💥 Erreur lors du fetch:", error);
+	  return [];
+	}
   };
 
-  const rawFollowers = await fetchFollowers(userId);
-  const followers: Follower[] = Array.isArray(rawFollowers) ? rawFollowers : [];
+  const followers = await fetchFollowers();
 
   return (
     <ClientProfile
       profile={profile}
       loggedInUser={loggedInUser}
       followers={followers}
-      currentUserId={parseInt(userId)}
+	  currentUserId={profile.id}
     />
   );
 }

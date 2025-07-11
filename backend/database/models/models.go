@@ -154,12 +154,11 @@ type GroupInvitation struct {
 }
 
 // GroupPost model
-type GroupPost struct {
+type GroupMessage struct {
 	ID        int64     `json:"id"`
 	GroupID   int64     `json:"group_id"`
 	UserID    int64     `json:"user_id"`
 	Content   string    `json:"content"`
-	ImagePath *string   `json:"image_path"`
 	CreatedAt time.Time `json:"create_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

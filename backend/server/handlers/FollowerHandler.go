@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
-	"strconv"
 
 	"social-network/backend/database/models"
 	"social-network/backend/database/repositories"
+	"social-network/backend/server/middlewares"
 )
 
 // FollowerHandler handles HTTP requests related to followers.
@@ -85,16 +85,10 @@ func (h *FollowerHandler) AcceptFollowRequest(w http.ResponseWriter, r *http.Req
 
 // GetFollowers retrieves all followers for a user.
 func (h *FollowerHandler) GetFollowers(w http.ResponseWriter, r *http.Request) {
-	// Lire depuis l'URL : /api/followers?user_id=1
-	userIDStr := r.URL.Query().Get("user_id")
-	if userIDStr == "" {
-		http.Error(w, "user_id is required", http.StatusBadRequest)
-		return
-	}
-
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		http.Error(w, "invalid user_id", http.StatusBadRequest)
+	// Récupération du user ID depuis le contexte (middleware JWT)
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
 
@@ -107,6 +101,7 @@ func (h *FollowerHandler) GetFollowers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(followers)
 }
+
 
 
 // UnCreateFollower removes a follower relationship.

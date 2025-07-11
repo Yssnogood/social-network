@@ -6,6 +6,8 @@ import (
 	"time"
 	"strconv"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
+	"fmt"
 
 	"social-network/backend/database/models"
 	"social-network/backend/database/repositories"
@@ -172,4 +174,187 @@ func (h *GroupHandler) GetGroupByID(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func (h *GroupHandler) GetMembersByGroupID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	groupIDStr, ok := vars["id"]
+	if !ok {
+		http.Error(w, "Missing group ID in path", http.StatusBadRequest)
+		return
+	}
+
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	members, err := h.GroupRepository.GetMembersByGroupID(groupID)
+	if err != nil {
+		http.Error(w, "Failed to retrieve group members: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(members)
+}
+
+func (h *GroupHandler) AddMember(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	groupIDStr, ok := vars["id"]
+	if !ok {
+		http.Error(w, "Missing group ID in path", http.StatusBadRequest)
+		return
+	}
+
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	// Lire l'ID de l'utilisateur à inviter dans le corps de la requête
+	var payload struct {
+		UserID int64 `json:"user_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	err = h.GroupRepository.AddMember(groupID, payload.UserID, true, time.Now())
+	if err != nil {
+		http.Error(w, "Failed to add member: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *GroupHandler) CreateGroupMessage(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	groupIDStr, ok := vars["id"]
+	if !ok {
+		http.Error(w, "Missing group ID in path", http.StatusBadRequest)
+		return
+	}
+
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	var message models.GroupMessage
+	if err := json.NewDecoder(r.Body).Decode(&message); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	message.GroupID = groupID
+	message.UserID = userID
+	message.CreatedAt = time.Now()
+	message.UpdatedAt = time.Now()
+
+	id, err := h.GroupRepository.CreateGroupMessage(&message)
+	if err != nil {
+		http.Error(w, "Failed to create group message: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	message.ID = id
+
+	go BroadcastToGroupClients(message.GroupID, message)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(message)
+
+}
+
+func (h *GroupHandler) GetGroupMessages(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	groupIDStr := vars["id"]
+
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	messages, err := h.GroupRepository.GetMessagesByGroupID(groupID)
+	if err != nil {
+		http.Error(w, "Failed to get messages: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(messages)
+}
+
+var groupClients = make(map[int64]map[*websocket.Conn]bool)
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+func HandleGroupWebSocket(w http.ResponseWriter, r *http.Request) {
+	groupIDStr := r.URL.Query().Get("groupId")
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		fmt.Println("Error upgrade WebSocket :", err)
+		return
+	}
+
+	if groupClients[groupID] == nil {
+		groupClients[groupID] = make(map[*websocket.Conn]bool)
+	}
+	groupClients[groupID][conn] = true
+
+	go func() {
+		defer func() {
+			conn.Close()
+			delete(groupClients[groupID], conn)
+		}()
+
+		for {
+			var msg map[string]interface{}
+			err := conn.ReadJSON(&msg)
+			if err != nil {
+				fmt.Println("Error read WS:", err)
+				break
+			}
+
+			for c := range groupClients[groupID] {
+				if c != conn {
+					c.WriteJSON(msg)
+				}
+			}
+		}
+	}()
+}
+
+func BroadcastToGroupClients(groupID int64, message interface{}) {
+	clients, ok := groupClients[groupID]
+	if !ok {
+		return
+	}
+
+	for c := range clients {
+		err := c.WriteJSON(message)
+		if err != nil {
+			fmt.Println("Error broadcast WebSocket:", err)
+			c.Close()
+			delete(clients, c)
+		}
+	}
 }
