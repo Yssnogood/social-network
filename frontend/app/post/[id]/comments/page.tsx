@@ -4,10 +4,11 @@ import { useState, useEffect, use } from "react";
 import { useCookies } from "next-client-cookies";
 import { getSpecificPost, Post } from "../../../../services/post";
 import { getComments, createComment, Comment } from "../../../../services/comment";
-import { createNotification } from "@/services/notifications";
+import { createNotification, fetchNotifications } from "@/services/notifications";
+import { getUserIdFromToken } from "../../../../services/user";
 
 // Nouveaux composants extraits
-import SimpleHeader from "../../../components/SimpleHeader";
+import Header from "../../../components/Header";
 import PostDetail from "../../../components/PostDetail";
 import CommentForm from "../../../components/CommentForm";
 import CommentsList from "../../../components/CommentsList";
@@ -24,8 +25,33 @@ export default function CommentsPage({
     const [post, setPost] = useState<Post | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [notifications, setNotifications] = useState<string[]>([]);
     const param = use(params);
     const postId = parseInt(param.id);
+
+    // Charger les notifications
+    useEffect(() => {
+        const getNotif = async () => {
+            const token = cookies.get("jwt");
+            const userId = await getUserIdFromToken(token);
+            if (!token || !userId) return;
+
+            try {
+                const fetchedNotifications = await fetchNotifications(token, userId);
+                const notifStrings = Array.isArray(fetchedNotifications) ? fetchedNotifications?.map((notif: any) => notif.content) : [];
+                setNotifications(notifStrings);
+            } catch (error) {
+                console.error("Failed to fetch notifications:", error);
+            }
+        };
+
+        getNotif();
+    }, [cookies]);
+
+    const handleToggleNotifications = () => {
+        setShowNotifications(!showNotifications);
+    };
 
     useEffect(() => {
         async function loadPostAndComments() {
@@ -90,7 +116,12 @@ export default function CommentsPage({
 
     return (
         <div className="min-h-screen bg-gray-900 text-white">
-            <SimpleHeader />
+            <Header
+                username={cookies.get("user")}
+                notifications={notifications}
+                showNotifications={showNotifications}
+                onToggleNotifications={handleToggleNotifications}
+            />
 
             <main className="container mx-auto px-4 pt-16 pb-8">
                 <div className="max-w-2xl mx-auto">
