@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -113,12 +114,12 @@ func (h *NotificationHandler) GetAllNotificationsForUser(w http.ResponseWriter, 
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-
 	notifications, err := h.NotificationRepository.GetAllByUserID(req.UserID)
 	if err != nil {
 		http.Error(w, "Failed to get notifications", http.StatusInternalServerError)
 		return
 	}
+	fmt.Println("Notifications retrieved for user ID:", req.UserID, notifications)
 
 	json.NewEncoder(w).Encode(notifications)
 }

@@ -180,6 +180,7 @@ export default function ClientProfile({
             <FollowersSection
               followers={followers}
               currentUserId={currentUserId}
+              currentUsername={profile.username} 
             />
           </div>
         </div>
