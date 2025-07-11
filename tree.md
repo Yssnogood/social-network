@@ -1,9 +1,10 @@
- social-network % tree -I node_modules -I frontend/.next -I frontend/node_modules -I .vscode
+social-network % tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|ATransmettre'
 .
 ├── backend
 │   ├── app
 │   │   ├── domain
 │   │   ├── services
+│   │   │   ├── CommentService.go
 │   │   │   ├── PostService.go
 │   │   │   └── UserService.go
 │   │   ├── utils
@@ -38,8 +39,8 @@
 │   │   │       ├── 010_create_group_members_table.up.sql
 │   │   │       ├── 011_create_group_invitations_table.down.sql
 │   │   │       ├── 011_create_group_invitations_table.up.sql
-│   │   │       ├── 012_create_group_posts_table.down.sql
-│   │   │       ├── 012_create_group_posts_table.up.sql
+│   │   │       ├── 012_create_group_messages_table.down.sql
+│   │   │       ├── 012_create_group_messages_table.up.sql
 │   │   │       ├── 013_create_group_comments_table.down.sql
 │   │   │       ├── 013_create_group_comments_table.up.sql
 │   │   │       ├── 014_create_events_table.down.sql
@@ -84,9 +85,9 @@
 │   │   │   ├── user_interface.go
 │   │   │   └── user.go
 │   │   └── sqlite
+│   │       ├── add_follow.sql
 │   │       ├── data.db
 │   │       └── sqlite.go
-│   ├── repositories
 │   ├── server
 │   │   ├── config
 │   │   ├── handlers
@@ -100,6 +101,7 @@
 │   │   │   ├── SessionHandler.go
 │   │   │   └── UserHandler.go
 │   │   ├── middlewares
+│   │   │   ├── cors.go
 │   │   │   └── jwt.go
 │   │   └── routes
 │   │       ├── comment_route.go
@@ -111,77 +113,38 @@
 │   │       ├── post_route.go
 │   │       ├── session_route.go
 │   │       └── user_route.go
-│   └── tests
-│       ├── handlers
-│       ├── repositories
-│       └── services
+│   ├── tests
+│   │   ├── handlers
+│   │   ├── repositories
+│   │   └── services
+│   └── websocket
+│       ├── client.go
+│       ├── handler.go
+│       ├── hub.go
+│       ├── router.go
+│       └── websocket_type.go
 ├── build-local.sh
+├── copy-ATransmettre.sh
 ├── dev.sh
 ├── docker-compose.yml
 ├── Dockerfile.backend
 ├── Dockerfile.frontend
-├── Documentation
-│   ├── base_Projet
-│   │   ├── Architecture Multicouche_&_Application_Principes_SOLID.md
-│   │   ├── Conclusion-Architecture.md
-│   │   ├── Dictionnaire_de_Données_table_Conversations_Messages.md
-│   │   ├── Dictionnaire_de_Données.md
-│   │   ├── Modèle_Logique_Données_(MLD).md
-│   │   ├── Modèle_Physique_Données(MPD).sql
-│   │   ├── schemaDB_2.mmd
-│   │   └── schemaDB_2.png
-│   ├── Diagramme
-│   │   ├── Diagramme_architecture_technique.md
-│   │   ├── Diagramme_architecture_technique.mmd
-│   │   ├── Diagramme_architecture_technique.png
-│   │   ├── Diagramme_cas_utilisation.md
-│   │   ├── Diagramme_cas_utilisation.mmd
-│   │   ├── Diagramme_cas_utilisation.png
-│   │   ├── Diagramme_de_Classes_UML.md
-│   │   ├── Diagramme_de_Classes_UML.mmd
-│   │   ├── Diagramme_de_Classes_UML.png
-│   │   ├── Diagramme_de_Séquence_pour_envoi_message_avec_référence.md
-│   │   ├── Diagramme_de_Séquence_pour_envoi_message_avec_référence.mmd
-│   │   ├── Diagramme_de_Séquence_pour_envoi_message_avec_référence.png
-│   │   ├── Diagramme_Séquence_Authentification_&_Gestion_Session.md
-│   │   ├── Diagramme_Séquence_Authentification_&_Gestion_Session.mmd
-│   │   ├── Diagramme_Séquence_Authentification_&_Gestion_Session.png
-│   │   ├── Diagramme_Séquence_Gestion_Posts_Commentaires.md
-│   │   ├── Diagramme_Séquence_Gestion_Posts_Commentaires.mmd
-│   │   ├── Diagramme_Séquence_Gestion_Posts_Commentaires.png
-│   │   ├── Diagramme_Séquence_Gestion_Utilisateurs_&_Abonnements.md
-│   │   ├── Diagramme_Séquence_Gestion_Utilisateurs_&_Abonnements.mmd
-│   │   ├── Diagramme_Séquence_Gestion_Utilisateurs_&_Abonnements.png
-│   │   ├── Diagramme_Séquence_Groupes_Événements.md
-│   │   ├── Diagramme_Séquence_Groupes_Événements.mmd
-│   │   ├── Diagramme_Séquence_Groupes_Événements.png
-│   │   ├── Diagramme_Séquence_Messagerie_Instantanée_Typing_Status.md
-│   │   ├── Diagramme_Séquence_Messagerie_Instantanée_Typing_Status.mmd
-│   │   ├── Diagramme_Séquence_Messagerie_Instantanée_Typing_Status.png
-│   │   ├── Diagramme_Séquence_Mode Hors_Ligne_Synchronisation(Electron).md
-│   │   ├── Diagramme_Séquence_Mode Hors_Ligne_Synchronisation(Electron).mmd
-│   │   └── Diagramme_Séquence_Mode Hors_Ligne_Synchronisation(Electron).png
-│   ├── preparation_projet
-│   │   ├── Architecture_modulaire_SN.md
-│   │   ├── Architecture_WebSocket_intégration_multiplateforme.md
-│   │   ├── Audit_optionnel.md
-│   │   ├── Audit.md
-│   │   ├── consigne_optionnel.md
-│   │   ├── consigne.md
-│   │   ├── guide_Certif.md
-│   │   └── structure_dossier_proposition.md
-│   ├── systeme websocket
-│   │   └── guide_websocket.md
-│   └── wirframe_social_network.md
 ├── frontend
 │   ├── app
 │   │   ├── components
+│   │   │   ├── ChatModal.tsx
+│   │   │   ├── FollowersSection.tsx
+│   │   │   ├── GroupModal.tsx
 │   │   │   ├── navbar.tsx
+│   │   │   ├── NotificationPanel.tsx
 │   │   │   └── post_form.tsx
 │   │   ├── contact
 │   │   │   └── page.tsx
 │   │   ├── favicon.ico
 │   │   ├── globals.css
+│   │   ├── groups
+│   │   │   └── [id]
+│   │   │       └── page.tsx
 │   │   ├── home
 │   │   │   └── page.tsx
 │   │   ├── layout.tsx
@@ -196,7 +159,10 @@
 │   │   │           └── page.tsx
 │   │   ├── profile
 │   │   │   └── [username]
-│   │   │       └── page.tsx
+│   │   │       ├── EditableProfile.tsx
+│   │   │       ├── page.tsx
+│   │   │       ├── Profile.tsx
+│   │   │       └── ProfileTabs.tsx
 │   │   └── register
 │   │       └── page.tsx
 │   ├── eslint.config.mjs
@@ -216,16 +182,21 @@
 │   ├── README.md
 │   ├── services
 │   │   ├── comment.ts
+│   │   ├── contact.ts
+│   │   ├── notifications.ts
 │   │   ├── post.ts
 │   │   ├── user.ts
 │   │   └── utils.ts
 │   └── tsconfig.json
 ├── go.mod
 ├── go.sum
+├── package-lock.json
 ├── readme.DOCKER.md
 ├── start-sans-docker.sh
 ├── tampon.go
+├── tampon.md
+├── tampon.tsx
 ├── tree.md
-└── uploads
+└── tree2.md
 
-47 directories, 181 files
+43 directories, 156 files
