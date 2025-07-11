@@ -62,6 +62,7 @@ type updateUserRequest struct {
 	Username  string `json:"username"`
 	AboutMe   string `json:"about_me"`
 	IsPublic  bool   `json:"is_public"`
+	AvatarPath string `json:"avatar_path"`
 }
 
 // deleteUserRequest defines the request body for deleting a user.
@@ -317,6 +318,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	user.LastName = req.LastName
 	user.Username = req.Username
 	user.AboutMe = req.AboutMe
+	user.AvatarPath = req.AvatarPath
 	user.IsPublic = req.IsPublic
 	user.UpdatedAt = time.Now()
 
