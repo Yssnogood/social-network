@@ -124,11 +124,13 @@ export default function GroupPage() {
 				try {
 					const newMsg = JSON.parse(event.data)
 					setMessages((prev) => {
-						if (prev.some(msg => msg.id === newMsg.id)) {
-							return prev
+						const safePrev = Array.isArray(prev) ? prev : []
+						if (safePrev.some(msg => msg.id === newMsg.id)) {
+							return safePrev
 						}
-						return [...prev, newMsg]
+						return [...safePrev, newMsg]
 					})
+
 				} catch (err) {
 					console.error('Error WebSocket group :', err)
 				}
