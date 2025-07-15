@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import GroupHeader from '../../components/groupComponent/GroupHeader'
+import MembersList from '../../components/groupComponent/MembersList'
+import UserInvitation from '../../components/groupComponent/UserInvitation'
+import MessageInput from '../../components/groupComponent/MessageInput'
+import MessagesList from '../../components/groupComponent/MessagesList'
 
 type Group = {
 	id: number
@@ -64,7 +69,7 @@ export default function GroupPage() {
 				setGroup({
 					id: raw.id,
 					creatorId: raw.creator_id,
-					creatorName: raw.creator_name, // Récupération du nom du créateur
+					creatorName: raw.creator_name,
 					title: raw.title,
 					description: raw.description,
 					createdAt: raw.created_at,
@@ -86,7 +91,7 @@ export default function GroupPage() {
 					id: m.id,
 					groupId: m.group_id,
 					userId: m.user_id,
-					username: m.username, // Récupération du nom d'utilisateur
+					username: m.username,
 					accepted: m.accepted,
 					createdAt: m.created_at,
 				}))
@@ -144,7 +149,6 @@ export default function GroupPage() {
 						}
 						return [...safePrev, newMsg]
 					})
-
 				} catch (err) {
 					console.error('Error WebSocket group :', err)
 				}
@@ -169,7 +173,7 @@ export default function GroupPage() {
 	}, [id])
 
 	const sendMessage = async () => {
-		if (!newMessage.trim()) return // Éviter d'envoyer des messages vides
+		if (!newMessage.trim()) return
 
 		try {
 			const res = await fetch(`http://localhost:8080/api/groups/${id}/messages`, {
@@ -197,107 +201,28 @@ export default function GroupPage() {
 			})
 			if (!res.ok) throw new Error(await res.text())
 			alert(`Invitation envoyée à l'utilisateur #${userIdToInvite} !`)
-			// Optionnel : rafraîchir la liste des membres après l'invitation
-			// fetchMembers()
 		} catch (err: any) {
 			alert(`Erreur lors de l'invitation : ${err.message}`)
 		}
 	}
-
-	const safeFollowers = Array.isArray(followers) ? followers : []
 
 	if (error) return <p className="text-red-500">Error : {error}</p>
 	if (!group) return <p>Loading group...</p>
 
 	return (
 		<div className="max-w-xl mx-auto mt-8 p-4 border rounded-xl shadow bg-white">
-			<h1 className="text-2xl font-bold mb-2">{group.title}</h1>
-			<p className="text-gray-600 mb-4">{group.description}</p>
-			<p className="text-sm text-gray-400">
-				Créé le {new Date(group.createdAt).toLocaleDateString()}
-			</p>
-			<p className="text-sm text-gray-400">Par {group.creatorName}</p> {/* Affichage du nom du créateur */}
-
-			<div className="mt-6">
-				<h2 className="text-xl font-semibold mb-2">Membres du groupe :</h2>
-				{members.length === 0 ? (
-					<p className="text-gray-500">Aucun membre pour ce groupe.</p>
-				) : (
-					<ul className="list-disc list-inside space-y-1">
-						{members.map((member) => (
-							<li key={member.id}>
-								{member.username} {/* Affichage du nom d'utilisateur */}
-								<span className="text-xs text-gray-500">
-									{member.accepted ? '(accepté)' : '(en attente)'}
-								</span>
-							</li>
-						))}
-					</ul>
-				)}
-			</div>
-
-			<div className="mt-8">
-				<h2 className="text-xl font-semibold mb-2">Invite user :</h2>
-				{safeFollowers.length === 0 ? (
-					<p className="text-gray-500">No followers</p>
-				) : (
-					<ul className="space-y-2">
-						{safeFollowers.map((follower) => (
-							<li key={follower.follower_id} className="flex justify-between items-center">
-								<span>User #{follower.follower_id}</span>
-								<button
-									className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
-									onClick={() => inviteUser(follower.follower_id)}
-								>
-									Inviter
-								</button>
-							</li>
-						))}
-					</ul>
-				)}
-			</div>
-
-			<div className="mt-4">
-				<textarea
-					value={newMessage}
-					onChange={(e) => setNewMessage(e.target.value)}
-					className="w-full p-2 border rounded mb-2"
-					placeholder="Écrire un message..."
-					onKeyPress={(e) => {
-						if (e.key === 'Enter' && !e.shiftKey) {
-							e.preventDefault()
-							sendMessage()
-						}
-					}}
-				/>
-				<button
-					onClick={sendMessage}
-					disabled={!newMessage.trim()}
-					className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white px-4 py-2 rounded"
-				>
-					Envoyer
-				</button>
-			</div>
-
-			<div className="mt-6 border-t pt-4">
-				<h2 className="text-xl font-semibold mb-2">Messages</h2>
-				<div className="space-y-2 max-h-96 overflow-y-auto bg-gray-100 p-3 rounded">
-					{Array.isArray(messages) && messages.length === 0 ? (
-						<p className="text-gray-500 text-center">Aucun message pour le moment</p>
-					) : (
-						Array.isArray(messages) &&
-						messages.map(msg => (
-							<div key={msg.id} className="bg-white p-2 rounded shadow">
-								<p className="text-sm font-semibold text-blue-600">{msg.username}</p>
-								<p className="mt-1">{msg.content}</p>
-								<p className="text-xs text-gray-500 mt-1">
-									{new Date(msg.created_at).toLocaleTimeString()}
-								</p>
-							</div>
-						))
-					)}
-				</div>
-			</div>
+			<GroupHeader group={group} />
+			<MembersList members={members} />
+			<UserInvitation
+				followers={followers}
+				onInvite={inviteUser}
+			/>
+			<MessageInput
+				value={newMessage}
+				onChange={setNewMessage}
+				onSend={sendMessage}
+			/>
+			<MessagesList messages={messages} />
 		</div>
 	)
 }
