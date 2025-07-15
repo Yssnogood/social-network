@@ -208,7 +208,7 @@ func (r *UserRepository) Update(user *models.User) error {
 	`)
 	if err != nil {
 		return err
-	}	
+	}
 
 		defer stmt.Close()
 

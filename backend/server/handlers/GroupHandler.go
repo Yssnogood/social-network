@@ -40,10 +40,24 @@ type CreateGroupRequest struct {
 type GroupResponse struct {
 	ID          int64  `json:"id"`
 	CreatorID   int64  `json:"creator_id"`
+	CreatorName string `json:"creator_name"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	CreatedAt   string `json:"created_at"`
 	UpdatedAt   string `json:"updated_at"`
+}
+
+// Helper function to get username by userID
+func (h *GroupHandler) getUsernameByID(userID int64) (string, error) {
+	user, err := h.UserRepository.GetByID(userID)
+	if err != nil {
+		return "", err
+	}
+	if user == nil {
+		return "", fmt.Errorf("user not found")
+	}
+
+	return user.Username, nil
 }
 
 // CreateGroup handles the creation of a new group.
@@ -54,21 +68,26 @@ func (h *GroupHandler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userName, err := h.getUsernameByID(userID)
+	if err != nil {
+		http.Error(w, "Failed to get user information: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	var req CreateGroupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	// Validation
 	if req.Title == "" {
 		http.Error(w, "Title is required", http.StatusBadRequest)
 		return
 	}
 
-	// Create group
 	group := &models.Group{
 		CreatorID:   userID,
+		CreatorName: userName,
 		Title:       req.Title,
 		Description: &req.Description,
 		CreatedAt:   time.Now(),
@@ -81,7 +100,7 @@ func (h *GroupHandler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.GroupRepository.AddMember(group.ID, userID, true, time.Now())
+	err = h.GroupRepository.AddMember(group.ID, userID, userName, true, time.Now())
 	if err != nil {
 		http.Error(w, "Failed to add group creator as member: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -89,10 +108,10 @@ func (h *GroupHandler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 
 	group.ID = id
 
-	// Return response
 	response := GroupResponse{
 		ID:        group.ID,
 		CreatorID: group.CreatorID,
+		CreatorName: group.CreatorName,
 		Title:     group.Title,
 		Description: func() string {
 			if group.Description != nil {
@@ -126,8 +145,14 @@ func (h *GroupHandler) GetGroupsByUserID(w http.ResponseWriter, r *http.Request)
 		response = append(response, GroupResponse{
 			ID:          group.ID,
 			CreatorID:   group.CreatorID,
+			CreatorName: group.CreatorName,
 			Title:       group.Title,
-			Description: *group.Description,
+			Description: func() string {
+				if group.Description != nil {
+					return *group.Description
+				}
+				return ""
+			}(),
 			CreatedAt:   group.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:   group.UpdatedAt.Format(time.RFC3339),
 		})
@@ -135,9 +160,7 @@ func (h *GroupHandler) GetGroupsByUserID(w http.ResponseWriter, r *http.Request)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
-
 }
-
 
 func (h *GroupHandler) GetGroupByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -166,8 +189,14 @@ func (h *GroupHandler) GetGroupByID(w http.ResponseWriter, r *http.Request) {
 	response := GroupResponse{
 		ID:          group.ID,
 		CreatorID:   group.CreatorID,
+		CreatorName: group.CreatorName,
 		Title:       group.Title,
-		Description: *group.Description,
+		Description: func() string {
+			if group.Description != nil {
+				return *group.Description
+			}
+			return ""
+		}(),
 		CreatedAt:   group.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:   group.UpdatedAt.Format(time.RFC3339),
 	}
@@ -214,7 +243,6 @@ func (h *GroupHandler) AddMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Lire l'ID de l'utilisateur à inviter dans le corps de la requête
 	var payload struct {
 		UserID int64 `json:"user_id"`
 	}
@@ -223,7 +251,13 @@ func (h *GroupHandler) AddMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.GroupRepository.AddMember(groupID, payload.UserID, true, time.Now())
+	userName, err := h.getUsernameByID(payload.UserID)
+	if err != nil {
+		http.Error(w, "Failed to get user information: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = h.GroupRepository.AddMember(groupID, payload.UserID, userName, true, time.Now())
 	if err != nil {
 		http.Error(w, "Failed to add member: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -252,6 +286,12 @@ func (h *GroupHandler) CreateGroupMessage(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	userName, err := h.getUsernameByID(userID)
+	if err != nil {
+		http.Error(w, "Failed to get user information: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	var message models.GroupMessage
 	if err := json.NewDecoder(r.Body).Decode(&message); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -260,6 +300,7 @@ func (h *GroupHandler) CreateGroupMessage(w http.ResponseWriter, r *http.Request
 
 	message.GroupID = groupID
 	message.UserID = userID
+	message.Username = userName
 	message.CreatedAt = time.Now()
 	message.UpdatedAt = time.Now()
 
@@ -274,7 +315,6 @@ func (h *GroupHandler) CreateGroupMessage(w http.ResponseWriter, r *http.Request
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(message)
-
 }
 
 func (h *GroupHandler) GetGroupMessages(w http.ResponseWriter, r *http.Request) {
@@ -293,6 +333,7 @@ func (h *GroupHandler) GetGroupMessages(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(messages)
 }
 

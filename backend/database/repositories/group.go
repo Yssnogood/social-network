@@ -21,8 +21,8 @@ func NewGroupRepository(db *sql.DB) *GroupRepository {
 func (r *GroupRepository) Create(group *models.Group) (int64, error) {
 	stmt, err := r.db.Prepare(`
 		INSERT INTO groups(
-			creator_id, title, description, created_at, updated_at
-		) VALUES(?, ?, ?, ?, ?)
+			creator_id, creator_name, title, description, created_at, updated_at
+		) VALUES(?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return 0, err
@@ -31,6 +31,7 @@ func (r *GroupRepository) Create(group *models.Group) (int64, error) {
 
 	result, err := stmt.Exec(
 		group.CreatorID,
+		group.CreatorName,
 		group.Title,
 		group.Description,
 		group.CreatedAt,
@@ -51,23 +52,23 @@ func (r *GroupRepository) Create(group *models.Group) (int64, error) {
 }
 
 // AddMember ajoute un utilisateur dans un groupe
-func (r *GroupRepository) AddMember(groupID, userID int64, accepted bool, createdAt time.Time) error {
+func (r *GroupRepository) AddMember(groupID, userID int64, Username string, accepted bool, createdAt time.Time) error {
 	stmt, err := r.db.Prepare(`
-		INSERT INTO group_members (group_id, user_id, accepted, created_at)
-		VALUES (?, ?, ?, ?)
+		INSERT INTO group_members (group_id, user_id, username, accepted, created_at)
+		VALUES (?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(groupID, userID, accepted, createdAt)
+	_, err = stmt.Exec(groupID, userID, Username, accepted, createdAt)
 	return err
 }
 
 func (r *GroupRepository) GetGroupsByUserID(userID int64) ([]models.Group, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT g.id, g.creator_id, g.title, g.description, g.created_at, g.updated_at
+		SELECT g.id, g.creator_id, g.creator_name, g.title, g.description, g.created_at, g.updated_at
 		FROM groups g
 		JOIN group_members gm ON g.id = gm.group_id
 		WHERE gm.user_id = ?
@@ -86,7 +87,7 @@ func (r *GroupRepository) GetGroupsByUserID(userID int64) ([]models.Group, error
 	var groups []models.Group
 	for rows.Next() {
 		var group models.Group
-		if err := rows.Scan(&group.ID, &group.CreatorID, &group.Title, &group.Description, &group.CreatedAt, &group.UpdatedAt); err != nil {
+		if err := rows.Scan(&group.ID, &group.CreatorID, &group.CreatorName ,&group.Title, &group.Description, &group.CreatedAt, &group.UpdatedAt); err != nil {
 			return nil, err
 		}
 		groups = append(groups, group)
@@ -97,7 +98,7 @@ func (r *GroupRepository) GetGroupsByUserID(userID int64) ([]models.Group, error
 
 func (r* GroupRepository) GetGroupByID(groupID int64) (*models.Group, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT id, creator_id, title, description, created_at, updated_at
+		SELECT id, creator_id, creator_name, title, description, created_at, updated_at
 		FROM groups
 		WHERE id = ?
 	`)
@@ -107,7 +108,7 @@ func (r* GroupRepository) GetGroupByID(groupID int64) (*models.Group, error) {
 	defer stmt.Close()
 
 	var group models.Group
-	err = stmt.QueryRow(groupID).Scan(&group.ID, &group.CreatorID, &group.Title, &group.Description, &group.CreatedAt, &group.UpdatedAt)
+	err = stmt.QueryRow(groupID).Scan(&group.ID, &group.CreatorID, &group.CreatorName, &group.Title, &group.Description, &group.CreatedAt, &group.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -121,7 +122,7 @@ func (r* GroupRepository) GetGroupByID(groupID int64) (*models.Group, error) {
 
 func (r *GroupRepository) GetMembersByGroupID(groupID int64) ([]models.GroupMember, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT gm.id, gm.group_id, gm.user_id, gm.accepted, gm.created_at
+		SELECT gm.id, gm.group_id, gm.user_id, gm.username, gm.accepted, gm.created_at
 		FROM group_members gm
 		JOIN users u ON gm.user_id = u.id
 		WHERE gm.group_id = ?
@@ -140,7 +141,7 @@ func (r *GroupRepository) GetMembersByGroupID(groupID int64) ([]models.GroupMemb
 	var members []models.GroupMember
 	for rows.Next() {
 		var member models.GroupMember
-		if err := rows.Scan(&member.ID, &member.GroupID, &member.UserID, &member.Accepted, &member.CreatedAt); err != nil {
+		if err := rows.Scan(&member.ID, &member.GroupID, &member.UserID, &member.Username, &member.Accepted, &member.CreatedAt); err != nil {
 			return nil, err
 		}
 		members = append(members, member)
@@ -151,8 +152,8 @@ func (r *GroupRepository) GetMembersByGroupID(groupID int64) ([]models.GroupMemb
 
 func (r *GroupRepository) CreateGroupMessage(groupMessage *models.GroupMessage) (int64, error) {
 	stmt, err := r.db.Prepare(`
-		INSERT INTO group_messages (group_id, user_id, content, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?)
+		INSERT INTO group_messages (group_id, user_id, username, content, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return 0, err
@@ -161,6 +162,7 @@ func (r *GroupRepository) CreateGroupMessage(groupMessage *models.GroupMessage) 
 	result, err := stmt.Exec(
 		groupMessage.GroupID,
 		groupMessage.UserID,
+		groupMessage.Username,
 		groupMessage.Content,
 		groupMessage.CreatedAt,
 		groupMessage.UpdatedAt,
@@ -178,7 +180,7 @@ func (r *GroupRepository) CreateGroupMessage(groupMessage *models.GroupMessage) 
 
 func (r *GroupRepository) GetMessagesByGroupID(groupID int64) ([]models.GroupMessage, error) {
 	rows, err := r.db.Query(`
-		SELECT id, group_id, user_id, content, created_at, updated_at
+		SELECT id, group_id, user_id, username, content, created_at, updated_at
 		FROM group_messages
 		WHERE group_id = ?
 		ORDER BY created_at ASC
@@ -191,7 +193,7 @@ func (r *GroupRepository) GetMessagesByGroupID(groupID int64) ([]models.GroupMes
 	var messages []models.GroupMessage
 	for rows.Next() {
 		var msg models.GroupMessage
-		if err := rows.Scan(&msg.ID, &msg.GroupID, &msg.UserID, &msg.Content, &msg.CreatedAt, &msg.UpdatedAt); err != nil {
+		if err := rows.Scan(&msg.ID, &msg.GroupID, &msg.UserID, &msg.Username , &msg.Content, &msg.CreatedAt, &msg.UpdatedAt); err != nil {
 			return nil, err
 		}
 		messages = append(messages, msg)

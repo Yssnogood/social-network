@@ -120,6 +120,7 @@ type Message struct {
 type Group struct {
 	ID          int64     `json:"id"`
 	CreatorID   int64     `json:"creator_id"`
+	CreatorName string    `json:"creator_name"`
 	Title       string    `json:"title"`
 	Description *string   `json:"description"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -139,8 +140,9 @@ type GroupMember struct {
 	ID        int64     `json:"id"`
 	GroupID   int64     `json:"group_id"`
 	UserID    int64     `json:"user_id"`
+	Username  string    `json:"username"`
 	Accepted  bool      `json:"accepted"`
-	CreatedAt time.Time `json:"create_at"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // GroupInvitation model
@@ -150,7 +152,7 @@ type GroupInvitation struct {
 	InviterID int64     `json:"inviter_id"`
 	InviteeID int64     `json:"invitee_id"`
 	Pending   bool      `json:"pending"`
-	CreatedAt time.Time `json:"create_at"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // GroupPost model
@@ -158,8 +160,9 @@ type GroupMessage struct {
 	ID        int64     `json:"id"`
 	GroupID   int64     `json:"group_id"`
 	UserID    int64     `json:"user_id"`
+	Username  string    `json:"username"`
 	Content   string    `json:"content"`
-	CreatedAt time.Time `json:"create_at"`
+	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
@@ -169,7 +172,7 @@ type GroupComment struct {
 	GroupPostID int64     `json:"group_post_id"`
 	UserID      int64     `json:"user_id"`
 	Content     string    `json:"content"`
-	CreatedAt   time.Time `json:"create_at"`
+	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"update_at"`
 }
 
@@ -200,5 +203,5 @@ type EventResponse struct {
 	EventID   int64     `json:"event_id"`
 	UserID    int64     `json:"user_id"`
 	OptionID  *int64    `json:"option_id"`
-	CreatedAt time.Time `json:"create_at"`
+	CreatedAt time.Time `json:"created_at"`
 }

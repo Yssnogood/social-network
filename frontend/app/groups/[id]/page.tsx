@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 type Group = {
 	id: number
 	creatorId: number
+	creatorName: string
 	title: string
 	description: string
 	createdAt: string
@@ -16,6 +17,7 @@ type GroupMember = {
 	id: number
 	groupId: number
 	userId: number
+	username: string
 	accepted: boolean
 	createdAt: string
 }
@@ -27,13 +29,23 @@ interface Follower {
 	followed_at: string
 }
 
+type GroupMessage = {
+	id: number
+	group_id: number
+	user_id: number
+	username: string
+	content: string
+	created_at: string
+	updated_at: string
+}
+
 export default function GroupPage() {
 	const { id } = useParams()
 
 	const [group, setGroup] = useState<Group | null>(null)
 	const [members, setMembers] = useState<GroupMember[]>([])
 	const [followers, setFollowers] = useState<Follower[]>([])
-	const [messages, setMessages] = useState<any[]>([])
+	const [messages, setMessages] = useState<GroupMessage[]>([])
 	const [newMessage, setNewMessage] = useState("")
 	const [error, setError] = useState<string | null>(null)
 
@@ -52,6 +64,7 @@ export default function GroupPage() {
 				setGroup({
 					id: raw.id,
 					creatorId: raw.creator_id,
+					creatorName: raw.creator_name, // Récupération du nom du créateur
 					title: raw.title,
 					description: raw.description,
 					createdAt: raw.created_at,
@@ -73,6 +86,7 @@ export default function GroupPage() {
 					id: m.id,
 					groupId: m.group_id,
 					userId: m.user_id,
+					username: m.username, // Récupération du nom d'utilisateur
 					accepted: m.accepted,
 					createdAt: m.created_at,
 				}))
@@ -136,7 +150,6 @@ export default function GroupPage() {
 				}
 			}
 
-
 			socket.onerror = (err) => {
 				console.error('WebSocket error group :', err)
 			}
@@ -156,6 +169,8 @@ export default function GroupPage() {
 	}, [id])
 
 	const sendMessage = async () => {
+		if (!newMessage.trim()) return // Éviter d'envoyer des messages vides
+
 		try {
 			const res = await fetch(`http://localhost:8080/api/groups/${id}/messages`, {
 				method: "POST",
@@ -170,7 +185,6 @@ export default function GroupPage() {
 		}
 	}
 
-
 	const inviteUser = async (userIdToInvite: number) => {
 		try {
 			const res = await fetch(`http://localhost:8080/api/groups/${id}/members`, {
@@ -183,6 +197,8 @@ export default function GroupPage() {
 			})
 			if (!res.ok) throw new Error(await res.text())
 			alert(`Invitation envoyée à l'utilisateur #${userIdToInvite} !`)
+			// Optionnel : rafraîchir la liste des membres après l'invitation
+			// fetchMembers()
 		} catch (err: any) {
 			alert(`Erreur lors de l'invitation : ${err.message}`)
 		}
@@ -200,7 +216,7 @@ export default function GroupPage() {
 			<p className="text-sm text-gray-400">
 				Créé le {new Date(group.createdAt).toLocaleDateString()}
 			</p>
-			<p className="text-sm text-gray-400">Par utilisateur #{group.creatorId}</p>
+			<p className="text-sm text-gray-400">Par {group.creatorName}</p> {/* Affichage du nom du créateur */}
 
 			<div className="mt-6">
 				<h2 className="text-xl font-semibold mb-2">Membres du groupe :</h2>
@@ -210,7 +226,7 @@ export default function GroupPage() {
 					<ul className="list-disc list-inside space-y-1">
 						{members.map((member) => (
 							<li key={member.id}>
-								Utilisateur #{member.userId}{' '}
+								{member.username} {/* Affichage du nom d'utilisateur */}
 								<span className="text-xs text-gray-500">
 									{member.accepted ? '(accepté)' : '(en attente)'}
 								</span>
@@ -247,10 +263,17 @@ export default function GroupPage() {
 					onChange={(e) => setNewMessage(e.target.value)}
 					className="w-full p-2 border rounded mb-2"
 					placeholder="Écrire un message..."
+					onKeyPress={(e) => {
+						if (e.key === 'Enter' && !e.shiftKey) {
+							e.preventDefault()
+							sendMessage()
+						}
+					}}
 				/>
 				<button
 					onClick={sendMessage}
-					className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+					disabled={!newMessage.trim()}
+					className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white px-4 py-2 rounded"
 				>
 					Envoyer
 				</button>
@@ -259,15 +282,20 @@ export default function GroupPage() {
 			<div className="mt-6 border-t pt-4">
 				<h2 className="text-xl font-semibold mb-2">Messages</h2>
 				<div className="space-y-2 max-h-96 overflow-y-auto bg-gray-100 p-3 rounded">
-					{Array.isArray(messages) && messages.map(msg => (
-						<div key={msg.id} className="bg-white p-2 rounded shadow">
-							<p className="text-sm font-semibold">User #{msg.user_id}</p>
-							<p>{msg.content}</p>
-							<p className="text-xs text-gray-500">
-								{new Date(msg.created_at).toLocaleTimeString()}
-							</p>
-						</div>
-					))}
+					{Array.isArray(messages) && messages.length === 0 ? (
+						<p className="text-gray-500 text-center">Aucun message pour le moment</p>
+					) : (
+						Array.isArray(messages) &&
+						messages.map(msg => (
+							<div key={msg.id} className="bg-white p-2 rounded shadow">
+								<p className="text-sm font-semibold text-blue-600">{msg.username}</p>
+								<p className="mt-1">{msg.content}</p>
+								<p className="text-xs text-gray-500 mt-1">
+									{new Date(msg.created_at).toLocaleTimeString()}
+								</p>
+							</div>
+						))
+					)}
 				</div>
 			</div>
 		</div>
