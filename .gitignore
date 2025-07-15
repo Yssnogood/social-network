@@ -10,8 +10,13 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# Arnaud
 tampon.go
+tampon.tsx
 tree.md
+copy-ATransmettre.sh
+ATransmettre/
+
 
 # Exclure les fichiers de build
 build/
