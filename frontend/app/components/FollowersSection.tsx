@@ -36,6 +36,7 @@ export default function FollowersSection({
 			</div>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 {safeFollowers.length > 0 ? (
   <div className="space-y-3">
     {safeFollowers.map((follower) => (
@@ -83,6 +84,9 @@ export default function FollowersSection({
 )}
 =======
 			{followers && followers.length > 0 ? (
+=======
+			{followers.length > 0 ? (
+>>>>>>> cd788bf (Revert "init")
 				<div className="space-y-3">
 					{followers.map((follower) => (
 						<div key={follower.follower_id} className="flex items-center gap-3 p-2">

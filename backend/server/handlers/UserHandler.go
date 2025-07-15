@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"social-network/backend/server/middlewares"
 	"social-network/backend/app/services"
 	"social-network/backend/database/models"
 	repository "social-network/backend/database/repositories"
+	"social-network/backend/server/middlewares"
 )
 
 // UserHandler is a handler for managing users.
@@ -55,15 +55,15 @@ type getCurrentUserRequest struct {
 
 // updateUserRequest defines the fields allowed for user update.
 type updateUserRequest struct {
-	ID        int64  `json:"id"`
-	Email     string `json:"email"`
-	Password  string `json:"password,omitempty"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	BirthDate string `json:"birth_date"`
-	Username  string `json:"username"`
-	AboutMe   string `json:"about_me"`
-	IsPublic  bool   `json:"is_public"`
+	ID         int64  `json:"id"`
+	Email      string `json:"email"`
+	Password   string `json:"password,omitempty"`
+	FirstName  string `json:"first_name"`
+	LastName   string `json:"last_name"`
+	BirthDate  string `json:"birth_date"`
+	Username   string `json:"username"`
+	AboutMe    string `json:"about_me"`
+	IsPublic   bool   `json:"is_public"`
 	AvatarPath string `json:"avatar_path"`
 }
 
@@ -131,10 +131,9 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
-		"message":  "Login successful",
-		"jwt":      token,
-		"userID":   strconv.Itoa(int(user.ID)),
-		"username": user.Username,
+		"message": "Login successful",
+		"jwt":     token,
+		"user":    user.Username,
 	})
 }
 
@@ -287,8 +286,6 @@ func (h *UserHandler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-
-
 // UpdateUser updates user information using JSON body.
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
@@ -326,10 +323,9 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		user.PasswordHash = hashedPassword
-	}else {
+	} else {
 		user.PasswordHash = req.Password
 	}
-
 
 	birthDate, err := time.Parse("2006-01-02T15:04:05Z", req.BirthDate)
 	if err != nil {

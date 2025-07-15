@@ -99,7 +99,7 @@ export default async function Profile({
 	const followers = await fetchFollowers(userId);
 	console.log('👥 Followers à afficher:', { // Log 6
 		userId,
-		followersCount: followers ? followers.length : 0,
+		followersCount: followers.length,
 	});
 
 	return (
