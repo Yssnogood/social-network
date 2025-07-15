@@ -4,12 +4,8 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { fetchUsersByUsername } from "../../services/contact"
 import Link from 'next/link';
-import ChatModal from '../components/ChatModal';
-import { useCookies } from 'next-client-cookies';
 
 export default function ContactPage() {
-  const cookies = useCookies()
-  const userID = Number(cookies.get("userID"))
   const [contacts, setContacts] = useState<any[]>([]);
   const [selectedContact, setSelectedContact] = useState<any | null>(null);
 
@@ -167,7 +163,7 @@ export default function ContactPage() {
       </div>
 
       {/* Modal */}
-      isNewConversationModalOpen && (
+      {isNewConversationModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6">
             <div className="flex justify-between items-center mb-4">
@@ -242,8 +238,7 @@ export default function ContactPage() {
             </div>
           </div>
         </div>
-      )
-      {selectedContact && <ChatModal currentUserId={Number(cookies.get("userID"))} targetUserId={selectedContact.id} onClose={() => {}}/>}
+      )}
     </div>
   );
 }

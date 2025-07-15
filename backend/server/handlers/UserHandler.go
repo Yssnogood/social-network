@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 
@@ -129,10 +128,9 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
-		"message":  "Login successful",
-		"jwt":      token,
-		"userID":   strconv.Itoa(int(user.ID)),
-		"username": user.Username,
+		"message": "Login successful",
+		"jwt":     token,
+		"user":    user.Username,
 	})
 }
 

@@ -31,11 +31,7 @@ export default function Login() {
           expires:1,
           path: '/',
         })
-        cookies.set('user',r.username,{
-          expires:1,
-          path: '/',
-      })
-      cookies.set('userID',r.userID,{
+        cookies.set('user',r.user,{
           expires:1,
           path: '/',
       })
