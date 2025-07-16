@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"time"
+	"fmt"
 
 	"social-network/backend/database/models"
 )
@@ -263,4 +264,75 @@ func (r *GroupRepository) GetPostsByGroupID(groupID int64) ([]models.GroupPost, 
 	}
 
 	return posts, nil
+}
+
+func (r *GroupRepository) CreateGroupComment(comment *models.GroupComment) (int64, error) {
+	stmt, err := r.db.Prepare(`
+		INSERT INTO group_comments (group_post_id, user_id, username, content, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`)
+	if err != nil {
+		return 0, err
+	}
+	defer stmt.Close()
+
+	result, err := stmt.Exec(
+		comment.GroupPostID,
+		comment.UserID,
+		comment.Username,
+		comment.Content,
+		comment.CreatedAt,
+		comment.UpdatedAt,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	comment.ID = id
+
+	_, err = r.db.Exec(`
+		UPDATE group_posts
+		SET comments_count = comments_count + 1
+		WHERE id = ?
+	`, comment.GroupPostID)
+	if err != nil {
+		return id, fmt.Errorf("failed to update comments_count: %w", err)
+	}
+
+	return id, nil
+}
+
+func (r *GroupRepository) GetCommentsByPostID(postID int64) ([]models.GroupComment, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT gc.id, gc.group_post_id, gc.user_id, gc.username, gc.content, gc.created_at, gc.updated_at
+		FROM group_comments gc
+		JOIN users u ON gc.user_id = u.id
+		WHERE gc.group_post_id = ?
+		ORDER BY gc.created_at ASC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(postID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var comments []models.GroupComment
+	for rows.Next() {
+		var comment models.GroupComment
+		if err := rows.Scan(&comment.ID, &comment.GroupPostID, &comment.UserID, &comment.Username, &comment.Content, &comment.CreatedAt, &comment.UpdatedAt); err != nil {
+			return nil, err
+		}
+		comments = append(comments, comment)
+	}
+
+	return comments, nil
 }

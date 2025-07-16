@@ -18,4 +18,6 @@ func GroupRoutes(r *mux.Router, groupHandler *handlers.GroupHandler) {
 	r.Handle("/api/groups/{id:[0-9]+}/messages", middlewares.JWTMiddleware(http.HandlerFunc(groupHandler.GetGroupMessages))).Methods("GET")
 	r.Handle("/api/groups/{id:[0-9]+}/posts", middlewares.JWTMiddleware(http.HandlerFunc(groupHandler.CreateGroupPost))).Methods("POST", "OPTIONS")
 	r.Handle("/api/groups/{id:[0-9]+}/posts", middlewares.JWTMiddleware(http.HandlerFunc(groupHandler.GetPostsByGroupID))).Methods("GET", "OPTIONS")
+	r.Handle("/api/groups/{id:[0-9]+}/posts/{postID:[0-9]+}/comments", middlewares.JWTMiddleware(http.HandlerFunc(groupHandler.CreateGroupComment))).Methods("POST", "OPTIONS")
+	r.Handle("/api/groups/{id:[0-9]+}/posts/{postID:[0-9]+}/comments", middlewares.JWTMiddleware(http.HandlerFunc(groupHandler.GetCommentsByGroupPostID))).Methods("GET", "OPTIONS")
 }

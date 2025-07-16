@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import Header from '../../components/Header'
 import GroupHeader from '../../components/groupComponent/GroupHeader'
 import MembersList from '../../components/groupComponent/MembersList'
 import UserInvitation from '../../components/groupComponent/UserInvitation'
@@ -56,6 +57,16 @@ type GroupPost = {
 	comments_count: number
 }
 
+type GroupComment = {
+	id: number
+	group_post_id: number
+	user_id: number
+	username: string
+	content: string
+	created_at: string
+	updated_at: string
+}
+
 export default function GroupPage() {
 	const { id } = useParams()
 
@@ -69,6 +80,12 @@ export default function GroupPage() {
 	const [newPost, setNewPost] = useState("")
 	const [showPosts, setShowPosts] = useState(false)
 	const [isLoadingPosts, setIsLoadingPosts] = useState(false)
+
+	// Gestion des commentaires améliorée
+	const [commentsByPost, setCommentsByPost] = useState<Record<number, GroupComment[]>>({})
+	const [showCommentsForPost, setShowCommentsForPost] = useState<Record<number, boolean>>({})
+	const [newCommentByPost, setNewCommentByPost] = useState<Record<number, string>>({})
+	const [loadingComments, setLoadingComments] = useState<Record<number, boolean>>({})
 
 	useEffect(() => {
 		if (!id) return
@@ -250,14 +267,12 @@ export default function GroupPage() {
 				},
 				credentials: 'include',
 				body: JSON.stringify({
-					group_id: parseInt(id as string),
 					content: newPost
 				}),
 			})
 			if (!res.ok) throw new Error(await res.text())
 
 			setNewPost("")
-			// Recharger les posts après création
 			await fetchPosts()
 		} catch (err: any) {
 			console.error('Error creating post:', err.message)
@@ -272,6 +287,76 @@ export default function GroupPage() {
 		setShowPosts(!showPosts)
 	}
 
+	// Fonctions pour les commentaires améliorées
+	const fetchComments = async (postId: number) => {
+		setLoadingComments(prev => ({ ...prev, [postId]: true }))
+		try {
+			const res = await fetch(`http://localhost:8080/api/groups/${id}/posts/${postId}/comments`, {
+				credentials: 'include',
+			})
+			if (!res.ok) throw new Error(await res.text())
+			const data = await res.json()
+			setCommentsByPost(prev => ({
+				...prev,
+				[postId]: Array.isArray(data) ? data : []
+			}))
+		} catch (err: any) {
+			console.error('Error fetching comments:', err.message)
+		} finally {
+			setLoadingComments(prev => ({ ...prev, [postId]: false }))
+		}
+	}
+
+	const toggleComments = async (postId: number) => {
+		const isCurrentlyShowing = showCommentsForPost[postId]
+
+		if (!isCurrentlyShowing) {
+			// Afficher les commentaires - les charger s'ils ne sont pas déjà chargés
+			if (!commentsByPost[postId]) {
+				await fetchComments(postId)
+			}
+			setShowCommentsForPost(prev => ({ ...prev, [postId]: true }))
+		} else {
+			// Masquer les commentaires
+			setShowCommentsForPost(prev => ({ ...prev, [postId]: false }))
+		}
+	}
+
+	const createComment = async (postId: number) => {
+		const commentContent = newCommentByPost[postId]
+		if (!commentContent?.trim()) return
+
+		try {
+			const res = await fetch(`http://localhost:8080/api/groups/${id}/posts/${postId}/comments`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				credentials: 'include',
+				body: JSON.stringify({
+					content: commentContent
+				}),
+			})
+			if (!res.ok) throw new Error(await res.text())
+
+			// Réinitialiser le champ de commentaire pour ce post
+			setNewCommentByPost(prev => ({ ...prev, [postId]: '' }))
+
+			// Recharger les commentaires pour ce post
+			await fetchComments(postId)
+
+			// Mettre à jour le compteur de commentaires dans le post
+			setPosts(prev => prev.map(post =>
+				post.id === postId
+					? { ...post, comments_count: post.comments_count + 1 }
+					: post
+			))
+		} catch (err: any) {
+			console.error('Error creating comment:', err.message)
+			alert(`Erreur lors de la création du commentaire : ${err.message}`)
+		}
+	}
+
 	const formatDate = (dateString: string) => {
 		return new Date(dateString).toLocaleString('fr-FR', {
 			day: '2-digit',
@@ -282,6 +367,10 @@ export default function GroupPage() {
 		})
 	}
 
+	const handleCommentChange = (postId: number, value: string) => {
+		setNewCommentByPost(prev => ({ ...prev, [postId]: value }))
+	}
+	
 	if (error) return <p className="text-red-500">Error : {error}</p>
 	if (!group) return <p>Loading group...</p>
 
@@ -301,7 +390,7 @@ export default function GroupPage() {
 					className={`pb-2 px-4 font-medium ${!showPosts
 						? 'text-blue-600 border-b-2 border-blue-600'
 						: 'text-gray-500 hover:text-gray-700'
-					}`}
+						}`}
 				>
 					Messages
 				</button>
@@ -310,7 +399,7 @@ export default function GroupPage() {
 					className={`pb-2 px-4 font-medium ${showPosts
 						? 'text-blue-600 border-b-2 border-blue-600'
 						: 'text-gray-500 hover:text-gray-700'
-					}`}
+						}`}
 				>
 					Posts
 				</button>
@@ -351,8 +440,9 @@ export default function GroupPage() {
 					</div>
 
 					{/* Liste des posts */}
-					<div className="space-y-3">
-						<h3 className="font-semibold">Posts du groupe</h3>
+					<div className="space-y-4">
+						<h3 className="font-semibold">Posts	// 1. Insère le commentaire
+						du groupe</h3>
 
 						{isLoadingPosts && (
 							<div className="text-center py-4">
@@ -369,33 +459,95 @@ export default function GroupPage() {
 
 						{posts.map((post) => (
 							<div key={post.id} className="bg-white border rounded-lg p-4 shadow-sm">
-								<div className="flex justify-between items-start mb-2">
-									<div>
-										<span className="font-medium text-blue-600">
-											{post.username}
-										</span>
-										<span className="text-sm text-gray-500 ml-2">
-											{formatDate(post.created_at)}
-										</span>
+								{/* En-tête du post */}
+								<div className="flex justify-between items-start mb-3">
+									<div className="flex items-center gap-2">
+										<span className="font-medium text-blue-600">{post.username}</span>
+										<span className="text-sm text-gray-500">{formatDate(post.created_at)}</span>
 									</div>
 									{post.comments_count > 0 && (
-										<span className="text-sm text-gray-500">
+										<span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
 											{post.comments_count} commentaire{post.comments_count > 1 ? 's' : ''}
 										</span>
 									)}
 								</div>
 
-								<div className="text-gray-800 whitespace-pre-wrap">
-									{post.content}
-								</div>
+								{/* Contenu du post */}
+								<div className="text-gray-800 whitespace-pre-wrap mb-3">{post.content}</div>
 
+								{/* Image du post */}
 								{post.image_path && (
-									<div className="mt-3">
+									<div className="mb-3">
 										<img
 											src={post.image_path}
 											alt="Post image"
 											className="max-w-full h-auto rounded-md"
 										/>
+									</div>
+								)}
+
+								{/* Actions du post */}
+								<div className="flex items-center gap-4 pt-2 border-t">
+									<button
+										onClick={() => toggleComments(post.id)}
+										className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+										disabled={loadingComments[post.id]}
+									>
+										{loadingComments[post.id] ? (
+											"Chargement..."
+										) : showCommentsForPost[post.id] ? (
+											"Masquer les commentaires"
+										) : (
+											`Voir les commentaires${post.comments_count > 0 ? ` (${post.comments_count})` : ''}`
+										)}
+									</button>
+								</div>
+
+								{/* Section des commentaires */}
+								{showCommentsForPost[post.id] && (
+									<div className="mt-4 border-t pt-4">
+										{/* Liste des commentaires */}
+										<div className="space-y-3 mb-4">
+											{commentsByPost[post.id] && commentsByPost[post.id].length > 0 ? (
+												commentsByPost[post.id].map((comment) => (
+													<div key={comment.id} className="bg-gray-50 p-3 rounded-md">
+														<div className="flex items-center gap-2 mb-1">
+															<span className="font-medium text-sm text-blue-600">
+																{comment.username}
+															</span>
+															<span className="text-xs text-gray-500">
+																{formatDate(comment.created_at)}
+															</span>
+														</div>
+														<p className="text-gray-800 text-sm">{comment.content}</p>
+													</div>
+												))
+											) : (
+												<p className="text-gray-500 text-sm text-center py-4">
+													Aucun commentaire pour le moment.
+												</p>
+											)}
+										</div>
+
+										{/* Formulaire d'ajout de commentaire */}
+										<div className="bg-gray-50 p-3 rounded-md">
+											<textarea
+												value={newCommentByPost[post.id] || ''}
+												onChange={(e) => handleCommentChange(post.id, e.target.value)}
+												placeholder="Ajouter un commentaire..."
+												className="w-full p-2 border rounded-md resize-none text-sm"
+												rows={2}
+											/>
+											<div className="flex justify-end mt-2">
+												<button
+													onClick={() => createComment(post.id)}
+													disabled={!newCommentByPost[post.id]?.trim()}
+													className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+												>
+													Commenter
+												</button>
+											</div>
+										</div>
 									</div>
 								)}
 							</div>
