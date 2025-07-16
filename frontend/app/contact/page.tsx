@@ -46,15 +46,17 @@ export default function ContactPage() {
 
     // Fetch users from backend based on search term
     useEffect(() => {
-        const delayDebounce = setTimeout(() => {
+        const delayDebounce = setTimeout(async () => {
             if (newConversationSearchTerm.trim()) {
-                fetchUsersByUsername(newConversationSearchTerm)
+                const token = cookies.get("jwt");
+                const userId = await getUserIdFromToken(token);
+                fetchUsersByUsername(newConversationSearchTerm, userId? userId : 'error')
                     .then(data => {
                         if (data && Array.isArray(data) && data.length > 0) {
                             const mapped = data.map((user: any) => ({
                                 id: user.id,
                                 name: user.username,
-                                avatar: user.avatarPath || '/social-placeholder.png',
+                                avatar: user.avatar_path || '/social-placeholder.png',
                                 status: 'offline',
                             }));
                             setUsers(mapped);

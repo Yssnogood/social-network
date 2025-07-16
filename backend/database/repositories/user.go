@@ -157,12 +157,14 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	return user, nil
 }
 
-func (r *UserRepository) GetUsersForContact(query string) ([]*models.User, error) {
+func (r *UserRepository) GetUsersForContact(currentUserID int64, query string) ([]*models.User, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT id, username, avatar_path
-		FROM users
-		WHERE LOWER(username) LIKE LOWER(?)
-		ORDER BY username
+		SELECT u.id, u.username, u.avatar_path
+		FROM users u
+		INNER JOIN followers f1 ON f1.followed_id = u.id AND f1.follower_id = ? AND f1.accepted = TRUE
+		INNER JOIN followers f2 ON f2.follower_id = u.id AND f2.followed_id = ? AND f2.accepted = TRUE
+		WHERE LOWER(u.username) LIKE LOWER(?)
+		ORDER BY u.username
 		LIMIT 5
 	`)
 	if err != nil {
@@ -171,7 +173,7 @@ func (r *UserRepository) GetUsersForContact(query string) ([]*models.User, error
 	defer stmt.Close()
 
 	likeQuery := "%" + query + "%"
-	rows, err := stmt.Query(likeQuery)
+	rows, err := stmt.Query(currentUserID, currentUserID, likeQuery)
 	if err != nil {
 		return nil, err
 	}

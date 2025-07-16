@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -226,10 +227,11 @@ func (h *UserHandler) SearchUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name := strings.TrimPrefix(path, prefix)
-	name = strings.TrimSpace(name)
+	val := strings.TrimPrefix(path, prefix)
+	name := strings.TrimSpace(val)[0:strings.Index(val, "/")]
+	current, err := strconv.Atoi(strings.Split(val, "/")[1])
 
-	users, err := h.UserRepository.GetUsersForContact(name)
+	users, err := h.UserRepository.GetUsersForContact(int64(current), name)
 	if err != nil {
 		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
 		return
@@ -295,11 +297,11 @@ func (h *UserHandler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 // UpdateUser updates user information using JSON body.
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
-	    // Handle preflight requests
-    if r.Method == "OPTIONS" {
-        w.WriteHeader(http.StatusOK)
-        return
-    }
+	// Handle preflight requests
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	var req updateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -332,8 +334,8 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}else {
 		user.PasswordHash = req.Password
 	}
-
 	
+
 	birthDate, err := time.Parse("2006-01-02T15:04:05Z", req.BirthDate)
 	if err != nil {
 		http.Error(w, "Invalid birth date format. Use YYYY-MM-DD.", http.StatusBadRequest)
