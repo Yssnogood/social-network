@@ -44,6 +44,18 @@ type GroupMessage = {
 	updated_at: string
 }
 
+type GroupPost = {
+	id: number
+	group_id: number
+	user_id: number
+	username: string
+	content: string
+	image_path?: string
+	created_at: string
+	updated_at: string
+	comments_count: number
+}
+
 export default function GroupPage() {
 	const { id } = useParams()
 
@@ -53,6 +65,10 @@ export default function GroupPage() {
 	const [messages, setMessages] = useState<GroupMessage[]>([])
 	const [newMessage, setNewMessage] = useState("")
 	const [error, setError] = useState<string | null>(null)
+	const [posts, setPosts] = useState<GroupPost[]>([])
+	const [newPost, setNewPost] = useState("")
+	const [showPosts, setShowPosts] = useState(false)
+	const [isLoadingPosts, setIsLoadingPosts] = useState(false)
 
 	useEffect(() => {
 		if (!id) return
@@ -206,6 +222,66 @@ export default function GroupPage() {
 		}
 	}
 
+	// Fonctions pour les posts
+	const fetchPosts = async () => {
+		setIsLoadingPosts(true)
+		try {
+			const res = await fetch(`http://localhost:8080/api/groups/${id}/posts`, {
+				credentials: 'include',
+			})
+			if (!res.ok) throw new Error(await res.text())
+			const data = await res.json()
+			setPosts(Array.isArray(data) ? data : [])
+		} catch (err: any) {
+			console.error('Error fetching posts:', err.message)
+		} finally {
+			setIsLoadingPosts(false)
+		}
+	}
+
+	const createPost = async () => {
+		if (!newPost.trim()) return
+
+		try {
+			const res = await fetch(`http://localhost:8080/api/groups/${id}/posts`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				credentials: 'include',
+				body: JSON.stringify({
+					group_id: parseInt(id as string),
+					content: newPost
+				}),
+			})
+			if (!res.ok) throw new Error(await res.text())
+
+			setNewPost("")
+			// Recharger les posts après création
+			await fetchPosts()
+		} catch (err: any) {
+			console.error('Error creating post:', err.message)
+			alert(`Erreur lors de la création du post : ${err.message}`)
+		}
+	}
+
+	const togglePosts = async () => {
+		if (!showPosts) {
+			await fetchPosts()
+		}
+		setShowPosts(!showPosts)
+	}
+
+	const formatDate = (dateString: string) => {
+		return new Date(dateString).toLocaleString('fr-FR', {
+			day: '2-digit',
+			month: '2-digit',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
+		})
+	}
+
 	if (error) return <p className="text-red-500">Error : {error}</p>
 	if (!group) return <p>Loading group...</p>
 
@@ -217,12 +293,116 @@ export default function GroupPage() {
 				followers={followers}
 				onInvite={inviteUser}
 			/>
-			<MessageInput
-				value={newMessage}
-				onChange={setNewMessage}
-				onSend={sendMessage}
-			/>
-			<MessagesList messages={messages} />
+
+			{/* Navigation entre Messages et Posts */}
+			<div className="flex gap-4 mb-4 border-b">
+				<button
+					onClick={() => setShowPosts(false)}
+					className={`pb-2 px-4 font-medium ${!showPosts
+						? 'text-blue-600 border-b-2 border-blue-600'
+						: 'text-gray-500 hover:text-gray-700'
+					}`}
+				>
+					Messages
+				</button>
+				<button
+					onClick={togglePosts}
+					className={`pb-2 px-4 font-medium ${showPosts
+						? 'text-blue-600 border-b-2 border-blue-600'
+						: 'text-gray-500 hover:text-gray-700'
+					}`}
+				>
+					Posts
+				</button>
+			</div>
+
+			{/* Section Messages */}
+			{!showPosts && (
+				<>
+					<MessageInput
+						value={newMessage}
+						onChange={setNewMessage}
+						onSend={sendMessage}
+					/>
+					<MessagesList messages={messages} />
+				</>
+			)}
+
+			{/* Section Posts */}
+			{showPosts && (
+				<div className="space-y-4">
+					{/* Créer un nouveau post */}
+					<div className="bg-gray-50 p-4 rounded-lg">
+						<h3 className="font-semibold mb-2">Créer un post</h3>
+						<textarea
+							value={newPost}
+							onChange={(e) => setNewPost(e.target.value)}
+							placeholder="Écrivez votre post..."
+							className="w-full p-2 border rounded-md resize-none"
+							rows={3}
+						/>
+						<button
+							onClick={createPost}
+							disabled={!newPost.trim()}
+							className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+						>
+							Publier
+						</button>
+					</div>
+
+					{/* Liste des posts */}
+					<div className="space-y-3">
+						<h3 className="font-semibold">Posts du groupe</h3>
+
+						{isLoadingPosts && (
+							<div className="text-center py-4">
+								<p className="text-gray-500">Chargement des posts...</p>
+							</div>
+						)}
+
+						{!isLoadingPosts && Array.isArray(posts) && posts.length === 0 && (
+							<div className="text-center py-8 text-gray-500">
+								<p>Aucun post dans ce groupe pour le moment.</p>
+								<p className="text-sm">Soyez le premier à publier quelque chose !</p>
+							</div>
+						)}
+
+						{posts.map((post) => (
+							<div key={post.id} className="bg-white border rounded-lg p-4 shadow-sm">
+								<div className="flex justify-between items-start mb-2">
+									<div>
+										<span className="font-medium text-blue-600">
+											{post.username}
+										</span>
+										<span className="text-sm text-gray-500 ml-2">
+											{formatDate(post.created_at)}
+										</span>
+									</div>
+									{post.comments_count > 0 && (
+										<span className="text-sm text-gray-500">
+											{post.comments_count} commentaire{post.comments_count > 1 ? 's' : ''}
+										</span>
+									)}
+								</div>
+
+								<div className="text-gray-800 whitespace-pre-wrap">
+									{post.content}
+								</div>
+
+								{post.image_path && (
+									<div className="mt-3">
+										<img
+											src={post.image_path}
+											alt="Post image"
+											className="max-w-full h-auto rounded-md"
+										/>
+									</div>
+								)}
+							</div>
+						))}
+					</div>
+				</div>
+			)}
 		</div>
 	)
 }

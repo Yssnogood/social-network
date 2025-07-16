@@ -51,7 +51,6 @@ func (r *GroupRepository) Create(group *models.Group) (int64, error) {
 	return id, nil
 }
 
-// AddMember ajoute un utilisateur dans un groupe
 func (r *GroupRepository) AddMember(groupID, userID int64, Username string, accepted bool, createdAt time.Time) error {
 	stmt, err := r.db.Prepare(`
 		INSERT INTO group_members (group_id, user_id, username, accepted, created_at)
@@ -200,4 +199,68 @@ func (r *GroupRepository) GetMessagesByGroupID(groupID int64) ([]models.GroupMes
 	}
 
 	return messages, nil
+}
+
+func (r *GroupRepository) CreateGroupPost(groupPost *models.GroupPost) (int64, error) {
+	stmt, err := r.db.Prepare(`
+		INSERT INTO group_posts (group_id, user_id, username, content, image_path, created_at, updated_at, comments_count)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`)
+	if err != nil {
+		return 0, err
+	}
+	defer stmt.Close()
+
+	result, err := stmt.Exec(
+		groupPost.GroupID,
+		groupPost.UserID,
+		groupPost.Username,
+		groupPost.Content,
+		groupPost.ImagePath,
+		groupPost.CreatedAt,
+		groupPost.UpdatedAt,
+		groupPost.CommentsCount,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	groupPost.ID = id
+	return id, nil
+}
+
+func (r *GroupRepository) GetPostsByGroupID(groupID int64) ([]models.GroupPost, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT gp.id, gp.group_id, gp.user_id, gp.username, gp.content, gp.image_path, gp.created_at, gp.updated_at, gp.comments_count
+		FROM group_posts gp
+		JOIN users u ON gp.user_id = u.id
+		WHERE gp.group_id = ?
+		ORDER BY gp.created_at DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []models.GroupPost
+	for rows.Next() {
+		var post models.GroupPost
+		if err := rows.Scan(&post.ID, &post.GroupID, &post.UserID, &post.Username, &post.Content, &post.ImagePath, &post.CreatedAt, &post.UpdatedAt, &post.CommentsCount); err != nil {
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	return posts, nil
 }

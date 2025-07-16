@@ -155,7 +155,7 @@ type GroupInvitation struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// GroupPost model
+// GroupMessage model
 type GroupMessage struct {
 	ID        int64     `json:"id"`
 	GroupID   int64     `json:"group_id"`
@@ -164,6 +164,19 @@ type GroupMessage struct {
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// GroupPost model
+type GroupPost struct {
+	ID          int64     `json:"id"`
+	GroupID     int64     `json:"group_id"`
+	UserID      int64     `json:"user_id"`
+	Username    string    `json:"username"`
+	Content     string    `json:"content"`
+	ImagePath   *string   `json:"image_path,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	CommentsCount int64   `json:"comments_count"`
 }
 
 // GroupComment model

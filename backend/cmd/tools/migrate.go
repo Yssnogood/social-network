@@ -53,13 +53,13 @@ func main() {
 		fmt.Println("Migrations applied.")
 	case "alldown":
 		fmt.Println("Rolling back all migration...")
-		if err := m.Steps(-19); err != nil {
+		if err := m.Steps(-21); err != nil {
 			log.Fatalf("Migration down failed: %v", err)
 		}
 		fmt.Println("Rolled all migration.")
 	case "reset":
 		fmt.Println("Resetting all migrations (down + up)...")
-		if err := m.Steps(-19); err != nil && err.Error() != "no change" {
+		if err := m.Steps(-21); err != nil && err.Error() != "no change" {
 			log.Fatalf("Down failed: %v", err)
 		}
 		fmt.Println("All migrations rolled back.")
