@@ -8,4 +8,5 @@ type FollowerRepositoryInterface interface {
 	GetFollowers(id int64) (*models.Follower, error)
 	Accept(followerID, followedID int64) error
 	Delete(followerID, FollowedID int64) error
+	IsFollowing(followerID, followedID int64) (bool, error)
 }

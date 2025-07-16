@@ -99,3 +99,16 @@ func (r *FollowerRepository) Delete(followerID, followedID int64) error {
 	_, err = stmt.Exec(followerID, followedID)
 	return err
 }
+
+// Vérifie si un utilisateur suit déjà une autre personne
+func (r *FollowerRepository) IsFollowing(followerID, followedID int64) (bool, error) {
+	var exists bool
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM followers
+			WHERE follower_id = $1 AND followed_id = $2
+		)
+	`
+	err := r.db.QueryRow(query, followerID, followedID).Scan(&exists)
+	return exists, err
+}

@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UserProfile } from "../../../services/user";
 import ProfileTabs from "./ProfileTabs";
 import FollowersSection from "../../components/FollowersSection";
 import EditableProfile from "./EditableProfile";
+import { followUser, unfollowUser } from "../../../services/follow";
 
 interface Follower {
   follower_id: number;
@@ -27,12 +28,50 @@ export default function ClientProfile({
   currentUserId: number;
 }) {
   const isOwnProfile = profile.username === loggedInUser;
-
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [updatedAvatar, setUpdatedAvatar] = useState(profile.avatar_path);
   const [aboutMe, setAboutMe] = useState(profile.about_me);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowPending, setIsFollowPending] = useState(false);
   const [isPublic, setIsPublic] = useState(profile.is_public);
-  const [isFollowing, setIsFollowing] = useState(false); // TODO: init via prop ou fetch
+
+console.log(profile)
+
+useEffect(() => {
+  const fetchIsFollowingStatus = async () => {
+
+    try {
+      const res = await fetch(`http://localhost:8080/api/followers/check`,{
+          method : "GET",
+          headers : {
+            "Content-Type" : "application/json",
+          },
+          body: JSON.stringify({follower_id : currentUserId, followed_id: profile.id}),
+      });
+
+      if (!res.ok) throw new Error("Erreur lors du unfollow");
+
+      const data = await res.json();
+      if (data.isFollowing && data.accepted) {
+        setIsFollowing(true);
+        setIsFollowPending(false);
+      } else if (data.isFollowing && !data.accepted) {
+        setIsFollowing(false);
+        setIsFollowPending(true);
+      } else {
+        setIsFollowing(false);
+        setIsFollowPending(false);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la vérification du statut de follow :", error);
+    }
+  };
+
+  if (!isOwnProfile) {
+    fetchIsFollowingStatus();
+  }
+}, [currentUserId, profile.id, isOwnProfile]);
+
 
   const handleProfileUpdate = () => {
     setIsEditingProfile(false);
@@ -40,29 +79,26 @@ export default function ClientProfile({
 
   const handleFollow = async () => {
     try {
-      // Exécuter un appel API ici pour envoyer la requête de follow
-      // await followUser(profile.id);
-      setIsFollowing(true);
-    } catch (error) {
-      console.error("Erreur lors du follow :", error);
+      await followUser(currentUserId, profile.id);
+      setIsFollowPending(true);
+    } catch (error: any) {
+      console.error("Erreur lors du follow :", error.message);
+      alert("Impossible de suivre cet utilisateur.");
     }
   };
 
-  // Masquer profil s'il est privé et pas celui de l'utilisateur
-  if (!isPublic && !isOwnProfile) {
-    return (
-      <main className="pt-16 px-4 mx-auto max-w-6xl">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            This profile is private 🔒
-          </h2>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Your are not authorized to view it.
-          </p>
-        </div>
-      </main>
-    );
-  }
+  const handleUnfollow = async () => {
+    try {
+      await unfollowUser(currentUserId, profile.id);
+      setIsFollowPending(false);
+      setIsFollowing(false);
+    } catch (error: any) {
+      console.error("Erreur lors du unfollow :", error.message);
+      alert("Impossible de se désabonner.");
+    }
+  };
+
+  const canViewProfile = profile.is_public || isOwnProfile || isFollowing;
 
   return (
     <>
@@ -91,7 +127,11 @@ export default function ClientProfile({
       <main className="pt-16 px-4 mx-auto max-w-6xl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            {isOwnProfile && isEditingProfile ? (
+            {!canViewProfile ? (
+              <div className="text-center text-gray-700 dark:text-white py-8">
+                <p className="text-lg">Ce profil est privé.</p>
+              </div>
+            ) : isOwnProfile && isEditingProfile ? (
               <EditableProfile
                 profile={profile}
                 onSave={handleProfileUpdate}
@@ -101,7 +141,6 @@ export default function ClientProfile({
               />
             ) : (
               <>
-                {/* Profile Infos */}
                 <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
                   <div className="flex-shrink-0">
                     <Image
@@ -121,50 +160,73 @@ export default function ClientProfile({
                       {profile.first_name} {profile.last_name}
                     </h2>
 
-                    <span
-                      className={`mt-2 inline-block text-sm font-semibold px-3 py-1 rounded-full 
-                      ${isPublic ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
-                    >
-                      {isPublic ? "🔓 Public Profile" : "🔒 Private Profile"}
-                    </span>
-
                     {isOwnProfile ? (
                       <button
                         onClick={() => setIsEditingProfile(true)}
                         className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                       >
-                        Edit profile
+                        Modifier le profil
                       </button>
-                    ) : (
+                    ) : !isFollowing && !isFollowPending ? (
                       <button
                         onClick={handleFollow}
-                        disabled={isFollowing || !isPublic}
-                        className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                        className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                       >
-                        {isFollowing ? "Followed" : "Start to follow"}
+                        Suivre
                       </button>
+                    ) : isFollowPending ? (
+                      <div className="flex items-center gap-2 mt-4">
+                        <span className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded">
+                          Demande en attente
+                        </span>
+                        <button
+                          onClick={handleUnfollow}
+                          className="text-sm text-red-500 hover:underline"
+                        >
+                          Annuler
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 mt-4">
+                        <span className="px-4 py-2 bg-gray-200 text-gray-800 rounded">
+                          Abonné
+                        </span>
+                        <button
+                          onClick={handleUnfollow}
+                          className="text-sm text-red-500 hover:underline"
+                        >
+                          Se désabonner
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
 
-                {/* More Info */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
                   <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-                    More Information
+                    Informations
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
-                      <p className="text-gray-900 dark:text-white">{profile.email}</p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Email
+                      </p>
+                      <p className="text-gray-900 dark:text-white">
+                        {profile.email}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Date de naissance</p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Date de naissance
+                      </p>
                       <p className="text-gray-900 dark:text-white">
                         {new Date(profile.birth_date).toLocaleDateString("fr-FR")}
                       </p>
                     </div>
                     <div className="md:col-span-2">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">À propos de moi</p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        À propos de moi
+                      </p>
                       <p className="text-gray-900 dark:text-white mt-2">
                         {aboutMe || "Aucune description pour le moment."}
                       </p>
@@ -175,7 +237,6 @@ export default function ClientProfile({
             )}
           </div>
 
-          {/* Followers Section */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <FollowersSection
               followers={followers}
@@ -185,7 +246,7 @@ export default function ClientProfile({
           </div>
         </div>
 
-        <ProfileTabs userId={profile.id} />
+        {canViewProfile && <ProfileTabs userId={profile.id} />}
       </main>
     </>
   );

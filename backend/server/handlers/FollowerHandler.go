@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+	"fmt"
 
 	"social-network/backend/database/models"
 	"social-network/backend/database/repositories"
@@ -54,6 +55,8 @@ func (h *FollowerHandler) CreateFollower(w http.ResponseWriter, r *http.Request)
 		Accepted:   false, // pending by default
 		FollowedAt: time.Now(),
 	}
+
+	fmt.Println(follower)
 
 	if err := h.FollowerRepository.Create(follower); err != nil {
 		http.Error(w, "Failed to follow user", http.StatusInternalServerError)
@@ -119,5 +122,35 @@ func (h *FollowerHandler) DeleteFollower(w http.ResponseWriter, r *http.Request)
 
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Unfollowed successfully",
+	})
+}
+
+
+func (h *FollowerHandler) CheckIfFollowing(w http.ResponseWriter, r *http.Request) {
+	followerIDParam := r.URL.Query().Get("follower_id")
+	followedIDParam := r.URL.Query().Get("followed_id")
+
+	if followerIDParam == "" || followedIDParam == "" {
+		http.Error(w, "Missing parameters", http.StatusBadRequest)
+		return
+	}
+
+	var followerID, followedID int64
+	_, err := fmt.Sscanf(followerIDParam, "%d", &followerID)
+	_, err2 := fmt.Sscanf(followedIDParam, "%d", &followedID)
+
+	if err != nil || err2 != nil {
+		http.Error(w, "Invalid parameters", http.StatusBadRequest)
+		return
+	}
+
+	isFollowing, err := h.FollowerRepository.IsFollowing(followerID, followedID)
+	if err != nil {
+		http.Error(w, "Failed to check following status", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]bool{
+		"isFollowing": isFollowing,
 	})
 }
