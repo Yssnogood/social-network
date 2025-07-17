@@ -150,6 +150,7 @@ func (h *FollowerHandler) CheckIfFollowing(w http.ResponseWriter, r *http.Reques
 type FollowerUserResponse struct {
 	ID        int64  `json:"id"`
 	Username string `json:"username"`
+	Avatar_path string `json:"avatar_path"`
 }
 
 
@@ -167,7 +168,11 @@ func (h *FollowerHandler) GetFollowersHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	fmt.Println("Ici")
+
 	followers, err := h.FollowerRepository.GetFollowerUsers(userID)
+fmt.Println("Pourquoi pas là")
+fmt.Println(followers)
 	if err != nil {
 		http.Error(w, "Failed to fetch followers", http.StatusInternalServerError)
 		return
@@ -178,6 +183,7 @@ func (h *FollowerHandler) GetFollowersHandler(w http.ResponseWriter, r *http.Req
 		response = append(response, &FollowerUserResponse{
 			ID:        f.ID,
 			Username: f.Username,
+			Avatar_path: f.Avatar_path,
 		})
 	}
 

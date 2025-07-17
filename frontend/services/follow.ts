@@ -8,6 +8,7 @@ export interface Follower {
 export interface FollowerUser {
   id: number;
   username: string;
+  avatar_path: string;
 }
 
 

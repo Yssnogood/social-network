@@ -118,11 +118,12 @@ func (r *FollowerRepository) IsFollowing(followerID, followedID int64) (bool, er
 type FollowerInfo struct {
 	ID        int64  // User ID
 	Username string
+	Avatar_path string
 }
 
 func (r *FollowerRepository) GetFollowerUsers(userID int64) ([]*FollowerInfo, error) {
 	rows, err := r.db.Query(`
-		SELECT u.id, u.username
+		SELECT u.id, u.username, u.avatar_path
 		FROM followers f
 		JOIN users u ON f.follower_id = u.id
 		WHERE f.followed_id = ? AND f.accepted = 1
@@ -136,7 +137,7 @@ func (r *FollowerRepository) GetFollowerUsers(userID int64) ([]*FollowerInfo, er
 
 	for rows.Next() {
 		f := &FollowerInfo{}
-		err := rows.Scan(&f.ID, &f.Username)
+		err := rows.Scan(&f.ID, &f.Username, &f.Avatar_path)
 		if err != nil {
 			return nil, err
 		}
