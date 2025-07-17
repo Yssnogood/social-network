@@ -7,14 +7,9 @@ import { UserProfile } from "../../../services/user";
 import ProfileTabs from "./ProfileTabs";
 import FollowersSection from "../../components/FollowersSection";
 import EditableProfile from "./EditableProfile";
-import { followUser, unfollowUser } from "../../../services/follow";
+import { followUser, unfollowUser, Follower, FollowerUser  } from "../../../services/follow";
 
-interface Follower {
-  follower_id: number;
-  followed_id: number;
-  accepted: boolean;
-  followed_at: string;
-}
+
 
 export default function ClientProfile({
   profile,
@@ -24,25 +19,28 @@ export default function ClientProfile({
 }: {
   profile: UserProfile;
   loggedInUser: string;
-  followers: Follower[];
+  followers: FollowerUser[];
   currentUserId: number;
 }) {
-  const isOwnProfile = profile.username === loggedInUser;
+  const isOwnProfile = profile.id === currentUserId;
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [updatedAvatar, setUpdatedAvatar] = useState(profile.avatar_path);
   const [aboutMe, setAboutMe] = useState(profile.about_me);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowPending, setIsFollowPending] = useState(false);
   const [isPublic, setIsPublic] = useState(profile.is_public);
+  const [followerList, setFollowerList] = useState<FollowerUser[]>(followers);
 
-console.log(profile)
+
 
 useEffect(() => {
   const fetchIsFollowingStatus = async () => {
 
+    console.log(currentUserId, profile.id)
+
     try {
       const res = await fetch(`http://localhost:8080/api/followers/check`,{
-          method : "GET",
+          method : "POST",
           headers : {
             "Content-Type" : "application/json",
           },
@@ -52,13 +50,11 @@ useEffect(() => {
       if (!res.ok) throw new Error("Erreur lors du unfollow");
 
       const data = await res.json();
-      if (data.isFollowing && data.accepted) {
+      console.log(data)
+      if (data.isFollowing) {
         setIsFollowing(true);
         setIsFollowPending(false);
-      } else if (data.isFollowing && !data.accepted) {
-        setIsFollowing(false);
-        setIsFollowPending(true);
-      } else {
+      }  else {
         setIsFollowing(false);
         setIsFollowPending(false);
       }
@@ -77,27 +73,43 @@ useEffect(() => {
     setIsEditingProfile(false);
   };
 
-  const handleFollow = async () => {
-    try {
-      await followUser(currentUserId, profile.id);
-      setIsFollowPending(true);
-    } catch (error: any) {
-      console.error("Erreur lors du follow :", error.message);
-      alert("Impossible de suivre cet utilisateur.");
-    }
-  };
+const fetchFollowers = async () => {
+  try {
+    const res = await fetch(`http://localhost:8080/api/followersDetails?userID=${profile.id}`);
+    if (!res.ok) throw new Error("Échec du fetch des followers");
+    const data = await res.json();
+    setFollowerList(data);
+  } catch (error) {
+    console.error("Erreur lors du fetch des followers:", error);
+  }
+};
 
-  const handleUnfollow = async () => {
-    try {
-      await unfollowUser(currentUserId, profile.id);
-      setIsFollowPending(false);
-      setIsFollowing(false);
-    } catch (error: any) {
-      console.error("Erreur lors du unfollow :", error.message);
-      alert("Impossible de se désabonner.");
-    }
-  };
+const handleFollow = async () => {
+  try {
+    await followUser(currentUserId, profile.id);
+    setIsFollowPending(true);
 
+    // Met à jour le statut et la liste
+    setIsFollowing(true);
+    setIsFollowPending(false);
+    await fetchFollowers();
+  } catch (error: any) {
+    console.error("Erreur lors du follow :", error.message);
+    alert("Impossible de suivre cet utilisateur.");
+  }
+};
+
+const handleUnfollow = async () => {
+  try {
+    await unfollowUser(currentUserId, profile.id);
+    setIsFollowing(false);
+    setIsFollowPending(false);
+    await fetchFollowers();
+  } catch (error: any) {
+    console.error("Erreur lors du unfollow :", error.message);
+    alert("Impossible de se désabonner.");
+  }
+};
   const canViewProfile = profile.is_public || isOwnProfile || isFollowing;
 
   return (
@@ -167,26 +179,14 @@ useEffect(() => {
                       >
                         Modifier le profil
                       </button>
-                    ) : !isFollowing && !isFollowPending ? (
+                    ) : !isFollowing ? (
                       <button
                         onClick={handleFollow}
                         className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                       >
                         Suivre
                       </button>
-                    ) : isFollowPending ? (
-                      <div className="flex items-center gap-2 mt-4">
-                        <span className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded">
-                          Demande en attente
-                        </span>
-                        <button
-                          onClick={handleUnfollow}
-                          className="text-sm text-red-500 hover:underline"
-                        >
-                          Annuler
-                        </button>
-                      </div>
-                    ) : (
+                    )  : (
                       <div className="flex items-center gap-2 mt-4">
                         <span className="px-4 py-2 bg-gray-200 text-gray-800 rounded">
                           Abonné
@@ -239,9 +239,10 @@ useEffect(() => {
 
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <FollowersSection
-              followers={followers}
+              followers={followerList}
               currentUserId={currentUserId}
               currentUsername={profile.username} 
+              isOwnProfile = {isOwnProfile}
             />
           </div>
         </div>

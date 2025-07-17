@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 	"fmt"
+	"strconv"
 
 	"social-network/backend/database/models"
 	"social-network/backend/database/repositories"
@@ -39,6 +40,7 @@ type getFollowersRequest struct {
 	UserID int64 `json:"user_id"`
 }
 
+
 // Handlers
 
 // CreateFollower creates a new follow request (or direct follow if accepted by default).
@@ -52,11 +54,9 @@ func (h *FollowerHandler) CreateFollower(w http.ResponseWriter, r *http.Request)
 	follower := &models.Follower{
 		FollowerID: req.FollowerID,
 		FollowedID: req.FollowedID,
-		Accepted:   false, // pending by default
+		Accepted:   true, // pending by default
 		FollowedAt: time.Now(),
 	}
-
-	fmt.Println(follower)
 
 	if err := h.FollowerRepository.Create(follower); err != nil {
 		http.Error(w, "Failed to follow user", http.StatusInternalServerError)
@@ -127,30 +127,60 @@ func (h *FollowerHandler) DeleteFollower(w http.ResponseWriter, r *http.Request)
 
 
 func (h *FollowerHandler) CheckIfFollowing(w http.ResponseWriter, r *http.Request) {
-	followerIDParam := r.URL.Query().Get("follower_id")
-	followedIDParam := r.URL.Query().Get("followed_id")
-
-	if followerIDParam == "" || followedIDParam == "" {
-		http.Error(w, "Missing parameters", http.StatusBadRequest)
+	var req followRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	var followerID, followedID int64
-	_, err := fmt.Sscanf(followerIDParam, "%d", &followerID)
-	_, err2 := fmt.Sscanf(followedIDParam, "%d", &followedID)
 
-	if err != nil || err2 != nil {
-		http.Error(w, "Invalid parameters", http.StatusBadRequest)
-		return
-	}
-
-	isFollowing, err := h.FollowerRepository.IsFollowing(followerID, followedID)
+	isFollowing, err := h.FollowerRepository.IsFollowing(req.FollowerID, req.FollowedID)
 	if err != nil {
 		http.Error(w, "Failed to check following status", http.StatusInternalServerError)
 		return
 	}
 
+	fmt.Println(isFollowing, req.FollowerID, req.FollowedID)
+
 	json.NewEncoder(w).Encode(map[string]bool{
 		"isFollowing": isFollowing,
 	})
+}
+
+type FollowerUserResponse struct {
+	ID        int64  `json:"id"`
+	Username string `json:"username"`
+}
+
+
+func (h *FollowerHandler) GetFollowersHandler(w http.ResponseWriter, r *http.Request) {
+	// Lire userID depuis la query string : ?userID=123
+	userIDStr := r.URL.Query().Get("userID")
+	if userIDStr == "" {
+		http.Error(w, "Missing userID", http.StatusBadRequest)
+		return
+	}
+
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid userID", http.StatusBadRequest)
+		return
+	}
+
+	followers, err := h.FollowerRepository.GetFollowerUsers(userID)
+	if err != nil {
+		http.Error(w, "Failed to fetch followers", http.StatusInternalServerError)
+		return
+	}
+
+	response := make([]*FollowerUserResponse, 0, len(followers))
+	for _, f := range followers {
+		response = append(response, &FollowerUserResponse{
+			ID:        f.ID,
+			Username: f.Username,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

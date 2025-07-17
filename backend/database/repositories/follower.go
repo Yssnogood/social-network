@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"social-network/backend/database/models"
+	"fmt"
 )
 
 // Connection to the database
@@ -75,7 +76,7 @@ func (r *FollowerRepository) GetFollowers(userID int64) ([]*models.Follower, err
 // Accept a follower request
 func (r *FollowerRepository) Accept(followerID, followedID int64) error {
 	stmt, err := r.db.Prepare(`
-		UPDATE followers SET accepted = 1 WHERE follower_id = ? AND followed_id = ?
+		UPDATE followers SET accepted = 1 WHERE follower_id = ? AND followed_id = ? AND accepted = 1
 	`)
 	if err != nil {
 		return err
@@ -106,9 +107,47 @@ func (r *FollowerRepository) IsFollowing(followerID, followedID int64) (bool, er
 	query := `
 		SELECT EXISTS(
 			SELECT 1 FROM followers
-			WHERE follower_id = $1 AND followed_id = $2
+			WHERE follower_id = ? AND followed_id = ?
 		)
 	`
 	err := r.db.QueryRow(query, followerID, followedID).Scan(&exists)
 	return exists, err
+}
+
+
+type FollowerInfo struct {
+	ID        int64  // User ID
+	Username string
+}
+
+func (r *FollowerRepository) GetFollowerUsers(userID int64) ([]*FollowerInfo, error) {
+	rows, err := r.db.Query(`
+		SELECT u.id, u.username
+		FROM followers f
+		JOIN users u ON f.follower_id = u.id
+		WHERE f.followed_id = ? AND f.accepted = 1
+	`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var followerUsers []*FollowerInfo
+
+	for rows.Next() {
+		f := &FollowerInfo{}
+		err := rows.Scan(&f.ID, &f.Username)
+		if err != nil {
+			return nil, err
+		}
+		followerUsers = append(followerUsers, f)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	fmt.Println(followerUsers)
+
+	return followerUsers, nil
 }
