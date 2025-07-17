@@ -15,7 +15,6 @@ export default async function Profile(props: { params: Promise<{ username: strin
   const userLogin: UserProfile = await getUserProfile(loggedInUser, false);
   
   const followers = await fetchFollowers(profile.id);
-  console.log(followers)
   
   return (
     <ClientProfile

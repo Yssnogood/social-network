@@ -4,7 +4,6 @@ import (
 	"database/sql"
 
 	"social-network/backend/database/models"
-	"fmt"
 )
 
 // Connection to the database
@@ -148,7 +147,6 @@ func (r *FollowerRepository) GetFollowerUsers(userID int64) ([]*FollowerInfo, er
 		return nil, err
 	}
 
-	fmt.Println(followerUsers)
 
 	return followerUsers, nil
 }

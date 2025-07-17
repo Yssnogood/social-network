@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
-	"fmt"
 	"strconv"
 
 	"social-network/backend/database/models"
@@ -140,7 +139,6 @@ func (h *FollowerHandler) CheckIfFollowing(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	fmt.Println(isFollowing, req.FollowerID, req.FollowedID)
 
 	json.NewEncoder(w).Encode(map[string]bool{
 		"isFollowing": isFollowing,
@@ -168,11 +166,8 @@ func (h *FollowerHandler) GetFollowersHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	fmt.Println("Ici")
 
 	followers, err := h.FollowerRepository.GetFollowerUsers(userID)
-fmt.Println("Pourquoi pas là")
-fmt.Println(followers)
 	if err != nil {
 		http.Error(w, "Failed to fetch followers", http.StatusInternalServerError)
 		return

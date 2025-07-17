@@ -36,7 +36,6 @@ export default function ClientProfile({
 useEffect(() => {
   const fetchIsFollowingStatus = async () => {
 
-    console.log(currentUserId, profile.id)
 
     try {
       const res = await fetch(`http://localhost:8080/api/followers/check`,{
@@ -50,7 +49,6 @@ useEffect(() => {
       if (!res.ok) throw new Error("Erreur lors du unfollow");
 
       const data = await res.json();
-      console.log(data)
       if (data.isFollowing) {
         setIsFollowing(true);
         setIsFollowPending(false);
