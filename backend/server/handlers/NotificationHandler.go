@@ -13,12 +13,14 @@ import (
 // NotificationHandler handles HTTP requests related to notifications.
 type NotificationHandler struct {
 	NotificationRepository *repository.NotificationRepository
+	FollowerRepository     *repository.FollowerRepository
 }
 
 // NewNotificationHandler creates a new instance of NotificationHandler.
-func NewNotificationHandler(nr *repository.NotificationRepository) *NotificationHandler {
+func NewNotificationHandler(nr *repository.NotificationRepository, fr *repository.FollowerRepository) *NotificationHandler {
 	return &NotificationHandler{
 		NotificationRepository: nr,
+		FollowerRepository:     fr,
 	}
 }
 
@@ -66,6 +68,11 @@ func (h *NotificationHandler) CreateNotification(w http.ResponseWriter, r *http.
 	var req createNotificationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+	if req.Type == "post_created" {
+		fmt.Println("Creating notification for post creation, notifying followers...")
+		h.NotifUsersForPost(w, r, req)
 		return
 	}
 
@@ -185,5 +192,40 @@ func (h *NotificationHandler) DeleteAllNotificationsByUser(w http.ResponseWriter
 
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "All notifications deleted successfully",
+	})
+}
+
+// Notificate all users that follows the post owner for a specific post (new post from the owner).
+func (h *NotificationHandler) NotifUsersForPost(w http.ResponseWriter, r *http.Request, req createNotificationRequest) {
+	
+	// req.UserID is the ID of the post owner
+	followers, err := h.FollowerRepository.GetFollowers(req.UserID)
+	if err != nil {
+		http.Error(w, "Failed to get followers", http.StatusInternalServerError)
+		return
+	}
+
+	notification := &models.Notification{
+		UserID:        0, // This will be set for each follower
+		Type:          req.Type,
+		Content:       req.Content,
+		Read:          req.Read,
+		ReferenceID:   &req.ReferenceID,
+		ReferenceType: &req.ReferenceType,
+		CreatedAt:     time.Now(),
+	}
+
+	// Send the notification to each follower
+	for _, f := range followers {
+		notification.UserID = f.FollowerID
+		_, err := h.NotificationRepository.Create(notification)
+		if err != nil {
+			continue
+		}
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Notifications sent to followers",
 	})
 }

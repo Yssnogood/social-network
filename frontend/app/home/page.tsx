@@ -1,10 +1,13 @@
 'use client';
+import Notifications from "../components/NotificationPanel";
+import { createNotification, fetchNotifications } from "../../services/notifications";
+import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { getPosts, createPost, Post } from "../../services/post";
 import { useCookies } from "next-client-cookies";
 import CreateGroupModal from "../components/GroupModal";
 import { getUserIdFromToken } from "../../services/user";
-import { fetchNotifications } from "../../services/notifications";
 
 // Nouveaux composants extraits
 import Header from "../components/Header";
@@ -68,6 +71,14 @@ export default function Home() {
     const handleSubmitPost = async (postData: { content: string; privacy: number; imageUrl?: string }) => {
         try {
             const newPost = await createPost(postData, cookies.get("jwt"));
+			
+			createNotification({
+				userId: parseInt(newPost.userId),
+				type: 'post_created',
+				content: `New post created by ${newPost.userName}`,
+				referenceId: newPost.id,
+				referenceType: 'post'
+			})
             setPosts([newPost, ...posts]);
             handleCloseModal();
         } catch (error) {
