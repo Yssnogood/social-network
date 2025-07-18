@@ -2,22 +2,22 @@
 
 import { useState } from "react";
 import ChatModal from "../components/ChatModal";
+import { FollowerUser } from "@/services/follow";
+import Link from "next/link";
 
-interface Follower {
-	follower_id: number;
-	followed_id: number;
-	accepted: boolean;
-	followed_at: string;
-}
+
+
 
 export default function FollowersSection({
 	followers = [],
 	currentUserId,
-	currentUsername
+	currentUsername,
+	isOwnProfile
 }: {
-	followers?: Follower[];
+	followers?: FollowerUser[];
 	currentUserId: number;
 	currentUsername: string;
+	isOwnProfile: boolean;
 }) {
 	const [isChatOpen, setIsChatOpen] = useState(false);
 	const [selectedFollower, setSelectedFollower] = useState<number | null>(null);
@@ -35,26 +35,51 @@ export default function FollowersSection({
 				<h3 className="text-lg font-semibold">Followers</h3>
 			</div>
 
-			{safeFollowers.length > 0 ? (
-				<div className="space-y-3">
-					{safeFollowers.map((follower) => (
-						<div key={follower.follower_id} className="flex items-center gap-3 p-2">
-							<p className="font-medium">User ID: {follower.follower_id}</p>
-							<button
-								className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
-								onClick={() => {
-									setSelectedFollower(follower.follower_id);
-									setIsChatOpen(true);
-								}}
-							>
-								Chat
-							</button>
-						</div>
-					))}
-				</div>
-			) : (
-				<p className="text-gray-500 text-center py-4">No followers yet</p>
-			)}
+{safeFollowers.length > 0 ? (
+  <div className="space-y-3">
+    {safeFollowers.map((follower) => (
+      <div
+        key={follower.id}
+        className="flex items-center gap-4 p-2 bg-gray-50 dark:bg-gray-700 rounded"
+      >
+        {/* Avatar */}
+        <img
+          src={follower.avatar_path || "/defaultPP.webp"}
+          alt="Avatar"
+          className="w-12 h-12 rounded-full object-cover border border-gray-300"
+        />
+
+        {/* Nom cliquable */}
+        <div className="flex flex-col">
+          <Link
+            href={`/profile/${follower.username}`}
+            className="font-medium text-gray-900 dark:text-white hover:underline"
+          >
+            {follower.username}
+          </Link>
+          <span className="text-sm text-gray-500 dark:text-gray-300">
+            @{follower.username}
+          </span>
+        </div>
+
+        {/* Bouton Chat */}
+        {isOwnProfile && (
+          <button
+            className="ml-auto px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+            onClick={() => {
+              setSelectedFollower(follower.id);
+              setIsChatOpen(true);
+            }}
+          >
+            Chat
+          </button>
+        )}
+      </div>
+    ))}
+  </div>
+) : (
+  <p className="text-gray-500">Aucun follower pour le moment.</p>
+)}
 
 			{isChatOpen && selectedFollower !== null && (
 				<ChatModal

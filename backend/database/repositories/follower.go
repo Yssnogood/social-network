@@ -75,7 +75,7 @@ func (r *FollowerRepository) GetFollowers(userID int64) ([]*models.Follower, err
 // Accept a follower request
 func (r *FollowerRepository) Accept(followerID, followedID int64) error {
 	stmt, err := r.db.Prepare(`
-		UPDATE followers SET accepted = 1 WHERE follower_id = ? AND followed_id = ?
+		UPDATE followers SET accepted = 1 WHERE follower_id = ? AND followed_id = ? AND accepted = 1
 	`)
 	if err != nil {
 		return err
@@ -98,4 +98,55 @@ func (r *FollowerRepository) Delete(followerID, followedID int64) error {
 
 	_, err = stmt.Exec(followerID, followedID)
 	return err
+}
+
+// Vérifie si un utilisateur suit déjà une autre personne
+func (r *FollowerRepository) IsFollowing(followerID, followedID int64) (bool, error) {
+	var exists bool
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM followers
+			WHERE follower_id = ? AND followed_id = ?
+		)
+	`
+	err := r.db.QueryRow(query, followerID, followedID).Scan(&exists)
+	return exists, err
+}
+
+
+type FollowerInfo struct {
+	ID        int64  // User ID
+	Username string
+	Avatar_path string
+}
+
+func (r *FollowerRepository) GetFollowerUsers(userID int64) ([]*FollowerInfo, error) {
+	rows, err := r.db.Query(`
+		SELECT u.id, u.username, u.avatar_path
+		FROM followers f
+		JOIN users u ON f.follower_id = u.id
+		WHERE f.followed_id = ? AND f.accepted = 1
+	`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var followerUsers []*FollowerInfo
+
+	for rows.Next() {
+		f := &FollowerInfo{}
+		err := rows.Scan(&f.ID, &f.Username, &f.Avatar_path)
+		if err != nil {
+			return nil, err
+		}
+		followerUsers = append(followerUsers, f)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+
+	return followerUsers, nil
 }

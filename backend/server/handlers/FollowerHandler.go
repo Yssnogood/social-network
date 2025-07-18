@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+	"strconv"
 
 	"social-network/backend/database/models"
 	"social-network/backend/database/repositories"
@@ -38,6 +39,7 @@ type getFollowersRequest struct {
 	UserID int64 `json:"user_id"`
 }
 
+
 // Handlers
 
 // CreateFollower creates a new follow request (or direct follow if accepted by default).
@@ -51,7 +53,7 @@ func (h *FollowerHandler) CreateFollower(w http.ResponseWriter, r *http.Request)
 	follower := &models.Follower{
 		FollowerID: req.FollowerID,
 		FollowedID: req.FollowedID,
-		Accepted:   false, // pending by default
+		Accepted:   true, // pending by default
 		FollowedAt: time.Now(),
 	}
 
@@ -120,4 +122,66 @@ func (h *FollowerHandler) DeleteFollower(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Unfollowed successfully",
 	})
+}
+
+
+func (h *FollowerHandler) CheckIfFollowing(w http.ResponseWriter, r *http.Request) {
+	var req followRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+
+	isFollowing, err := h.FollowerRepository.IsFollowing(req.FollowerID, req.FollowedID)
+	if err != nil {
+		http.Error(w, "Failed to check following status", http.StatusInternalServerError)
+		return
+	}
+
+
+	json.NewEncoder(w).Encode(map[string]bool{
+		"isFollowing": isFollowing,
+	})
+}
+
+type FollowerUserResponse struct {
+	ID        int64  `json:"id"`
+	Username string `json:"username"`
+	Avatar_path string `json:"avatar_path"`
+}
+
+
+func (h *FollowerHandler) GetFollowersHandler(w http.ResponseWriter, r *http.Request) {
+	// Lire userID depuis la query string : ?userID=123
+	userIDStr := r.URL.Query().Get("userID")
+	if userIDStr == "" {
+		http.Error(w, "Missing userID", http.StatusBadRequest)
+		return
+	}
+
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid userID", http.StatusBadRequest)
+		return
+	}
+
+
+	followers, err := h.FollowerRepository.GetFollowerUsers(userID)
+	if err != nil {
+		http.Error(w, "Failed to fetch followers", http.StatusInternalServerError)
+		return
+	}
+
+	response := make([]*FollowerUserResponse, 0, len(followers))
+	for _, f := range followers {
+		response = append(response, &FollowerUserResponse{
+			ID:        f.ID,
+			Username: f.Username,
+			Avatar_path: f.Avatar_path,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
