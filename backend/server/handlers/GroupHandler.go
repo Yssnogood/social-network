@@ -342,6 +342,153 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
+func (h *GroupHandler) CreateGroupPost(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	groupIDStr, ok := vars["id"]
+	if !ok {
+		http.Error(w, "Missing group ID in path", http.StatusBadRequest)
+		return
+	}
+
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	userName, err := h.getUsernameByID(userID)
+	if err != nil {
+		http.Error(w, "Failed to get user information: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var post models.GroupPost
+	if err := json.NewDecoder(r.Body).Decode(&post); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	post.GroupID = groupID
+	post.UserID = userID
+	post.Username = userName
+	post.CreatedAt = time.Now()
+	post.UpdatedAt = time.Now()
+	post.CommentsCount = 0
+
+	id, err := h.GroupRepository.CreateGroupPost(&post)
+	if err != nil {
+		http.Error(w, "Failed to create group post: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	post.ID = id
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(post)
+}
+
+func (h *GroupHandler) GetPostsByGroupID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	groupIDStr, ok := vars["id"]
+	if !ok {
+		http.Error(w, "Missing group ID in path", http.StatusBadRequest)
+		return
+	}
+
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	posts, err := h.GroupRepository.GetPostsByGroupID(groupID)
+	if err != nil {
+		http.Error(w, "Failed to retrieve group posts: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(posts)
+}
+
+func (h *GroupHandler) CreateGroupComment(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	groupPostIDStr, ok := vars["postID"]
+	if !ok {
+		http.Error(w, "Missing group post ID in path", http.StatusBadRequest)
+		return
+	}
+
+	groupPostID, err := strconv.ParseInt(groupPostIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid group post ID", http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	userName, err := h.getUsernameByID(userID)
+	if err != nil {
+		http.Error(w, "Failed to get user information: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var comment models.GroupComment
+	if err := json.NewDecoder(r.Body).Decode(&comment); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	comment.GroupPostID = groupPostID
+	comment.UserID = userID
+	comment.Username = userName
+	comment.CreatedAt = time.Now()
+	comment.UpdatedAt = time.Now()
+
+	id, err := h.GroupRepository.CreateGroupComment(&comment)
+	if err != nil {
+		http.Error(w, "Failed to create group comment: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	comment.ID = id
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(comment)
+}
+
+func (h *GroupHandler) GetCommentsByGroupPostID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	groupPostIDStr, ok := vars["postID"]
+	if !ok {
+		http.Error(w, "Missing group post ID in path", http.StatusBadRequest)
+		return
+	}
+
+	groupPostID, err := strconv.ParseInt(groupPostIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid group post ID", http.StatusBadRequest)
+		return
+	}
+
+	comments, err := h.GroupRepository.GetCommentsByPostID(groupPostID)
+	if err != nil {
+		http.Error(w, "Failed to retrieve group comments: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(comments)
+}
+
 func HandleGroupWebSocket(w http.ResponseWriter, r *http.Request) {
 	groupIDStr := r.URL.Query().Get("groupId")
 	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
