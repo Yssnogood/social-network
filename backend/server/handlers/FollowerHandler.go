@@ -13,13 +13,15 @@ import (
 
 // FollowerHandler handles HTTP requests related to followers.
 type FollowerHandler struct {
-	FollowerRepository *repository.FollowerRepository
+	FollowerRepository     *repository.FollowerRepository
+	NotificationRepository *repository.NotificationRepository
 }
 
 // NewFollowerHandler creates a new instance of FollowerHandler.
-func NewFollowerHandler(fr *repository.FollowerRepository) *FollowerHandler {
+func NewFollowerHandler(fr *repository.FollowerRepository, nr *repository.NotificationRepository) *FollowerHandler {
 	return &FollowerHandler{
-		FollowerRepository: fr,
+		FollowerRepository:     fr,
+		NotificationRepository: nr,
 	}
 }
 
@@ -28,6 +30,7 @@ func NewFollowerHandler(fr *repository.FollowerRepository) *FollowerHandler {
 type followRequest struct {
 	FollowerID int64 `json:"follower_id"`
 	FollowedID int64 `json:"followed_id"`
+	Private    bool  `json:"is_public"`
 }
 
 type acceptFollowerRequest struct {
@@ -38,7 +41,6 @@ type acceptFollowerRequest struct {
 type getFollowersRequest struct {
 	UserID int64 `json:"user_id"`
 }
-
 
 // Handlers
 
@@ -53,7 +55,7 @@ func (h *FollowerHandler) CreateFollower(w http.ResponseWriter, r *http.Request)
 	follower := &models.Follower{
 		FollowerID: req.FollowerID,
 		FollowedID: req.FollowedID,
-		Accepted:   true, // pending by default
+		Accepted:   req.Private,
 		FollowedAt: time.Now(),
 	}
 
@@ -184,4 +186,42 @@ func (h *FollowerHandler) GetFollowersHandler(w http.ResponseWriter, r *http.Req
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func (h *FollowerHandler) AcceptFollower(w http.ResponseWriter, r *http.Request) {
+	var req acceptFollowerRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.FollowerRepository.Accept(req.FollowerID, req.FollowedID); err != nil {
+		http.Error(w, "Failed to accept follower", http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.NotificationRepository.DeleteFollowRequestFromUser(req.FollowedID, req.FollowerID); err != nil {
+		http.Error(w, "Failed to delete friend request", http.StatusInternalServerError)
+		return
+	}
+
+}
+
+func (h *FollowerHandler) DeclineFollower(w http.ResponseWriter, r *http.Request) {
+	var req acceptFollowerRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.FollowerRepository.Delete(req.FollowerID, req.FollowedID); err != nil {
+		http.Error(w, "Failed to decline follower", http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.NotificationRepository.DeleteFollowRequestFromUser(req.FollowedID, req.FollowerID); err != nil {
+		http.Error(w, "Failed to delete friend request", http.StatusInternalServerError)
+		return
+	}
+
 }

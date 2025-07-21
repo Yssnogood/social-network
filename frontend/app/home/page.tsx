@@ -25,7 +25,7 @@ export default function Home() {
     const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
     const [groups, setGroups] = useState([]);
     const [showNotifications, setShowNotifications] = useState(false);
-    const [notifications, setNotifications] = useState<string[]>([]);
+    const [notifications, setNotifications] = useState<any[]>([]);
 
     useEffect(() => {
         const getNotif = async () => {
@@ -35,8 +35,9 @@ export default function Home() {
 
             try {
                 const fetchedNotifications = await fetchNotifications(token, userId);
-                const notifStrings = Array.isArray(fetchedNotifications) ? fetchedNotifications?.map((notif: any) => notif.content) : [];
-                setNotifications(notifStrings);
+                if (Array.isArray(fetchedNotifications)) {
+                    setNotifications(fetchedNotifications);
+                }
             } catch (error) {
                 console.error("Failed to fetch notifications:", error);
             }

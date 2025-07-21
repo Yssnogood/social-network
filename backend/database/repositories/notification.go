@@ -196,3 +196,20 @@ func (r *NotificationRepository) DeleteAllByUserID(userID int64) error {
 
 	return nil
 }
+
+func (r *NotificationRepository) DeleteFollowRequestFromUser(userID, requesterID int64) error {
+	stmt, err := r.db.Prepare(`
+		DELETE FROM notifications WHERE user_id = ? AND reference_id = ? AND type = 'follow_request'
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(userID, requesterID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

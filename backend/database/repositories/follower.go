@@ -75,7 +75,7 @@ func (r *FollowerRepository) GetFollowers(userID int64) ([]*models.Follower, err
 // Accept a follower request
 func (r *FollowerRepository) Accept(followerID, followedID int64) error {
 	stmt, err := r.db.Prepare(`
-		UPDATE followers SET accepted = 1 WHERE follower_id = ? AND followed_id = ? AND accepted = 1
+		UPDATE followers SET accepted = 1 WHERE follower_id = ? AND followed_id = ?
 	`)
 	if err != nil {
 		return err

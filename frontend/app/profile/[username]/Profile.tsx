@@ -8,6 +8,7 @@ import ProfileTabs from "./ProfileTabs";
 import FollowersSection from "../../components/FollowersSection";
 import EditableProfile from "./EditableProfile";
 import { followUser, unfollowUser, Follower, FollowerUser  } from "../../../services/follow";
+import { createNotification } from "../../../services/notifications";
 
 
 
@@ -81,11 +82,19 @@ const fetchFollowers = async () => {
     console.error("Erreur lors du fetch des followers:", error);
   }
 };
-
+    console.log("logged :", loggedInUser)
 const handleFollow = async () => {
   try {
-    await followUser(currentUserId, profile.id);
+    await followUser(currentUserId, profile.id, profile.is_public);
     setIsFollowPending(true);
+
+    createNotification({
+      userId: profile.id,
+      type: "follow_request",
+      content: `${loggedInUser} vous a envoyé une demande de suivi.`,
+      referenceId: currentUserId,
+      referenceType: "user",
+    });
 
     // Met à jour le statut et la liste
     setIsFollowing(true);
@@ -140,6 +149,12 @@ const handleUnfollow = async () => {
             {!canViewProfile ? (
               <div className="text-center text-gray-700 dark:text-white py-8">
                 <p className="text-lg">Ce profil est privé.</p>
+                <p className="mt-2">S'abonner pour voir le contenu ?</p>
+                <button
+                  onClick={handleFollow}
+                  className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                >Envoyer une demande
+                </button>
               </div>
             ) : isOwnProfile && isEditingProfile ? (
               <EditableProfile

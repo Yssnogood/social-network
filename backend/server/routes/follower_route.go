@@ -13,5 +13,7 @@ func FollowersRoutes(r *mux.Router, followerHandler *handlers.FollowerHandler) {
 	r.HandleFunc("/api/followers/{id}", followerHandler.DeleteFollower).Methods("DELETE")
 	r.HandleFunc("/api/followers/check", followerHandler.CheckIfFollowing).Methods("POST")
 	r.HandleFunc("/api/followersDetails", followerHandler.GetFollowersHandler).Methods("GET")
+	r.HandleFunc("/api/followers/accept", followerHandler.AcceptFollower).Methods("POST")
+	r.HandleFunc("/api/followers/decline", followerHandler.DeclineFollower).Methods("POST")
 
 }
