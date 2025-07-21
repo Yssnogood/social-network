@@ -1,10 +1,9 @@
 CREATE TABLE IF NOT EXISTS event_responses (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	event_id INTEGER NOT NULL,
 	user_id INTEGER NOT NULL,
-	option_id INTEGER,
-	create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	status TEXT NOT NULL CHECK(status IN ('going', 'not_going')),
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (event_id, user_id),
 	FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
-	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-	FOREIGN KEY (option_id) REFERENCES event_options(id) ON DELETE CASCADE
+	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

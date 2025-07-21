@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS events (
 	group_id INTEGER NOT NULL,
 	creator_id INTEGER NOT NULL,
 	title TEXT NOT NULL CHECK (length(title) BETWEEN 1 AND 100),
-	description TEXT CHECK (length(description) BETWEEN 0 AND 1000),
+	description TEXT NOT NULL CHECK (length(description) BETWEEN 0 AND 1000),
 	event_date TIMESTAMP NOT NULL,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

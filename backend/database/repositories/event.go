@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"time"
 
 	"social-network/backend/database/models"
 )
@@ -17,16 +18,16 @@ func NewEventRepository(db *sql.DB) *EventRepository {
 }
 
 // Create a new event in the database
-func (r *EventRepository) Create(event *models.Event) (int64, error) {
+func (r *EventRepository) CreateEvent(event *models.Event) (int64, error) {
 	stmt, err := r.db.Prepare(`
-		INSERT INTO events(
-			group_id, creator_id, title, description, event_date, created_at
-		) VALUES(?, ?, ?, ?, ?, ?)
+		INSERT INTO events (group_id, creator_id, title, description, event_date, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return 0, err
 	}
 	defer stmt.Close()
+
 	result, err := stmt.Exec(
 		event.GroupID,
 		event.CreatorID,
@@ -34,58 +35,31 @@ func (r *EventRepository) Create(event *models.Event) (int64, error) {
 		event.Description,
 		event.EventDate,
 		event.CreatedAt,
+		event.UpdatedAt,
 	)
 	if err != nil {
 		return 0, err
 	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-	event.ID = id
-	return id, nil
 
+	return result.LastInsertId()
 }
 
-// Get an event by ID
-func (r *EventRepository) GetByID(id int64) (*models.Event, error) {
-	stmt, err := r.db.Prepare(`
-		SELECT id, group_id, creator_id, title, description, event_date, created_at
-		FROM events WHERE id = ?
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-
-	event := &models.Event{}
-	err = stmt.QueryRow(id).Scan(
-		&event.ID,
-		&event.GroupID,
-		&event.CreatorID,
-		&event.Title,
-		&event.Description,
-		&event.EventDate,
-		&event.CreatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return event, nil
+func (r *EventRepository) SetEventResponse(eventID, userID int64, status string) error {
+	_, err := r.db.Exec(`
+		INSERT INTO event_responses (event_id, user_id, status, created_at)
+		VALUES (?, ?, ?, ?)
+		ON CONFLICT(event_id, user_id) DO UPDATE SET status = excluded.status
+	`, eventID, userID, status, time.Now())
+	return err
 }
 
-// Get all events for a group
-func (r *EventRepository) GetAllByGroupID(groupID int64) ([]*models.Event, error) {
-	stmt, err := r.db.Prepare(`
-		SELECT id, group_id, creator_id, title, description, event_date, created_at
-		FROM events WHERE group_id = ?
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-
-	rows, err := stmt.Query(groupID)
+func (r *EventRepository) GetEventsByGroupID(groupID int64) ([]*models.Event, error) {
+	rows, err := r.db.Query(`
+		SELECT id, group_id, creator_id, title, description, event_date, created_at, updated_at
+		FROM events
+		WHERE group_id = ?
+		ORDER BY event_date ASC
+	`, groupID)
 	if err != nil {
 		return nil, err
 	}
@@ -93,8 +67,8 @@ func (r *EventRepository) GetAllByGroupID(groupID int64) ([]*models.Event, error
 
 	var events []*models.Event
 	for rows.Next() {
-		event := &models.Event{}
-		err = rows.Scan(
+		var event models.Event
+		err := rows.Scan(
 			&event.ID,
 			&event.GroupID,
 			&event.CreatorID,
@@ -102,48 +76,13 @@ func (r *EventRepository) GetAllByGroupID(groupID int64) ([]*models.Event, error
 			&event.Description,
 			&event.EventDate,
 			&event.CreatedAt,
+			&event.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
 		}
-		events = append(events, event)
+		events = append(events, &event)
 	}
 
 	return events, nil
-}
-
-// Update an event in the database
-func (r *EventRepository) Update(event *models.Event) error {
-	stmt, err := r.db.Prepare(`
-		UPDATE events SET
-			group_id = ?, creator_id = ?, title = ?, description = ?, event_date = ?
-		WHERE id = ?
-	`)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(
-		event.GroupID,
-		event.CreatorID,
-		event.Title,
-		event.Description,
-		event.EventDate,
-		event.ID,
-	)
-	return err
-}
-
-// Delete an event from the database
-func (r *EventRepository) Delete(id int64) error {
-	stmt, err := r.db.Prepare(`
-		DELETE FROM events WHERE id = ?
-	`)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-	_, err = stmt.Exec(id)
-	return err
 }
