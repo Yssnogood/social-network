@@ -113,6 +113,17 @@ func (r *FollowerRepository) IsFollowing(followerID, followedID int64) (bool, er
 	return exists, err
 }
 
+func (r *FollowerRepository) IsPending(followerID, followedID int64) (bool, error) {
+	var exists bool
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM followers
+			WHERE follower_id = ? AND followed_id = ? AND accepted = 0
+		)
+	`
+	err := r.db.QueryRow(query, followerID, followedID).Scan(&exists)
+	return exists, err
+}
 
 type FollowerInfo struct {
 	ID        int64  // User ID

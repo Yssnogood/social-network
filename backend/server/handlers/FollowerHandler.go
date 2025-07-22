@@ -3,11 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 	"strconv"
+	"time"
 
 	"social-network/backend/database/models"
-	"social-network/backend/database/repositories"
+	repository "social-network/backend/database/repositories"
 	"social-network/backend/server/middlewares"
 )
 
@@ -121,6 +121,11 @@ func (h *FollowerHandler) DeleteFollower(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if err := h.NotificationRepository.DeleteFollowRequestFromUser(req.FollowedID, req.FollowerID); err != nil {
+		http.Error(w, "Failed to delete friend request", http.StatusInternalServerError)
+		return
+	}
+
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Unfollowed successfully",
 	})
@@ -140,10 +145,15 @@ func (h *FollowerHandler) CheckIfFollowing(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "Failed to check following status", http.StatusInternalServerError)
 		return
 	}
-
+	isPending, err := h.FollowerRepository.IsPending(req.FollowerID, req.FollowedID)
+	if err != nil {
+		http.Error(w, "Failed to check following status", http.StatusInternalServerError)
+		return
+	}
 
 	json.NewEncoder(w).Encode(map[string]bool{
 		"isFollowing": isFollowing,
+		"isPending":   isPending,
 	})
 }
 

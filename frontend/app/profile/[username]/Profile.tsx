@@ -7,10 +7,8 @@ import { UserProfile } from "../../../services/user";
 import ProfileTabs from "./ProfileTabs";
 import FollowersSection from "../../components/FollowersSection";
 import EditableProfile from "./EditableProfile";
-import { followUser, unfollowUser, Follower, FollowerUser  } from "../../../services/follow";
+import { followUser, unfollowUser, FollowerUser } from "../../../services/follow";
 import { createNotification } from "../../../services/notifications";
-
-
 
 export default function ClientProfile({
   profile,
@@ -31,93 +29,95 @@ export default function ClientProfile({
   const [isFollowPending, setIsFollowPending] = useState(false);
   const [isPublic, setIsPublic] = useState(profile.is_public);
   const [followerList, setFollowerList] = useState<FollowerUser[]>(followers);
+  const [loading, setLoading] = useState(false);
+  const [followStatusLoaded, setFollowStatusLoaded] = useState(isOwnProfile || profile.is_public);
 
-
-
-useEffect(() => {
-  const fetchIsFollowingStatus = async () => {
-
-
-    try {
-      const res = await fetch(`http://localhost:8080/api/followers/check`,{
+  useEffect(() => {
+    const fetchIsFollowingStatus = async () => {
+      try {
+        const res = await fetch(`http://localhost:8080/api/followers/check`,{
           method : "POST",
           headers : {
             "Content-Type" : "application/json",
           },
-          body: JSON.stringify({follower_id : currentUserId, followed_id: profile.id}),
-      });
+          body: JSON.stringify({
+            follower_id: currentUserId,
+            followed_id: profile.id,
+          }),
+        });
 
-      if (!res.ok) throw new Error("Erreur lors du unfollow");
+        if (!res.ok) throw new Error("Erreur lors du check follow");
 
-      const data = await res.json();
-      if (data.isFollowing) {
-        setIsFollowing(true);
-        setIsFollowPending(false);
-      }  else {
-        setIsFollowing(false);
-        setIsFollowPending(false);
+        const data = await res.json();
+        setIsFollowing(data.isFollowing);
+        setIsFollowPending(data.isPending);
+      } catch (error) {
+        console.error("Erreur lors de la vérification du statut de follow :", error);
+      } finally {
+        setFollowStatusLoaded(true);
       }
-    } catch (error) {
-      console.error("Erreur lors de la vérification du statut de follow :", error);
+    };
+
+    if (!isOwnProfile && !profile.is_public) {
+      fetchIsFollowingStatus();
     }
-  };
-
-  if (!isOwnProfile) {
-    fetchIsFollowingStatus();
-  }
-}, [currentUserId, profile.id, isOwnProfile]);
-
+  }, [currentUserId, profile.id, isOwnProfile, profile.is_public]);
 
   const handleProfileUpdate = () => {
     setIsEditingProfile(false);
   };
 
-const fetchFollowers = async () => {
-  try {
-    const res = await fetch(`http://localhost:8080/api/followersDetails?userID=${profile.id}`);
-    if (!res.ok) throw new Error("Échec du fetch des followers");
-    const data = await res.json();
-    setFollowerList(data);
-  } catch (error) {
-    console.error("Erreur lors du fetch des followers:", error);
-  }
-};
-    console.log("logged :", loggedInUser)
-const handleFollow = async () => {
-  try {
-    await followUser(currentUserId, profile.id, profile.is_public);
-    setIsFollowPending(true);
+  const fetchFollowers = async () => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/followersDetails?userID=${profile.id}`);
+      if (!res.ok) throw new Error("Échec du fetch des followers");
+      const data = await res.json();
+      setFollowerList(data);
+    } catch (error) {
+      console.error("Erreur lors du fetch des followers:", error);
+    }
+  };
 
-    createNotification({
-      userId: profile.id,
-      type: "follow_request",
-      content: `${loggedInUser} vous a envoyé une demande de suivi.`,
-      referenceId: currentUserId,
-      referenceType: "user",
-    });
+  const handleFollow = async () => {
+    try {
+      setLoading(true);
+      await followUser(currentUserId, profile.id, profile.is_public);
 
-    // Met à jour le statut et la liste
-    setIsFollowing(true);
-    setIsFollowPending(false);
-    await fetchFollowers();
-  } catch (error: any) {
-    console.error("Erreur lors du follow :", error.message);
-    alert("Impossible de suivre cet utilisateur.");
-  }
-};
+      createNotification({
+        userId: profile.id,
+        type: "follow_request",
+        content: `${loggedInUser} vous a envoyé une demande de suivi.`,
+        referenceId: currentUserId,
+        referenceType: "user",
+      });
 
-const handleUnfollow = async () => {
-  try {
-    await unfollowUser(currentUserId, profile.id);
-    setIsFollowing(false);
-    setIsFollowPending(false);
-    await fetchFollowers();
-  } catch (error: any) {
-    console.error("Erreur lors du unfollow :", error.message);
-    alert("Impossible de se désabonner.");
-  }
-};
-  const canViewProfile = profile.is_public || isOwnProfile || isFollowing;
+      setIsFollowing(profile.is_public);
+      setIsFollowPending(!profile.is_public);
+      await fetchFollowers();
+    } catch (error: any) {
+      console.error("Erreur lors du follow :", error.message);
+      alert("Impossible de suivre cet utilisateur.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnfollow = async () => {
+    try {
+      setLoading(true);
+      await unfollowUser(currentUserId, profile.id);
+      setIsFollowing(false);
+      setIsFollowPending(false);
+      await fetchFollowers();
+    } catch (error: any) {
+      console.error("Erreur lors du unfollow :", error.message);
+      alert("Impossible de se désabonner.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const canViewProfile = isOwnProfile || profile.is_public || (isFollowing && !isFollowPending);
 
   return (
     <>
@@ -145,16 +145,32 @@ const handleUnfollow = async () => {
 
       <main className="pt-16 px-4 mx-auto max-w-6xl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            {!canViewProfile ? (
+          <div className="md:col-span-3 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            {!followStatusLoaded ? (
+              <div className="text-center text-gray-600 py-8">Chargement du profil...</div>
+            ) : !canViewProfile ? (
               <div className="text-center text-gray-700 dark:text-white py-8">
                 <p className="text-lg">Ce profil est privé.</p>
                 <p className="mt-2">S'abonner pour voir le contenu ?</p>
-                <button
-                  onClick={handleFollow}
-                  className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                >Envoyer une demande
-                </button>
+                {isFollowPending ? (
+                  <button 
+                    className="mt-4 px-4 py-2 bg-yellow-300 text-gray-800 rounded"
+                    onClick={() => {
+                      unfollowUser(currentUserId, profile.id);
+                      setIsFollowPending(false);
+                    }}
+                  >
+                    Annuler la demande
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleFollow}
+                    disabled={loading}
+                    className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {loading ? "..." : "Envoyer une demande"}
+                  </button>
+                )}
               </div>
             ) : isOwnProfile && isEditingProfile ? (
               <EditableProfile
@@ -192,25 +208,36 @@ const handleUnfollow = async () => {
                       >
                         Modifier le profil
                       </button>
-                    ) : !isFollowing ? (
-                      <button
-                        onClick={handleFollow}
-                        className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                      >
-                        Suivre
-                      </button>
-                    )  : (
+                    ) : isFollowing ? (
                       <div className="flex items-center gap-2 mt-4">
                         <span className="px-4 py-2 bg-gray-200 text-gray-800 rounded">
                           Abonné
                         </span>
                         <button
                           onClick={handleUnfollow}
+                          disabled={loading}
                           className="text-sm text-red-500 hover:underline"
                         >
-                          Se désabonner
+                          {loading ? "..." : "Se désabonner"}
                         </button>
                       </div>
+                    ) : isFollowPending ? (
+                      <button 
+                        className="mt-4 px-4 py-2 bg-yellow-300 text-gray-800 rounded"
+                        onClick={() => {
+                          unfollowUser(currentUserId, profile.id);
+                        }}
+                      >
+                        Annuler la demande
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleFollow}
+                        disabled={loading}
+                        className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {loading ? "..." : "Suivre"}
+                      </button>
                     )}
                   </div>
                 </div>
@@ -221,12 +248,8 @@ const handleUnfollow = async () => {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Email
-                      </p>
-                      <p className="text-gray-900 dark:text-white">
-                        {profile.email}
-                      </p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
+                      <p className="text-gray-900 dark:text-white">{profile.email}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -249,15 +272,15 @@ const handleUnfollow = async () => {
               </>
             )}
           </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          {canViewProfile && (<div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <FollowersSection
               followers={followerList}
               currentUserId={currentUserId}
-              currentUsername={profile.username} 
-              isOwnProfile = {isOwnProfile}
+              currentUsername={profile.username}
+              isOwnProfile={isOwnProfile}
             />
-          </div>
+          </div>)}
+          
         </div>
 
         {canViewProfile && <ProfileTabs userId={profile.id} />}
