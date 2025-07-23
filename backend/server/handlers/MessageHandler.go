@@ -1,41 +1,41 @@
 package handlers
 
 import (
-    "social-network/backend/database/repositories"
-	"social-network/backend/database/models"
-	"strconv"
 	"encoding/json"
 	"net/http"
+	"social-network/backend/database/models"
+	repository "social-network/backend/database/repositories"
+	"social-network/backend/server/middlewares"
+	"strconv"
 	"time"
 )
 
 type MessageHandler struct {
-    MessageRepository          *repository.MessageRepository
-    ConversationRepository     *repository.ConversationRepository
-    ConversationMembersRepository *repository.ConversationMembersRepository
+	MessageRepository             *repository.MessageRepository
+	ConversationRepository        *repository.ConversationRepository
+	ConversationMembersRepository *repository.ConversationMembersRepository
 }
 
 func NewMessageHandler(
-    mr *repository.MessageRepository,
-    cr *repository.ConversationRepository,
-    cmr *repository.ConversationMembersRepository,
+	mr *repository.MessageRepository,
+	cr *repository.ConversationRepository,
+	cmr *repository.ConversationMembersRepository,
 ) *MessageHandler {
-    return &MessageHandler{
-        MessageRepository:              mr,
-        ConversationRepository:         cr,
-        ConversationMembersRepository:  cmr,
-    }
+	return &MessageHandler{
+		MessageRepository:             mr,
+		ConversationRepository:        cr,
+		ConversationMembersRepository: cmr,
+	}
 }
-
 
 // Request DTOs
 
 type createMessageRequest struct {
-	ConversationID int64     `json:"conversation_id"`
-	SenderID   int64     `json:"sender_id"`
-	ReceiverID int64     `json:"receiver_id"`
-	GroupID    *int64    `json:"group_id,omitempty"`
-	Content    string    `json:"content"`
+	ConversationID int64  `json:"conversation_id"`
+	SenderID       int64  `json:"sender_id"`
+	ReceiverID     int64  `json:"receiver_id"`
+	GroupID        *int64 `json:"group_id,omitempty"`
+	Content        string `json:"content"`
 }
 
 type getMessageByIDRequest struct {
@@ -57,6 +57,10 @@ type deleteMessageRequest struct {
 	ID int64 `json:"id"`
 }
 
+type getUserConversationRequest struct {
+	JWT string `json:"jwt"`
+}
+
 // Handlers
 
 // CreateMessage creates a new message.
@@ -69,11 +73,11 @@ func (h *MessageHandler) CreateMessage(w http.ResponseWriter, r *http.Request) {
 
 	message := &models.Message{
 		ConversationID: req.ConversationID,
-		SenderID:   req.SenderID,
-		ReceiverID: req.ReceiverID,
-		GroupID:    req.GroupID,
-		Content:    req.Content,
-		CreatedAt:  time.Now(),
+		SenderID:       req.SenderID,
+		ReceiverID:     req.ReceiverID,
+		GroupID:        req.GroupID,
+		Content:        req.Content,
+		CreatedAt:      time.Now(),
 	}
 
 	id, err := h.MessageRepository.Create(message)
@@ -185,3 +189,16 @@ func (h *MessageHandler) GetMessagesByConversationID(w http.ResponseWriter, r *h
 	json.NewEncoder(w).Encode(messages)
 }
 
+func (h *MessageHandler) GetUserConversation(w http.ResponseWriter, r *http.Request) {
+	var req getUserConversationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid Request", http.StatusBadRequest)
+		return
+	}
+
+	userID := middlewares.CheckJWT(req.JWT)
+	if userID == 0 {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+}

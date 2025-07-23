@@ -15,6 +15,12 @@ func NewConversationRepository(db *sql.DB) *ConversationRepository {
 	return &ConversationRepository{db: db}
 }
 
+type ConversationResponse struct {
+	Members      []*models.User       `json:"members"`
+	Messages     []*models.Message    `json:"messages"`
+	Conversation *models.Conversation `json:"conversation"`
+}
+
 // Create a new conversation
 func (r *ConversationRepository) Create(convo *models.Conversation) (*models.Conversation, error) {
 	now := time.Now()
@@ -223,4 +229,42 @@ func (r *ConversationRepository) CreateOrGetPrivateConversation(initiator, recip
 	}
 
 	return newConv, nil
+}
+
+func (r *ConversationRepository) GetConversationByUserID(userID int64) ([]ConversationResponse, error) {
+	stmt, err := r.db.Prepare(`
+	SELECT * FROM conversations WHERE user_id = ?;
+	`)
+	if err != nil {
+		return nil, err
+	}
+	var conversations []ConversationResponse
+	rows, err := stmt.Query(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var conversation = ConversationResponse{Conversation: &models.Conversation{}}
+		rows.Scan(
+			&conversation.Conversation.ID,
+			&conversation.Conversation.Name,
+			&conversation.Conversation.IsGroup,
+			&conversation.Conversation.CreatedAt,
+			&conversation.Conversation.UpdatedAt)
+		members, _ := r.GetMembers(conversation.Conversation.ID)
+		for _, member := range members {
+			conversation.Members = append(conversation.Members, r.getMemberData(member.UserID))
+		}
+	}
+	return conversations, nil
+}
+
+func (r *ConversationRepository) getMemberData(userID int64) *models.User {
+	stmt, _ := r.db.Prepare(`
+	SELECT id,username FROM users WHERE id = ?;
+	`)
+	var user = &models.User{}
+	stmt.QueryRow(userID).Scan(&user.ID, &user.Username)
+	return user
 }

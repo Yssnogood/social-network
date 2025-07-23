@@ -4,8 +4,9 @@ import (
 	"social-network/backend/server/handlers"
 	"social-network/backend/server/middlewares"
 
-	"github.com/gorilla/mux"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func MessageRoutes(r *mux.Router, messageHandler *handlers.MessageHandler) {
@@ -23,5 +24,7 @@ func MessageRoutes(r *mux.Router, messageHandler *handlers.MessageHandler) {
 
 	r.Handle("/api/messages", middlewares.CORSMiddleware(middlewares.JWTMiddleware(
 		http.HandlerFunc(messageHandler.GetMessagesByConversationID)))).Methods("GET", "OPTIONS")
+	r.Handle("/api/messages/user/conversations", middlewares.CORSMiddleware(
+		http.HandlerFunc(messageHandler.GetMessagesByConversationID))).Methods("GET")
 
 }

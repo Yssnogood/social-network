@@ -12,3 +12,17 @@ export async function fetchUsersByUsername(query: string, current: string): Prom
     return [];
   }
 }
+
+export async function fetchUserConversation(jwt: string) {
+  if (jwt == "") {
+    return
+  }
+  const resp = await fetch(url + "/messages/user/conversations",{
+    method:"GET",
+    headers: {
+      Credentials: `Bearer ${jwt}`
+    }
+  })
+  if (!resp.ok) throw new Error("Failed to fetch user's conversations")
+  return resp.json()
+}

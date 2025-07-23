@@ -32,7 +32,7 @@ func JWTMiddleware(next http.Handler) http.Handler {
 			}
 		}
 
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 			return JwtSecret, nil
 		})
 		if err != nil || !token.Valid {
@@ -51,4 +51,16 @@ func JWTMiddleware(next http.Handler) http.Handler {
 func GetUserID(r *http.Request) (int64, bool) {
 	userID, ok := r.Context().Value(UserIDKey).(int64)
 	return userID, ok
+}
+
+func CheckJWT(tokenString string) int64 {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+		return JwtSecret, nil
+	})
+	if err != nil || !token.Valid {
+		return 0
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	return int64(claims["user_id"].(float64))
 }

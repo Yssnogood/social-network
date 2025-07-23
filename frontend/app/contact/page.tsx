@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { fetchUsersByUsername } from "../../services/contact"
 import Link from 'next/link';
@@ -8,9 +8,10 @@ import { useCookies } from "next-client-cookies";
 import { getUserIdFromToken } from "../../services/user";
 import { fetchNotifications } from "../../services/notifications";
 import Header from "../components/Header";
-
+import { fetchUserConversation } from '../../services/contact';
 export default function ContactPage() {
     const cookies = useCookies();
+    const jwt = cookies.get("jwt") || ""
     const [contacts, setContacts] = useState<any[]>([]);
     const [selectedContact, setSelectedContact] = useState<any | null>(null);
     const [showNotifications, setShowNotifications] = useState(false);
@@ -20,6 +21,36 @@ export default function ContactPage() {
     const [isNewConversationModalOpen, setIsNewConversationModalOpen] = useState(false);
     const [newConversationSearchTerm, setNewConversationSearchTerm] = useState('');
     const [users, setUsers] = useState<any[]>([]);
+
+    const ws = useRef<WebSocket | null>(null);
+
+    useEffect(() => {
+    // Fetch existed conversations
+    fetchUserConversation(jwt).then((data) => setContacts(data))
+    // Init WebSockets at start
+    ws.current = new WebSocket("ws://localhost:8080/ws");
+
+				ws.current.onopen = () => {
+					console.log("✅ WebSocket connection opened");
+				};
+
+				ws.current.onmessage = (event) => {
+					try {
+						const msg = JSON.parse(event.data);
+					} catch (err) {
+						console.error("❌ Failed to parse WebSocket message:", err);
+					}
+				};
+
+				ws.current.onerror = (event) => {
+					console.error("❌ WebSocket error:", event);
+				};
+
+				ws.current.onclose = (event) => {
+					console.log("🔌 WebSocket closed:", event);
+				};
+  })
+
 
     // Charger les notifications
     useEffect(() => {
