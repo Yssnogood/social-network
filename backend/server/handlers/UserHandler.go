@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"social-network/backend/server/middlewares"
 	"social-network/backend/app/services"
 	"social-network/backend/database/models"
 	repository "social-network/backend/database/repositories"
@@ -269,23 +270,14 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 // GetUser retrieves a user by ID from JSON body.
 func (h *UserHandler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	var req getCurrentUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		fmt.Println("error1", err)
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
-	if err != nil {
-		fmt.Println("error2", err)
+	userID, ok := middlewares.GetUserID(r)
+	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	user, err := h.UserRepository.GetByID(session.UserID)
+	user, err := h.UserRepository.GetByID(userID)
 	if err != nil {
-		fmt.Println("error3", err)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
@@ -293,6 +285,8 @@ func (h *UserHandler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
 }
+
+
 
 // UpdateUser updates user information using JSON body.
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
@@ -334,7 +328,7 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}else {
 		user.PasswordHash = req.Password
 	}
-	
+
 
 	birthDate, err := time.Parse("2006-01-02T15:04:05Z", req.BirthDate)
 	if err != nil {

@@ -86,3 +86,11 @@ func (r *EventRepository) GetEventsByGroupID(groupID int64) ([]*models.Event, er
 
 	return events, nil
 }
+
+func ( r * EventRepository) DeleteEvent(eventID int64) error {
+	_, err := r.db.Exec(`
+		DELETE FROM events
+		WHERE id = ?
+	`, eventID)
+	return err
+}

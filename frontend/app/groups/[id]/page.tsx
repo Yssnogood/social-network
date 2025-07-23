@@ -82,8 +82,15 @@ interface EventWithResponse extends Event {
 	response_status?: "going" | "not_going" | null;
 }
 
+type user = {
+	id: number;
+	username: string;
+}
+
 export default function GroupPage() {
 	const { id } = useParams();
+
+	const [currentUser, setCurrentUser] = useState<user | null>(null);
 
 	// États principaux
 	const [group, setGroup] = useState<Group | null>(null);
@@ -114,6 +121,25 @@ export default function GroupPage() {
 		description: "",
 		event_date: "",
 	});
+
+	// récupération de l'utilisateur actuel
+	useEffect(() => {
+		const fetchCurrentUser = async () => {
+			try {
+				const res = await fetch("http://localhost:8080/api/users/me", {
+					method: "GET",
+					credentials: "include",
+				});
+				if (!res.ok) throw new Error(await res.text());
+				const data = await res.json();
+				setCurrentUser({ id: data.id, username: data.username });
+			} catch (err: any) {
+				console.error("Error fetching current user:", err.message);
+				setCurrentUser(null);
+			}
+		};
+		fetchCurrentUser();
+	}, []);
 
 	// Fonctions de récupération des données
 	const fetchGroup = async () => {
@@ -368,6 +394,22 @@ const createEvent = async () => {
 		}
 	};
 
+	const deleteEvent = async (eventId: number) => {
+		try {
+			const res = await fetch(`http://localhost:8080/api/events/${eventId}`, {
+				method: "DELETE",
+				credentials: "include",
+			});
+			if (!res.ok) throw new Error(await res.text());
+
+			setEvents((prev) => prev.filter((event) => event.id !== eventId));
+			console.log("Événement supprimé avec succès !");
+		} catch (err: any) {
+			console.error("Error deleting event:", err.message);
+			alert(`Erreur lors de la suppression de l'événement : ${err.message}`);
+		}
+	}
+
 	// Fonctions utilitaires
 	const togglePosts = async () => {
 		if (!showPosts) {
@@ -525,6 +567,15 @@ const createEvent = async () => {
 								>
 									Ne pas participer
 								</button>
+								{/* Bouton de suppression d'événement apparait que au créateur de l'event*/}
+								{currentUser?.id === event.creator_id && (
+									<button
+										onClick={() => deleteEvent(event.id)}
+										className="bg-gray-300 text-gray-800 px-3 py-1 rounded hover:bg-gray-400"
+									>
+										Supprimer
+									</button>
+								)}
 							</div>
 						</div>
 					))

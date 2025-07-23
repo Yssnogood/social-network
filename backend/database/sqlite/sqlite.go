@@ -26,6 +26,12 @@ func InitDBAndMigrate() *sql.DB {
 		log.Fatalf("Cannot open SQLite database: %v", err)
 	}
 
+	// active les foreign keys
+	_, err = db.Exec("PRAGMA foreign_keys = ON")
+	if err != nil {
+		log.Fatal("Impossible d’activer les foreign keys :", err)
+	}
+
 	// Prepare the driver for migrations
 	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
 	if err != nil {
