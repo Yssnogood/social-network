@@ -204,18 +204,11 @@ type Event struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-// EventOption model
-type EventOption struct {
-	ID         int64  `json:"id"`
-	EventID    int64  `json:"event_id"`
-	OptionText string `json:"option_text"`
-}
-
 // EventResponse model
 type EventResponse struct {
 	ID        int64     `json:"id"`
 	EventID   int64     `json:"event_id"`
 	UserID    int64     `json:"user_id"`
-	OptionID  *int64    `json:"option_id"`
+	Status    string    `json:"status"`
 	CreatedAt time.Time `json:"created_at"`
 }
