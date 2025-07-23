@@ -11,9 +11,19 @@ export default function PostItem({ post, jwt }: PostItemProps) {
     return (
         <div id={String(post.id)} className="bg-gray-800 p-4 rounded-lg shadow-md mb-4">
             <div className="flex items-center mb-3">
-                <div className="w-10 h-10 bg-gray-700 rounded-full mr-3"></div>
+                <div className="w-10 h-10 rounded-full overflow-hidden mr-3 bg-gray-700 flex items-center justify-center">
+                    {post.userName.avatar_path ? (
+                        <img
+                        src={post.userName.avatar_path.startsWith("http") ? post.userName.avatar_path : `/uploads/${post.userName.avatar_path}`}
+                        alt={`${post.userName.username}'s avatar`}
+                        className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <span className="text-white text-sm">{post.userName.username[0]}</span>
+                    )}
+                </div>
                 <div>
-                    <div className="font-semibold text-white">{post.userName}</div>
+                    <div className="font-semibold text-white">{post.userName.username}</div>
                     <div className="text-xs text-gray-400">
                         {formatRelativeTime(post.createdAt)}
                     </div>

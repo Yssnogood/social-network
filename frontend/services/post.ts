@@ -4,7 +4,7 @@ const url = "http://localhost:8080/api"
 export interface Post {
   id: number;
   userId: string;
-  userName: string;
+  userName: any;
   content: string;
   privacy: number;
   imageUrl?: string;
@@ -81,6 +81,8 @@ export async function getPosts(jwt?:string): Promise<Post[]> {
 
                 }
         posts.push(newPost)
+        console.log(newPost)
+        console.log(newPost.userName)
       }
     }
   } catch (err) {

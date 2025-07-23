@@ -11,9 +11,9 @@ export default function PostDetail({ post, commentsCount, jwt }: PostDetailProps
     return (
         <div id={String(post.id)} className="bg-gray-800 p-4 rounded-lg shadow-md mb-4">
             <div className="flex items-center mb-3">
-                <div className="w-10 h-10 bg-gray-700 rounded-full mr-3"></div>
+                <div className="w-10 h-10 bg-gray-700 rounded-full mr-3">{post.userName.avatar_path}</div>
                 <div>
-                    <div className="font-semibold text-white">{post.userName}</div>
+                    <div className="font-semibold text-white">{post.userName.username}</div>
                     <div className="text-xs text-gray-400">
                         {formatRelativeTime(new Date(post.createdAt))}
                     </div>
