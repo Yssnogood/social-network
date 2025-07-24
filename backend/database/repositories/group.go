@@ -2,8 +2,8 @@ package repository
 
 import (
 	"database/sql"
-	"time"
 	"fmt"
+	"time"
 
 	"social-network/backend/database/models"
 )
@@ -63,6 +63,48 @@ func (r *GroupRepository) AddMember(groupID, userID int64, Username string, acce
 	defer stmt.Close()
 
 	_, err = stmt.Exec(groupID, userID, Username, accepted, createdAt)
+	return err
+}
+
+func (r *GroupRepository) CreateGroupInvitation(groupID, inviterID, inviteeID int64) (*models.Group, error) {
+	stmt, err := r.db.Prepare(`
+		INSERT INTO group_invitations (group_id, inviter_id, invitee_id, create_at)
+		VALUES (?, ?, ?, ?)
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	createdAt := time.Now()
+	result, err := stmt.Exec(groupID, inviterID, inviteeID, createdAt)
+	if err != nil {
+		return nil, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+
+	group := &models.Group{
+		ID:        id,
+		CreatorID: inviterID,
+	}
+	return group, nil
+}
+
+func (r *GroupRepository) DeleteInvitation(userID, groupID int64) error {
+	stmt, err := r.db.Prepare(`
+		DELETE FROM group_invitations
+		WHERE invitee_id = ? AND group_id = ?
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(userID, groupID)
 	return err
 }
 

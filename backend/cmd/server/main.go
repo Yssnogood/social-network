@@ -69,7 +69,7 @@ func main() {
 	eventHandler := appHandlers.NewEventHandler(eventRepo)
 
 
-	groupHandler := appHandlers.NewGroupHandler(groupRepo, sessionRepo, userRepo)
+	groupHandler := appHandlers.NewGroupHandler(groupRepo, sessionRepo, userRepo, notificationRepo)
 
 
 	// CORS
