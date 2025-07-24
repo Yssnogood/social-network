@@ -1,3 +1,5 @@
+import { url } from "@/app/login/page";
+
 export async function fetchUsersByUsername(query: string, current: string): Promise<any[]> {
   if (current === 'error') {
     console.error('Invalid user ID provided');
@@ -19,10 +21,8 @@ export async function fetchUserConversation(jwt: string) {
   }
   const resp = await fetch(url + "/messages/user/conversations",{
     method:"GET",
-    headers: {
-      Credentials: `Bearer ${jwt}`
-    }
+    credentials: "include"
   })
-  if (!resp.ok) throw new Error("Failed to fetch user's conversations")
-  return resp.json()
+  const r = await resp.json()
+  return r
 }

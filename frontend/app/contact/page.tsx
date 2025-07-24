@@ -12,7 +12,13 @@ import { fetchUserConversation } from '../../services/contact';
 export default function ContactPage() {
     const cookies = useCookies();
     const jwt = cookies.get("jwt") || ""
+    const userID = cookies.get("userID")
+
+    const file_ext = [".jpg",".gif",".png"]
+
+    const [messages, setMessages] = useState<any[]>([]);
     const [contacts, setContacts] = useState<any[]>([]);
+    const [input,setInput] = useState("")
     const [selectedContact, setSelectedContact] = useState<any | null>(null);
     const [showNotifications, setShowNotifications] = useState(false);
     const [notifications, setNotifications] = useState<string[]>([]);
@@ -28,6 +34,10 @@ export default function ContactPage() {
     // Fetch existed conversations
     fetchUserConversation(jwt).then((data) => setContacts(data))
     // Init WebSockets at start
+    initWS()
+  },[])
+  
+  const initWS = () => {
     ws.current = new WebSocket("ws://localhost:8080/ws");
 
 				ws.current.onopen = () => {
@@ -37,6 +47,10 @@ export default function ContactPage() {
 				ws.current.onmessage = (event) => {
 					try {
 						const msg = JSON.parse(event.data);
+            setMessages((prev) => [...prev, msg])
+            filteredContacts.filter(({contact,conversation,messages}) => {
+              if (contact.id == msg.sender_id || contact.id === msg.receiver_id) messages.push(msg)
+            })
 					} catch (err) {
 						console.error("❌ Failed to parse WebSocket message:", err);
 					}
@@ -49,8 +63,30 @@ export default function ContactPage() {
 				ws.current.onclose = (event) => {
 					console.log("🔌 WebSocket closed:", event);
 				};
-  })
-
+  }
+  const sendMessage = async () => {
+            if (!input.trim()) return;
+        
+            if (ws.current?.readyState !== WebSocket.OPEN) {
+              initWS()
+            }
+        
+            const message = {
+              type: "message_send",
+              sender_id: Number(userID),
+              receiver_id: selectedContact.id,
+              content: input.trim(),
+            };
+        
+            try {
+              console.log("📤 Envoi du message:", message);
+              ws.current?.send(JSON.stringify(message));
+              setInput(""); // Vider le champ après envoi
+            } catch (error) {
+              console.error("❌ Failed to send message:", error);
+            }
+        
+          };
 
     // Charger les notifications
     useEffect(() => {
@@ -107,8 +143,8 @@ export default function ContactPage() {
         return () => clearTimeout(delayDebounce);
     }, [newConversationSearchTerm]);
 
-    const filteredContacts = contacts.filter(contact =>
-        contact.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredContacts = contacts.filter(({contact,messages,conversation}) =>
+        contact.username.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const openNewConversationModal = () => {
@@ -160,26 +196,30 @@ export default function ContactPage() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto">
-                        {filteredContacts.map((contact) => (
+                        {filteredContacts.map(({conversation,contact,messages}) => {
+                          return (
                             <div
                                 key={contact.id}
-                                onClick={() => setSelectedContact(contact)}
+                                onClick={() => {
+                                  setSelectedContact(contact)
+                                  setMessages(messages)
+                                }}
                                 className={`flex items-center p-3 border-b border-gray-400 hover:bg-blue-400 cursor-pointer ${selectedContact?.id === contact.id ? 'bg-blue-800' : ''}`}
                             >
                                 <div className="relative">
-                                    <Image src={contact.avatar} alt={contact.name} width={40} height={40} className="rounded-full" />
+                                    <Image src={contact.avatar_path} alt={contact.username} width={40} height={40} className="rounded-full" />
                                     {contact.isOnline && (
                                         <div className="w-3 h-3 bg-green-500 rounded-full absolute bottom-0 right-0 border-2 border-white"></div>
                                     )}
                                 </div>
                                 <div className="ml-3 flex-1">
                                     <div className="flex justify-between items-center">
-                                        <h3 className="font-medium">{contact.name}</h3>
-                                        <span className="text-xs text-gray-100">{contact.time}</span>
-                                    </div>
+                                        <h3 className="font-medium">{contact.username}</h3>
+                                        <span className="text-xs text-gray-100">{/* messages[messages.length - 1].content */}</span>
+                                    </div> 
                                 </div>
                             </div>
-                        ))}
+                        )})}
                     </div>
                 </div>
 
@@ -189,13 +229,13 @@ export default function ContactPage() {
                         <>
                             <div className="p-4 border-b border-gray-400 flex items-center">
                                 <div className="relative">
-                                    <Image src={selectedContact.avatar} alt={selectedContact.name} width={48} height={48} className="rounded-full" />
+                                    <Image src={selectedContact.avatar_path} alt={selectedContact.username} width={48} height={48} className="rounded-full" />
                                     {selectedContact.isOnline && (
                                         <div className="w-3 h-3 bg-green-500 rounded-full absolute bottom-0 right-0 border-2 border-white"></div>
                                     )}
                                 </div>
                                 <div className="ml-3">
-                                    <h2 className="font-semibold">{selectedContact.name}</h2>
+                                    <h2 className="font-semibold">{selectedContact.username}</h2>
                                     <p className="text-xs text-gray-400">
                                         {selectedContact.isOnline ? 'Online now' : ''}
                                     </p>
@@ -203,7 +243,26 @@ export default function ContactPage() {
                             </div>
 
                             <div className="flex-1 p-4 overflow-y-auto bg-gray-800">
-                                {/* Display messages here */}
+                                {messages.length > 0 ? (
+						messages.map((msg, i) => (
+							<div
+								key={i}
+								className={`mb-2 ${msg.sender_id !== selectedContact.id ? "text-right" : "text-left"}`}
+							>
+								<span
+									className={`inline-block px-3 py-1 rounded ${msg.sender_id !== selectedContact.id ? "bg-blue-600 text-white" : "bg-gray-200 text-black"
+										}`}
+								>
+
+									{ msg.content.includes("giphy.com") && file_ext.includes(msg.content.slice(-4)) 
+                  ? <Image src={msg.content} alt={msg.id} width={200} height={200} className="" />
+                  : msg.content}
+								</span>
+							</div>
+						))
+					) : (
+						<p className="text-center text-sm text-gray-400">Aucun message</p>
+					)}
                             </div>
 
                             <div className="p-4 border-t border-gray-400">
@@ -216,6 +275,11 @@ export default function ContactPage() {
                                     <input
                                         type="text"
                                         placeholder="Type a message..."
+                                        value={input}
+						                            onChange={(e) => setInput(e.target.value)}
+						                            onKeyDown={(e) => {
+							                            if (e.key === "Enter") sendMessage();
+						                              }}
                                         className="flex-1 mx-4 p-2 rounded-full border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
                                     <button className="p-2 bg-blue-600 text-white rounded-full">

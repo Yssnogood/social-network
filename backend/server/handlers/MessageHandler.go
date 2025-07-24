@@ -190,15 +190,16 @@ func (h *MessageHandler) GetMessagesByConversationID(w http.ResponseWriter, r *h
 }
 
 func (h *MessageHandler) GetUserConversation(w http.ResponseWriter, r *http.Request) {
-	var req getUserConversationRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid Request", http.StatusBadRequest)
-		return
-	}
-
-	userID := middlewares.CheckJWT(req.JWT)
-	if userID == 0 {
+	userID, ok := middlewares.GetUserID(r)
+	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
+	conversations, err := h.ConversationRepository.GetConversationByUserID(userID, h.MessageRepository)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(conversations)
 }

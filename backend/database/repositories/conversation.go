@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	"social-network/backend/database/models"
@@ -16,7 +17,7 @@ func NewConversationRepository(db *sql.DB) *ConversationRepository {
 }
 
 type ConversationResponse struct {
-	Members      []*models.User       `json:"members"`
+	Contact      *models.User         `json:"contact"`
 	Messages     []*models.Message    `json:"messages"`
 	Conversation *models.Conversation `json:"conversation"`
 }
@@ -231,16 +232,18 @@ func (r *ConversationRepository) CreateOrGetPrivateConversation(initiator, recip
 	return newConv, nil
 }
 
-func (r *ConversationRepository) GetConversationByUserID(userID int64) ([]ConversationResponse, error) {
+func (r *ConversationRepository) GetConversationByUserID(userID int64, mr *MessageRepository) ([]ConversationResponse, error) {
 	stmt, err := r.db.Prepare(`
-	SELECT * FROM conversations WHERE user_id = ?;
+	SELECT c.id, c.name,c.is_group, c.created_at, c.updated_at FROM conversations AS c INNER JOIN conversation_members AS cm ON c.id = cm.conversation_id WHERE cm.user_id = ?;
 	`)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 	var conversations []ConversationResponse
 	rows, err := stmt.Query(userID)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
@@ -254,17 +257,22 @@ func (r *ConversationRepository) GetConversationByUserID(userID int64) ([]Conver
 			&conversation.Conversation.UpdatedAt)
 		members, _ := r.GetMembers(conversation.Conversation.ID)
 		for _, member := range members {
-			conversation.Members = append(conversation.Members, r.getMemberData(member.UserID))
+			if member.ID != userID {
+				conversation.Contact = r.getMemberData(member.UserID)
+			}
 		}
+		messages, _ := mr.GetMessagesByConversationID(conversation.Conversation.ID)
+		conversation.Messages = messages
+		conversations = append(conversations, conversation)
 	}
 	return conversations, nil
 }
 
 func (r *ConversationRepository) getMemberData(userID int64) *models.User {
 	stmt, _ := r.db.Prepare(`
-	SELECT id,username FROM users WHERE id = ?;
+	SELECT id,username, avatar_path FROM users WHERE id = ?;
 	`)
 	var user = &models.User{}
-	stmt.QueryRow(userID).Scan(&user.ID, &user.Username)
+	stmt.QueryRow(userID).Scan(&user.ID, &user.Username, &user.AvatarPath)
 	return user
 }

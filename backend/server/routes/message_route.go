@@ -24,7 +24,7 @@ func MessageRoutes(r *mux.Router, messageHandler *handlers.MessageHandler) {
 
 	r.Handle("/api/messages", middlewares.CORSMiddleware(middlewares.JWTMiddleware(
 		http.HandlerFunc(messageHandler.GetMessagesByConversationID)))).Methods("GET", "OPTIONS")
-	r.Handle("/api/messages/user/conversations", middlewares.CORSMiddleware(
-		http.HandlerFunc(messageHandler.GetMessagesByConversationID))).Methods("GET")
+	r.Handle("/api/messages/user/conversations", middlewares.CORSMiddleware(middlewares.JWTMiddleware(
+		http.HandlerFunc(messageHandler.GetUserConversation)))).Methods("GET")
 
 }

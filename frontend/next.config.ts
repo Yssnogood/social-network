@@ -7,6 +7,18 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "res.cloudinary.com",
       },
+      {
+        protocol: "https",
+        hostname: "media2.giphy.com"
+      },
+      {
+        protocol: "https",
+        hostname: "media.giphy.com"
+      },
+      {
+        protocol: "https",
+        hostname: "media3.giphy.com"
+      }
     ],
   },
 };
