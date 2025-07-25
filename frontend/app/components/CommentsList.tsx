@@ -7,6 +7,7 @@ interface CommentsListProps {
 }
 
 export default function CommentsList({ comments }: CommentsListProps) {
+                        console.log(comments);
     return (
         <div>
             <h2 className="text-xl font-semibold text-white mb-4">Comments</h2>

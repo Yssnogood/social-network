@@ -131,7 +131,7 @@ export async function getSpecificPost(post_id: number, jwt?: string): Promise<Po
       newPost = {
         id: r.post.id,
         userId: r.post.user_id,
-        userName: r.user,
+        userName: r.user ?? r.post.post_author ?? "Unknown",
         imageUrl: r.post.image_path,
         privacy: r.post.privacy_type,
         createdAt: new Date(Date.parse(r.post.created_at)),

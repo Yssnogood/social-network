@@ -55,8 +55,12 @@ func (r *CommentRepository) Create(comment *models.Comment) (int64, error) {
 // Get a comment by ID
 func (r *CommentRepository) GetByID(id int64) (*models.Comment, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT id, post_id, user_id, content, image_path, created_at, updated_at
-		FROM comments WHERE id = ?
+		SELECT 
+			c.id, c.post_id, c.user_id, c.content, c.image_path, c.created_at, c.updated_at,
+			u.id, u.avatar_path, u.username, u.about_me, u.is_public, u.created_at
+		FROM comments c
+		JOIN users u ON c.user_id = u.id
+		WHERE c.id = ?
 	`)
 	if err != nil {
 		return nil, err
@@ -64,6 +68,8 @@ func (r *CommentRepository) GetByID(id int64) (*models.Comment, error) {
 	defer stmt.Close()
 
 	comment := &models.Comment{}
+	user := &models.User{}
+
 	err = stmt.QueryRow(id).Scan(
 		&comment.ID,
 		&comment.PostID,
@@ -72,18 +78,33 @@ func (r *CommentRepository) GetByID(id int64) (*models.Comment, error) {
 		&comment.ImagePath,
 		&comment.CreatedAt,
 		&comment.UpdatedAt,
+
+		&user.ID,
+		&user.AvatarPath,
+		&user.Username,
+		&user.AboutMe,
+		&user.IsPublic,
+		&user.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
 
+	print(user)
+	comment.Author = *user
+	comment.Username = user.Username
+
 	return comment, nil
 }
 
+
 // GetComments retrieves the list of comments for a post
+// GetComments retrieves the list of comments for a post, including user info
 func (r *CommentRepository) GetComments(postID int64) ([]*models.Comment, error) {
 	rows, err := r.db.Query(`
-		SELECT c.id, c.post_id, c.user_id, u.username, c.content, c.image_path, c.created_at, c.updated_at
+		SELECT 
+			c.id, c.post_id, c.user_id, c.content, c.image_path, c.created_at, c.updated_at,
+			u.id, u.avatar_path, u.username, u.about_me, u.is_public, u.created_at
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
 		WHERE c.post_id = ?
@@ -97,21 +118,32 @@ func (r *CommentRepository) GetComments(postID int64) ([]*models.Comment, error)
 	var comments []*models.Comment
 
 	for rows.Next() {
-		c := &models.Comment{}
+		comment := &models.Comment{}
+		user := &models.User{}
+
 		err := rows.Scan(
-			&c.ID,
-			&c.PostID,
-			&c.UserID,
-			&c.Username,
-			&c.Content,
-			&c.ImagePath,
-			&c.CreatedAt,
-			&c.UpdatedAt,
+			&comment.ID,
+			&comment.PostID,
+			&comment.UserID,
+			&comment.Content,
+			&comment.ImagePath,
+			&comment.CreatedAt,
+			&comment.UpdatedAt,
+
+			&user.ID,
+			&user.AvatarPath,
+			&user.Username,
+			&user.AboutMe,
+			&user.IsPublic,
+			&user.CreatedAt,
 		)
 		if err != nil {
 			return nil, err
 		}
-		comments = append(comments, c)
+
+		comment.Author = *user
+		comment.Username = user.Username
+		comments = append(comments, comment)
 	}
 
 	if err = rows.Err(); err != nil {
@@ -120,6 +152,7 @@ func (r *CommentRepository) GetComments(postID int64) ([]*models.Comment, error)
 
 	return comments, nil
 }
+
 
 func (r *CommentRepository) GetCommentsFromUserByID(userID int64)([]*models.Comment, error){
 		rows, err := r.db.Query(`
