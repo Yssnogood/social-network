@@ -13,6 +13,7 @@ import PostsList from "../../components/groupComponent/PostsList";
 import TabNavigation from "../../components/groupComponent/TabNavigation";
 import { useGroupData } from "../../hooks/useGroupData";
 import { useGroupWebSocket } from "../../hooks/useGroupWebSocket";
+import { createNotification } from "../../../services/notifications";
 import {
 	Group,
 	GroupMember,
@@ -135,10 +136,21 @@ export default function GroupPage() {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				credentials: "include",
-				body: JSON.stringify({ user_id: userIdToInvite }),
+				body: JSON.stringify({ user_id: userIdToInvite, current_user_id: currentUser?.id, current_user_name: currentUser?.username }),
 			});
 			if (!res.ok) throw new Error(await res.text());
 			alert(`Invitation envoyée à l'utilisateur #${userIdToInvite} !`);
+			try {
+				createNotification({
+					userId: userIdToInvite,
+					type: "group_invitation",
+					content: `Vous avez été invité à rejoindre le groupe "${group?.title}" par ${currentUser?.username}.`,
+					referenceId: group?.id,
+					referenceType: "group",
+				});
+			} catch (err: any) {
+				alert(`Erreur lors de la création de la notification : ${err.message}`);
+			}
 		} catch (err: any) {
 			alert(`Erreur lors de l'invitation : ${err.message}`);
 		}

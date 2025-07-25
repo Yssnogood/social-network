@@ -1,3 +1,6 @@
+import jwt from "jsonwebtoken";
+
+// Fetch the notifications to display on their notification panel
 export async function fetchNotifications(token: string, user_id: string) {
   const res = await fetch(`http://localhost:8080/api/notifications/get`, {
     method: "POST",
@@ -14,6 +17,7 @@ export async function fetchNotifications(token: string, user_id: string) {
   return res.json();
 }
 
+// Create a new notification, with dynamic content, reference ID and type, depending on the usage.
 export async function createNotification(notification: {
   userId: number;
   type: string;
@@ -44,39 +48,87 @@ export async function createNotification(notification: {
   return res.json();
 }
 
-export async function acceptFriendRequestNotif(notificationId: number, user_id: number, reference_id: number) {
+// Accept a follow request (from the notification)
+export async function acceptFollowRequestNotif(notificationId: number, user_id: number, reference_id: number) {
   const res = await fetch("http://localhost:8080/api/followers/accept", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ 
+    body: JSON.stringify({
       notification_id: notificationId,
       followed_id: user_id,
-      follower_id: reference_id }),
+      follower_id: reference_id
+    }),
   });
 
   if (!res.ok) {
-    throw new Error("Erreur lors de l'acceptation de la demande d'ami.");
+    throw new Error("Erreur lors de l'acceptation de la demande de follow.");
   }
 
   return res.json();
 }
 
-export async function declineFriendRequestNotif(notificationId: number, user_id: number, reference_id: number) {
+// Decline a follow request (from the notification)
+export async function declineFollowRequestNotif(notificationId: number, user_id: number, reference_id: number) {
   const res = await fetch("http://localhost:8080/api/followers/decline", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ 
-    notification_id: notificationId,
-    followed_id: user_id,
-    follower_id: reference_id }),
+    body: JSON.stringify({
+      notification_id: notificationId,
+      followed_id: user_id,
+      follower_id: reference_id
+    }),
   });
 
   if (!res.ok) {
-    throw new Error("Erreur lors du refus de la demande d'ami.");
+    throw new Error("Erreur lors du refus de la demande de follow.");
+  }
+
+  return res.json();
+}
+
+// Accept a join group request (from the notification)
+export async function acceptGroupJoinRequest(reference_id: number, user_id: number, reference_type: string) {
+  const res = await fetch("http://localhost:8080/api/groups/accept-invitation", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      group_id: reference_id,
+      current_user: user_id,
+      reference_type: reference_type,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("Error accepting group invitation:", errorText);
+    throw new Error("Erreur lors de l'acceptation de l'invitation au groupe.");
+  }
+
+  return res.json();
+}
+
+// Decline a join group request (from the notification)
+export async function declineGroupJoinRequest(reference_id: number, user_id: number, reference_type: string) {
+  const res = await fetch("http://localhost:8080/api/groups/decline-invitation", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      group_id: reference_id,
+      current_user: user_id,
+      reference_type: reference_type
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Erreur lors du refus de l'invitation au groupe.");
   }
 
   return res.json();
