@@ -124,6 +124,18 @@ export default function GroupPage() {
 			});
 			if (!res.ok) throw new Error(await res.text());
 			setNewMessage("");
+			if (!currentUser) return;
+			try {
+				createNotification({
+					userId: currentUser?.id,
+					type: "group_message",
+					content: `Nouveau message dans le groupe "${group?.title}".`,
+					referenceId: group?.id,
+					referenceType: "group",
+				});
+			} catch (err: any) {
+				alert(`Erreur lors de la création de la notification : ${err.message}`);
+			}
 		} catch (err: any) {
 			console.error("Error send message:", err.message);
 		}
