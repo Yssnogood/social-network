@@ -178,6 +178,18 @@ export default function GroupPage() {
 				body: JSON.stringify({ content }),
 			});
 			if (!res.ok) throw new Error(await res.text());
+			if (!currentUser) return;
+			try {
+				createNotification({
+					userId: currentUser?.id,
+					type: "group_post",
+					content: `Nouveau post dans le groupe "${group?.title}".`,
+					referenceId: group?.id,
+					referenceType: "group",
+				});
+			} catch (err: any) {
+				alert(`Erreur lors de la création de la notification : ${err.message}`);
+			}
 			await fetchPosts();
 		} catch (err: any) {
 			console.error("Error creating post:", err.message);
@@ -206,7 +218,7 @@ export default function GroupPage() {
 		}
 	};
 
-	const createComment = async (postId: number) => {
+	const createComment = async (postId: number, userId: number, username: string) => {
 		const commentContent = newCommentByPost[postId];
 		if (!commentContent?.trim()) return;
 
@@ -221,6 +233,19 @@ export default function GroupPage() {
 				}
 			);
 			if (!res.ok) throw new Error(await res.text());
+			if (!currentUser) return;
+			console.log("userId", userId);
+			try {
+				createNotification({
+					userId: userId,
+					type: "group_comment",
+					content: `${username} a commenté un de vos posts dans le groupe "${group?.title}".`,
+					referenceId: group?.id,
+					referenceType: "group",
+				});
+			} catch (err: any) {
+				alert(`Erreur lors de la création de la notification : ${err.message}`);
+			}
 
 			setNewCommentByPost((prev) => ({ ...prev, [postId]: "" }));
 			await fetchComments(postId);
@@ -257,6 +282,18 @@ export default function GroupPage() {
 			});
 
 			if (!res.ok) throw new Error(await res.text());
+			if (!currentUser) return;
+			try {
+				createNotification({
+					userId: currentUser?.id,
+					type: "group_event",
+					content: `Nouveau événement dans le groupe "${group?.title}".`,
+					referenceId: group?.id,
+					referenceType: "group",
+				});
+			} catch (err: any) {
+				alert(`Erreur lors de la création de la notification : ${err.message}`);
+			}
 			await fetchEvents();
 		} catch (err: any) {
 			console.error("Erreur création événement:", err.message);
