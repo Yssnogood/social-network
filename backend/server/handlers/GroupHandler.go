@@ -2,15 +2,16 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"time"
 	"strconv"
+	"time"
+
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"fmt"
 
 	"social-network/backend/database/models"
-	"social-network/backend/database/repositories"
+	repository "social-network/backend/database/repositories"
 	"social-network/backend/server/middlewares"
 )
 
@@ -19,14 +20,16 @@ type GroupHandler struct {
 	GroupRepository   *repository.GroupRepository
 	SessionRepository *repository.SessionRepository
 	UserRepository    *repository.UserRepository
+	NotificationRepository *repository.NotificationRepository
 }
 
 // NewGroupHandler creates a new GroupHandler.
-func NewGroupHandler(gr *repository.GroupRepository, sr *repository.SessionRepository, ur *repository.UserRepository) *GroupHandler {
+func NewGroupHandler(gr *repository.GroupRepository, sr *repository.SessionRepository, ur *repository.UserRepository, nr *repository.NotificationRepository) *GroupHandler {
 	return &GroupHandler{
 		GroupRepository:   gr,
 		SessionRepository: sr,
 		UserRepository:    ur,
+		NotificationRepository: nr,
 	}
 }
 
@@ -244,20 +247,16 @@ func (h *GroupHandler) AddMember(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var payload struct {
-		UserID int64 `json:"user_id"`
+		UserID          int64  `json:"user_id"`
+		CurrentUserID   int64  `json:"current_user_id"`
+		CurrentUserName string `json:"current_user_name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
 		return
 	}
 
-	userName, err := h.getUsernameByID(payload.UserID)
-	if err != nil {
-		http.Error(w, "Failed to get user information: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = h.GroupRepository.AddMember(groupID, payload.UserID, userName, true, time.Now())
+	_, err = h.GroupRepository.CreateGroupInvitation(groupID, payload.CurrentUserID, payload.UserID)
 	if err != nil {
 		http.Error(w, "Failed to add member: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -545,4 +544,71 @@ func BroadcastToGroupClients(groupID int64, message interface{}) {
 			delete(clients, c)
 		}
 	}
+}
+
+func (h *GroupHandler) AcceptGroupInvitation(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		GroupID int64 `json:"group_id"`
+		UserID  int64 `json:"current_user"`
+		ReferenceType string `json:"reference_type"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println("Accepting group invitation for user:", payload.UserID, "to group:", payload.GroupID)
+
+	userName, err := h.getUsernameByID(payload.UserID)
+	if err != nil {
+		http.Error(w, "Failed to get user information: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = h.GroupRepository.AddMember(payload.GroupID, payload.UserID, userName, true, time.Now())
+	if err != nil {
+		http.Error(w, "Failed to add group member: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = h.GroupRepository.DeleteInvitation(payload.UserID, payload.GroupID)
+	if err != nil {
+		http.Error(w, "Failed to delete group invitation: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = h.NotificationRepository.DeleteGroupInvitationRequest(payload.UserID, payload.GroupID)
+	if err != nil {
+		http.Error(w, "Failed to delete group invitation: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *GroupHandler) DeclineGroupInvitation(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		GroupID int64 `json:"group_id"`
+		UserID  int64 `json:"current_user"`
+		ReferenceType string `json:"reference_type"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	err := h.GroupRepository.DeleteInvitation(payload.UserID, payload.GroupID)
+	if err != nil {
+		http.Error(w, "Failed to decline group invitation: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = h.NotificationRepository.DeleteGroupInvitationRequest(payload.UserID, payload.GroupID)
+	if err != nil {
+		http.Error(w, "Failed to delete group invitation: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

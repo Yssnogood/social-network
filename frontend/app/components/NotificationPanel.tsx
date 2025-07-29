@@ -1,4 +1,4 @@
-import { acceptFriendRequestNotif, declineFriendRequestNotif } from "../../services/notifications";
+import { acceptFollowRequestNotif, declineFollowRequestNotif, acceptGroupJoinRequest, declineGroupJoinRequest } from "../../services/notifications";
 
 export default function Notifications({ notifications }: { notifications: any[] }) {
     return (
@@ -13,16 +13,32 @@ export default function Notifications({ notifications }: { notifications: any[] 
                             {notif.type === "follow_request" && (
                                 <div className="mt-2 flex gap-2">
                                     <button
-                                        onClick={() => acceptFriendRequestNotif(notif.id, notif.user_id, notif.reference_id)}
+                                        onClick={() => acceptFollowRequestNotif(notif.id, notif.user_id, notif.reference_id)}
                                         className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
                                     >
                                         Accepter
                                     </button>
                                     <button
-                                        onClick={() => declineFriendRequestNotif(notif.id, notif.user_id, notif.reference_id)}
+                                        onClick={() => declineFollowRequestNotif(notif.id, notif.user_id, notif.reference_id)}
                                         className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
                                     >
                                         Refuser
+                                    </button>
+                                </div>
+                            )}
+                            {notif.type === "group_invitation" && (
+                                <div className="mt-2">
+                                    <button
+                                        onClick={() => acceptGroupJoinRequest(notif.reference_id, notif.user_id, notif.reference_type)}
+                                        className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    >
+                                        Rejoindre le groupe
+                                    </button>
+                                    <button
+                                        onClick={() => declineGroupJoinRequest(notif.reference_id, notif.user_id, notif.reference_type)}
+                                        className="ml-2 px-2 py-1 text-xs bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+                                    >
+                                        Refuser l'invitation
                                     </button>
                                 </div>
                             )}
