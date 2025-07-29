@@ -257,7 +257,8 @@ func (r *ConversationRepository) GetConversationByUserID(userID int64, mr *Messa
 			&conversation.Conversation.UpdatedAt)
 		members, _ := r.GetMembers(conversation.Conversation.ID)
 		for _, member := range members {
-			if member.ID != userID {
+			if test := (member.UserID != userID); test {
+				fmt.Println(member.ID, userID)
 				conversation.Contact = r.getMemberData(member.UserID)
 			}
 		}

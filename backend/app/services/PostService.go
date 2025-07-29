@@ -2,6 +2,7 @@ package services
 
 import (
 	"database/sql"
+	"fmt"
 	"social-network/backend/database/models"
 )
 
@@ -71,4 +72,37 @@ func (s *PostService) GetLikes(post_id int64) ([]string, error) {
 		likes = append(likes, username)
 	}
 	return likes, nil
+}
+
+func (s *PostService) CheckPrivacy(post_id int64, user_id int64) bool {
+	stmt, err := s.db.Prepare(`
+	SELECT id FROM post_privacy WHERE post_id = ? AND user_id = ?;
+	`)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	if err = stmt.QueryRow(post_id, user_id).Scan(); err != nil {
+		fmt.Println(err)
+		return false
+	}
+	return true
+}
+
+func (s *PostService) IsAuthorFriend(author_id int64, user_id int64) bool {
+	stmt, err := s.db.Prepare(`
+		SELECT count(f1.follower_id) FROM followers
+		INNER JOIN followers f2 ON f2.follower_id = ? AND f2.followed_id = ? AND f2.accepted = TRUE
+		WHERE f1.followed_id = ? AND f1.follower_id = ? AND f1.accepted = TRUE;
+	`)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	var count int
+	if err = stmt.QueryRow(author_id, user_id, author_id, user_id).Scan(&count); err != nil {
+		fmt.Println(count, err)
+		return false
+	}
+	return true
 }

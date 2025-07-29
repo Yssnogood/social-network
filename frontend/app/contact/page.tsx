@@ -156,7 +156,8 @@ export default function ContactPage() {
     }, [newConversationSearchTerm]);
 
     const filteredContacts = contacts.filter(({contact,messages,conversation}) =>
-        contact.username.toLowerCase().includes(searchTerm.toLowerCase())
+        {
+            return contact?.username.toLowerCase().includes(searchTerm.toLowerCase())}
     );
 
     const openNewConversationModal = () => {
@@ -298,7 +299,7 @@ export default function ContactPage() {
 						                              }}
                                         className="flex-1 mx-4 p-2 rounded-full border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
-                                    <button className="p-2 bg-blue-600 text-white rounded-full">
+                                    <button onClick={() => {sendMessage()}} className="p-2 bg-blue-600 text-white rounded-full">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                                         </svg>
@@ -350,8 +351,8 @@ export default function ContactPage() {
                                             if (!exists) {
                                                 const newContact = {
                                                     id: user.id,
-                                                    name: user.name,
-                                                    avatar: user.avatar,
+                                                    username: user.name,
+                                                    avatar_path: user.avatar,
                                                     isOnline: user.status === 'online',
                                                     time: 'Just now',
                                                 };
