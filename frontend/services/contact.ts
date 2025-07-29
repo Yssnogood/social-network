@@ -1,4 +1,5 @@
 import { url } from "@/app/login/page";
+import { useRef, useEffect } from "react";
 
 export async function fetchUsersByUsername(query: string, current: string): Promise<any[]> {
   if (current === 'error') {
@@ -15,12 +16,18 @@ export async function fetchUsersByUsername(query: string, current: string): Prom
   }
 }
 
-export async function fetchUserConversation(jwt: string) {
-  if (jwt == "") {
-    return
-  }
+export async function fetchUserConversation() {
   const resp = await fetch(url + "/messages/user/conversations",{
     method:"GET",
+    credentials: "include"
+  })
+  const r = await resp.json()
+  return r
+}
+
+export async function fetchMessages(conversation_id:number) {
+  const resp = await fetch(url + `/messages?conversation_id=${conversation_id}`, {
+    method: "GET",
     credentials: "include"
   })
   const r = await resp.json()

@@ -1,8 +1,8 @@
 package websocket
 
 import (
-	"social-network/backend/database/repositories"
 	"net/http"
+	repository "social-network/backend/database/repositories"
 	"social-network/backend/server/middlewares"
 
 	"github.com/gorilla/mux"
@@ -20,7 +20,6 @@ func SetupWebSocketRoutes(
 
 	// WebSocket endpoint
 	router.Handle("/ws", middlewares.JWTMiddleware(http.HandlerFunc(wsHandler.HandleWebSocket))).Methods("GET")
-
 
 	apiRouter := router.PathPrefix("/api/messages").Subrouter()
 

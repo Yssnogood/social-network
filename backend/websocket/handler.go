@@ -2,11 +2,12 @@ package websocket
 
 import (
 	"encoding/json"
-	"net/http"
+	"fmt"
 	"log"
-	"strconv"
-	"social-network/backend/database/repositories"
+	"net/http"
+	repository "social-network/backend/database/repositories"
 	"social-network/backend/server/middlewares"
+	"strconv"
 )
 
 // WebSocketHandler handles WebSocket connections and HTTP requests
@@ -83,7 +84,6 @@ func (h *WebSocketHandler) HandleGetConversation(w http.ResponseWriter, r *http.
 		return
 	}
 
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(conversation)
 }
@@ -95,13 +95,14 @@ func (h *WebSocketHandler) GetConversationMessages(w http.ResponseWriter, r *htt
 			log.Printf("🔥 Panic récupérée: %+v\n", r)
 		}
 	}()
-
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
+	cookie, err := r.Cookie("jwt")
+	if err != nil {
+		http.Error(w, "No Credentials", http.StatusForbidden)
 	}
+	middlewares.CheckJWT(cookie.Value)
 
 	conversationID := r.URL.Query().Get("conversation_id")
+	fmt.Println("test error oéne")
 	if conversationID == "" {
 		http.Error(w, "Conversation ID is required", http.StatusBadRequest)
 		return
@@ -114,7 +115,7 @@ func (h *WebSocketHandler) GetConversationMessages(w http.ResponseWriter, r *htt
 	}
 
 	messages, err := h.messageRepo.GetMessagesByConversationID(cid)
-		if err != nil {
+	if err != nil {
 		log.Println("❌ Erreur GetMessagesByConversationID:", err)
 		http.Error(w, "Failed to retrieve messages", http.StatusInternalServerError)
 		return

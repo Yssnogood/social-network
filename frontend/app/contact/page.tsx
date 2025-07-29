@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { fetchUsersByUsername } from "../../services/contact"
+import { fetchUsersByUsername, fetchMessages } from "../../services/contact"
 import Link from 'next/link';
 import { useCookies } from "next-client-cookies";
 import { getUserIdFromToken } from "../../services/user";
@@ -29,10 +29,22 @@ export default function ContactPage() {
     const [users, setUsers] = useState<any[]>([]);
 
     const ws = useRef<WebSocket | null>(null);
+    const container = useRef<HTMLDivElement>(null)
+    const Scroll = (first:boolean) => {
+        if (!container.current) return
+        const { offsetHeight, scrollHeight, scrollTop } = container.current as HTMLDivElement
+        if (scrollHeight <= scrollTop + offsetHeight + 100 || first)  {
+            container.current?.scrollTo(0, scrollHeight)
+        }
+  }
+
+  useEffect(() => {
+    Scroll(false)
+  }, [messages])
 
     useEffect(() => {
     // Fetch existed conversations
-    fetchUserConversation(jwt).then((data) => setContacts(data))
+    fetchUserConversation().then((data) => setContacts(data))
     // Init WebSockets at start
     initWS()
   },[])
@@ -200,9 +212,12 @@ export default function ContactPage() {
                           return (
                             <div
                                 key={contact.id}
-                                onClick={() => {
+                                onClick={async () => {
                                   setSelectedContact(contact)
-                                  setMessages(messages)
+                                  
+                                  let mess = await fetchMessages(conversation.id)
+                                  setMessages(mess)
+                                  Scroll(true)
                                 }}
                                 className={`flex items-center p-3 border-b border-gray-400 hover:bg-blue-400 cursor-pointer ${selectedContact?.id === contact.id ? 'bg-blue-800' : ''}`}
                             >
@@ -242,9 +257,10 @@ export default function ContactPage() {
                                 </div>
                             </div>
 
-                            <div className="flex-1 p-4 overflow-y-auto bg-gray-800">
+                            <div ref={container}  className="flex-1 p-4 overflow-y-auto bg-gray-800">
                                 {messages.length > 0 ? (
-						messages.map((msg, i) => (
+						messages.map((msg, i) => {
+                            return (
 							<div
 								key={i}
 								className={`mb-2 ${msg.sender_id !== selectedContact.id ? "text-right" : "text-left"}`}
@@ -254,12 +270,12 @@ export default function ContactPage() {
 										}`}
 								>
 
-									{ msg.content.includes("giphy.com") && file_ext.includes(msg.content.slice(-4)) 
+									{msg.content && msg.content.includes("giphy.com") && file_ext.includes(msg.content.slice(-4)) 
                   ? <Image src={msg.content} alt={msg.id} width={200} height={200} className="" />
                   : msg.content}
 								</span>
 							</div>
-						))
+						)})
 					) : (
 						<p className="text-center text-sm text-gray-400">Aucun message</p>
 					)}
