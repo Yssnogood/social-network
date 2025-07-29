@@ -22,6 +22,9 @@ export async function fetchUserConversation() {
     credentials: "include"
   })
   const r = await resp.json()
+  if (!r) {
+    return []
+  }
   return r
 }
 

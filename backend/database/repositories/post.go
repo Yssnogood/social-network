@@ -125,12 +125,23 @@ func (r *PostRepository) GetPosts(ps *services.PostService, curr_user *models.Us
 		}
 		post.CommentsCount = commentCount
 		user, _ := ps.GetPostAuthor(post)
-		posts = append(posts, map[string]any{
-			"post":       post,
-			"user":       user.Username,
-			"like":       len(likes),
-			"user_liked": slices.Contains(likes, curr_user.Username),
-		})
+		isPrivate := user != curr_user && post.PrivacyType != 0
+		if isPrivate {
+			switch post.PrivacyType {
+			case 1:
+
+			case 2:
+				isPrivate = !ps.CheckPrivacy(post.ID, curr_user.ID)
+			}
+		}
+		if !isPrivate {
+			posts = append(posts, map[string]any{
+				"post":       post,
+				"user":       user.Username,
+				"like":       len(likes),
+				"user_liked": slices.Contains(likes, curr_user.Username),
+			})
+		}
 	}
 	return posts, nil
 }
@@ -313,7 +324,6 @@ func (r *PostRepository) GetLikedPostsByUserId(userID int64) ([]int64, error) {
 	return likedPosts, nil
 }
 
-
 func (r *PostRepository) GetPostById(postID int64) (*models.Post, error) {
 	query := `
 		SELECT id, user_id, content, image_path, privacy_type, created_at, updated_at
@@ -358,4 +368,3 @@ func (r *PostRepository) GetCommentsCountByPostID(postID int64) (int, error) {
 	err := r.db.QueryRow(`SELECT COUNT(*) FROM comments WHERE post_id = ?`, postID).Scan(&count)
 	return count, err
 }
-
