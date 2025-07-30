@@ -4,10 +4,7 @@ import jwt from "jsonwebtoken";
 export async function fetchNotifications(token: string, user_id: string) {
   const res = await fetch(`http://localhost:8080/api/notifications/get`, {
     method: "POST",
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+    credentials: "include",
     body: JSON.stringify({ user_id: parseInt(user_id) }),
   });
 

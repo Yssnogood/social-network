@@ -125,11 +125,11 @@ func (r *PostRepository) GetPosts(ps *services.PostService, curr_user *models.Us
 		}
 		post.CommentsCount = commentCount
 		user, _ := ps.GetPostAuthor(post)
-		isPrivate := user != curr_user && post.PrivacyType != 0
+		isPrivate := user.ID != curr_user.ID && post.PrivacyType != 0
 		if isPrivate {
 			switch post.PrivacyType {
 			case 1:
-
+				isPrivate = !ps.IsAuthorFriend(user.ID, curr_user.ID)
 			case 2:
 				isPrivate = !ps.CheckPrivacy(post.ID, curr_user.ID)
 			}
@@ -260,7 +260,7 @@ func (r *PostRepository) Delete(id int64) error {
 	return nil
 }
 
-func (r *PostRepository) GetPostsFromUserByID(id int64) ([]*models.Post, error) {
+func (r *PostRepository) GetPostsFromUserByID(id int64, curr_user int64, ps *services.PostService) ([]*models.Post, error) {
 	rows, err := r.db.Query(`
 		SELECT id, user_id, content, image_path, privacy_type, created_at, updated_at
 		FROM posts WHERE user_id = ?
@@ -284,7 +284,18 @@ func (r *PostRepository) GetPostsFromUserByID(id int64) ([]*models.Post, error) 
 		); err != nil {
 			return nil, err
 		}
-		posts = append(posts, post)
+		isPrivate := post.UserID != curr_user && post.PrivacyType != 0
+		if isPrivate {
+			switch post.PrivacyType {
+			case 1:
+				isPrivate = !ps.IsAuthorFriend(post.UserID, curr_user)
+			case 2:
+				isPrivate = !ps.CheckPrivacy(post.ID, curr_user)
+			}
+		}
+		if !isPrivate {
+			posts = append(posts, post)
+		}
 	}
 
 	if err := rows.Err(); err != nil {
@@ -367,4 +378,29 @@ func (r *PostRepository) GetCommentsCountByPostID(postID int64) (int, error) {
 	var count int
 	err := r.db.QueryRow(`SELECT COUNT(*) FROM comments WHERE post_id = ?`, postID).Scan(&count)
 	return count, err
+}
+
+func (r *PostRepository) UpdateViewersPrivacy(post_id int64, incomming []int64, ps *services.PostService) error {
+	err := ps.DeletePostCurrentViewers(post_id)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	for _, user_id := range incomming {
+		stmt, err := r.db.Prepare(`
+		INSERT INTO post_privacy (post_id,user_id) 
+		VALUES(?,?);
+	`)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+		_, err = stmt.Exec(post_id, user_id)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+	}
+	return nil
 }

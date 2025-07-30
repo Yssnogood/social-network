@@ -121,12 +121,12 @@ func (r *CommentRepository) GetComments(postID int64) ([]*models.Comment, error)
 	return comments, nil
 }
 
-func (r *CommentRepository) GetCommentsFromUserByID(userID int64)([]*models.Comment, error){
-		rows, err := r.db.Query(`
+func (r *CommentRepository) GetCommentsFromUserByID(userID int64) ([]*models.Comment, error) {
+	rows, err := r.db.Query(`
 		SELECT id, post_id, user_id, content, image_path, created_at, updated_at
 		FROM comments WHERE user_id = ?
 	`, userID)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 	defer rows.Close()

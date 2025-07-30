@@ -154,7 +154,8 @@ export async function getSpecificPost(post_id: number, jwt?: string): Promise<Po
  */
 export async function createPost(postData: { 
   content: string;
-  privacy: number
+  privacy: number;
+  viewers: number[];
   imageUrl?: string;
 },jwt?:string): Promise<Post> {
   let newPost: Post = {
@@ -168,7 +169,6 @@ export async function createPost(postData: {
     liked:false,
     comments: 0
   };
-  console.log(postData.imageUrl)
         try {
             const resp = await fetch(url+"/post",{
                 method: "POST",
@@ -176,6 +176,7 @@ export async function createPost(postData: {
                     jwt: jwt,
                     content: postData.content,
                     image_path: postData.imageUrl,
+                    viewers: postData.viewers,
                     privacy_type: postData.privacy
                 })
             })
@@ -213,6 +214,7 @@ export async function getPostsByUserID(userID: number): Promise<Post[]> {
     const resp = await fetch(url + "/posts_user", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         user_id: userID
       })

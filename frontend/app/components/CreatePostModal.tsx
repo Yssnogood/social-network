@@ -1,19 +1,27 @@
-import { useState } from "react";
+import { useState, use, useEffect } from "react";
 import { CldUploadButton } from "next-cloudinary";
+import { MultiSelect } from "./MultiSelect";
+import { fetchFriends } from "@/services/contact";
 
 const cloudPresetName = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET_NAME;
 
 interface CreatePostModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (postData: { content: string; privacy: number; imageUrl?: string }) => void;
+    onSubmit: (postData: { content: string; privacy: number; viewers: number[]; imageUrl?: string }) => void;
 }
 
 export default function CreatePostModal({ isOpen, onClose, onSubmit }: CreatePostModalProps) {
     const [postPrivacy, setPostPrivacy] = useState(0);
     const [postContent, setPostContent] = useState('');
     const [imageURL, setPostImage] = useState<string>('');
-
+    const [friends,setFriends] = useState<any[]>([]);
+    const [selectedFriends,setSelectedFriends] = useState<any[]>([]);
+    
+    useEffect(() => {
+        if (!isOpen) return
+        fetchFriends().then((data) => setFriends(data))
+    },[isOpen])
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -21,10 +29,15 @@ export default function CreatePostModal({ isOpen, onClose, onSubmit }: CreatePos
         if (imageURL !== '') {
             imageUrl = imageURL;
         }
-
+        let viewers: number[] = [];
+        if (postPrivacy == 2) {
+            viewers = friends.map((friend) => friend.id)
+            console.log(viewers,postPrivacy)
+        }
         onSubmit({
             content: postContent,
             privacy: postPrivacy,
+            viewers,
             imageUrl
         });
 
@@ -62,6 +75,8 @@ export default function CreatePostModal({ isOpen, onClose, onSubmit }: CreatePos
                             <option value="1">🙎‍♂️ Friends</option>
                             <option value="2">🔒 Private</option>
                         </select>
+                        
+                        {postPrivacy === 2 && <MultiSelect options={friends} selected={selectedFriends} onChange={setSelectedFriends} placeholder="Select who can see your post !" />}
                     </div>
 
                     <div className="mb-4">
