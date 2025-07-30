@@ -69,7 +69,7 @@ export default function Home() {
         setIsCreatePostModalOpen(false);
     };
 
-    const handleSubmitPost = async (postData: { content: string; privacy: number; imageUrl?: string }) => {
+    const handleSubmitPost = async (postData: { content: string; privacy: number; viewers: number[], imageUrl?: string }) => {
         try {
             const newPost = await createPost(postData, cookies.get("jwt"));
 			
@@ -166,7 +166,7 @@ export default function Home() {
 
             <GroupsList groups={groups} />
 
-            <div className="pt-16 px-4 flex justify-center">
+            <div className="dark:bg-background pt-16 px-4 flex justify-center">
                 <div className="w-full max-w-xl mx-auto">
                     <PostsList
                         posts={posts}
