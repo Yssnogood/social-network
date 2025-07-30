@@ -7,7 +7,7 @@ import { getComments, createComment, Comment } from "../../../../services/commen
 import { createNotification, fetchNotifications } from "@/services/notifications";
 import { getUserIdFromToken } from "../../../../services/user";
 
-// Nouveaux composants extraits
+// Component imports
 import Header from "../../../components/Header";
 import PostDetail from "../../../components/PostDetail";
 import CommentForm from "../../../components/CommentForm";
@@ -19,7 +19,7 @@ import NotFoundMessage from "../../../components/NotFoundMessage";
 export default function CommentsPage({
     params,
 }: {
-    params: Promise<{ id: string }>
+    params: Promise<{ id: string }>;
 }) {
     const cookies = useCookies();
     const [post, setPost] = useState<Post | null>(null);
@@ -27,10 +27,25 @@ export default function CommentsPage({
     const [isLoading, setIsLoading] = useState(true);
     const [showNotifications, setShowNotifications] = useState(false);
     const [notifications, setNotifications] = useState<string[]>([]);
+    const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+
     const param = use(params);
     const postId = parseInt(param.id);
 
-    // Charger les notifications
+    // Load logged-in user ID
+    useEffect(() => {
+        const loadUserId = async () => {
+            const token = cookies.get("jwt");
+            if (token) {
+                const id = await getUserIdFromToken(token);
+                if (id) setCurrentUserId(parseInt(id));
+            }
+        };
+
+        loadUserId();
+    }, [cookies]);
+
+    // Load notifications
     useEffect(() => {
         const getNotif = async () => {
             const token = cookies.get("jwt");
@@ -39,7 +54,9 @@ export default function CommentsPage({
 
             try {
                 const fetchedNotifications = await fetchNotifications(token, userId);
-                const notifStrings = Array.isArray(fetchedNotifications) ? fetchedNotifications?.map((notif: any) => notif.content) : [];
+                const notifStrings = Array.isArray(fetchedNotifications)
+                    ? fetchedNotifications.map((notif: any) => notif.content)
+                    : [];
                 setNotifications(notifStrings);
             } catch (error) {
                 console.error("Failed to fetch notifications:", error);
@@ -53,17 +70,16 @@ export default function CommentsPage({
         setShowNotifications(!showNotifications);
     };
 
+    // Load post and comments
     useEffect(() => {
         async function loadPostAndComments() {
             try {
-                // Fetch the specific post and its comments
-                const foundPost = await getSpecificPost(postId, cookies.get("jwt"));
+                const token = cookies.get("jwt");
 
+                const foundPost = await getSpecificPost(postId, token);
                 if (foundPost) {
                     setPost(foundPost);
-
-                    // Fetch comments for the post
-                    const postComments = await getComments(postId, cookies.get("jwt"));
+                    const postComments = await getComments(postId, token);
                     setComments(postComments.reverse());
                 }
             } catch (error) {
@@ -76,39 +92,39 @@ export default function CommentsPage({
         loadPostAndComments();
     }, [postId, cookies]);
 
+    // Handle new comment submission
     const handleSubmitComment = async (commentContent: string) => {
-        // Get the current username from cookie
+        const token = cookies.get("jwt");
         const username = cookies.get("user");
 
-        // Awaiting the async comment creation
-        const newComment = await createComment({
-            postId,
-            content: commentContent
-        }, cookies.get("jwt"));
+        const newComment = await createComment(
+            {
+                postId,
+                content: commentContent,
+            },
+            token
+        );
 
         if (newComment) {
-            // Add the new comment to the existing list
             const commentWithUsername = {
                 ...newComment,
-                userName: username || newComment.userName || "You"
+                userName: username || newComment.userName || "You",
             };
 
             setComments([commentWithUsername, ...comments]);
 
-            // Don't create a notification if the comment is by the post owner
             if (post?.userName !== username) {
                 try {
                     if (!post) return;
-                    createNotification({
+                    await createNotification({
                         userId: parseInt(post.userId),
                         type: "comment",
                         content: `${username || "You"} commented on your post`,
-                        // The referenceId is the post ID where the comment was made
                         referenceId: post.id,
-                        referenceType: "post"
+                        referenceType: "post",
                     });
                 } catch (error) {
-                    console.error("Failed to create notification for comment:", error);
+                    console.error("Failed to create notification:", error);
                 }
             }
         }
@@ -139,7 +155,7 @@ export default function CommentsPage({
 
                             <CommentForm onSubmit={handleSubmitComment} />
 
-                            <CommentsList comments={comments} />
+                            <CommentsList comments={comments} currentUserId={currentUserId} />
                         </div>
                     ) : (
                         <NotFoundMessage message="Post not found" />

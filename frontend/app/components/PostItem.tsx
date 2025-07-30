@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { Post, LikePost } from "../../services/post";
-import { formatRelativeTime } from "../../services/utils";
 
 interface PostItemProps {
   post: Post;
   jwt: string | undefined;
+  onlineUser: boolean
 }
 
-export default function PostItem({ post, jwt }: PostItemProps) {
+export default function PostItem({ post, jwt, onlineUser }: PostItemProps) {
   const [showProfileCard, setShowProfileCard] = useState(false);
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -46,6 +46,7 @@ export default function PostItem({ post, jwt }: PostItemProps) {
     }
   };
 
+    console.log("onlineUser : ", onlineUser, post.userName)
   return (
     <div
       id={String(post.id)}
@@ -122,25 +123,28 @@ export default function PostItem({ post, jwt }: PostItemProps) {
             <div className="text-gray-300 text-sm mb-3">
               {post.userName.about_me || "Pas de description."}
             </div>
-            {post.userName.is_public ? (
-              <div className="flex gap-2">
-                <button className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white">
-                  Message
-                </button>
-                <button className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 rounded text-white">
-                  Suivre
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <button className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white">
-                  Demander message
-                </button>
-                <button className="px-3 py-1 text-sm bg-yellow-600 hover:bg-yellow-700 rounded text-white">
-                  Demander follow
-                </button>
-              </div>
+            {!(onlineUser===post.userName.username) && (
+              post.userName.is_public ? (
+                <div className="flex gap-2">
+                  <button className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white">
+                    Message
+                  </button>
+                  <button className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 rounded text-white">
+                    Suivre
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <button className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white">
+                    Demander message
+                  </button>
+                  <button className="px-3 py-1 text-sm bg-yellow-600 hover:bg-yellow-700 rounded text-white">
+                    Demander follow
+                  </button>
+                </div>
+              )
             )}
+
           </div>
         )}
       </div>

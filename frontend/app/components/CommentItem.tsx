@@ -7,9 +7,10 @@ import { formatRelativeTime } from "../../services/utils";
 
 interface CommentItemProps {
   comment: Comment;
+  isOwn: boolean;
 }
 
-export default function CommentItem({ comment }: CommentItemProps) {
+export default function CommentItem({ comment, isOwn }: CommentItemProps) {
   const user = comment.author;
 
   const [showProfileCard, setShowProfileCard] = useState(false);
@@ -47,7 +48,11 @@ export default function CommentItem({ comment }: CommentItemProps) {
   };
 
   return (
-    <div className="bg-gray-800 p-4 rounded-lg shadow-md relative">
+    <div
+      className={`bg-gray-800 p-4 rounded-lg shadow-md relative ${
+        isOwn ? "border border-blue-500" : ""
+      }`}
+    >
       <div className="flex items-center mb-2 relative">
         {/* Avatar */}
         <div
@@ -56,17 +61,17 @@ export default function CommentItem({ comment }: CommentItemProps) {
           onMouseLeave={handleMouseLeave}
           onClick={toggleCard}
         >
-          {user?.avatar_path && (
-            <img
-              src={
-                user.avatar_path.startsWith("http")
-                  ? user.avatar_path
-                  : `/uploads/${user.avatar_path}`
-              }
-              alt="Avatar"
-              className="w-full h-full object-cover"
-            />
-          )}
+              {user.avatar_path && (
+                <img
+                  src={
+                    user.avatar_path.startsWith("http")
+                      ? user.avatar_path
+                      : `/uploads/${user.avatar_path}`
+                  }
+                 alt="Profile"
+                 className="w-full h-full object-cover"
+                  />
+              )}
         </div>
 
         {/* Username */}
@@ -76,7 +81,8 @@ export default function CommentItem({ comment }: CommentItemProps) {
           onMouseLeave={handleMouseLeave}
           onClick={toggleCard}
         >
-          {user?.userName || comment.userName}
+          {user?.username || comment.author.username}{" "}
+          {isOwn && <span className="text-blue-400 text-xs">(You)</span>}
         </div>
 
         {/* Hover Card */}
@@ -118,24 +124,26 @@ export default function CommentItem({ comment }: CommentItemProps) {
             <div className="text-gray-300 text-sm mb-3">
               {user.about_me || "Pas de description."}
             </div>
-            {user.is_public ? (
-              <div className="flex gap-2">
-                <button className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white">
-                  Message
-                </button>
-                <button className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 rounded text-white">
-                  Suivre
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <button className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white">
-                  Demander message
-                </button>
-                <button className="px-3 py-1 text-sm bg-yellow-600 hover:bg-yellow-700 rounded text-white">
-                  Demander follow
-                </button>
-              </div>
+            {!isOwn && (
+              user.isPublic ? (
+                <div className="flex gap-2">
+                  <button className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white">
+                    Message
+                  </button>
+                  <button className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 rounded text-white">
+                    Suivre
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <button className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white">
+                    Demander message
+                  </button>
+                  <button className="px-3 py-1 text-sm bg-yellow-600 hover:bg-yellow-700 rounded text-white">
+                    Demander follow
+                  </button>
+                </div>
+              )
             )}
           </div>
         )}
