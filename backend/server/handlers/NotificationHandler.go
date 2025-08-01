@@ -4,23 +4,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"social-network/backend/database/models"
-	"social-network/backend/database/repositories"
+	repository "social-network/backend/database/repositories"
 )
 
 // NotificationHandler handles HTTP requests related to notifications.
 type NotificationHandler struct {
 	NotificationRepository *repository.NotificationRepository
 	FollowerRepository     *repository.FollowerRepository
+	GroupRepository        *repository.GroupRepository
 }
 
 // NewNotificationHandler creates a new instance of NotificationHandler.
-func NewNotificationHandler(nr *repository.NotificationRepository, fr *repository.FollowerRepository) *NotificationHandler {
+func NewNotificationHandler(nr *repository.NotificationRepository, fr *repository.FollowerRepository, gr *repository.GroupRepository) *NotificationHandler {
 	return &NotificationHandler{
 		NotificationRepository: nr,
 		FollowerRepository:     fr,
+		GroupRepository:        gr,
 	}
 }
 
@@ -61,6 +64,11 @@ type deleteAllNotificationsRequest struct {
 	UserID int64 `json:"user_id"`
 }
 
+type deleteNotificationByRefRequest struct {
+	ReferenceID int64  `json:"reference_id"`
+	Type       string `json:"type"`
+}
+
 // Handlers
 
 // CreateNotification handles the creation of a new notification.
@@ -70,9 +78,9 @@ func (h *NotificationHandler) CreateNotification(w http.ResponseWriter, r *http.
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
-	if req.Type == "post_created" {
-		fmt.Println("Creating notification for post creation, notifying followers...")
-		h.NotifUsersForPost(w, r, req)
+	if req.Type == "post_created" || (strings.Contains(req.Type, "group") && !strings.Contains(req.Type, "comment")) {
+		fmt.Println("Creating notification to broadcast...")
+		h.BroadcastNotifToUsers(w, r, req)
 		return
 	}
 
@@ -196,15 +204,7 @@ func (h *NotificationHandler) DeleteAllNotificationsByUser(w http.ResponseWriter
 }
 
 // Notificate all users that follows the post owner for a specific post (new post from the owner).
-func (h *NotificationHandler) NotifUsersForPost(w http.ResponseWriter, r *http.Request, req createNotificationRequest) {
-	
-	// req.UserID is the ID of the post owner
-	followers, err := h.FollowerRepository.GetFollowers(req.UserID)
-	if err != nil {
-		http.Error(w, "Failed to get followers", http.StatusInternalServerError)
-		return
-	}
-
+func (h *NotificationHandler) BroadcastNotifToUsers(w http.ResponseWriter, r *http.Request, req createNotificationRequest) {
 	notification := &models.Notification{
 		UserID:        0, // This will be set for each follower
 		Type:          req.Type,
@@ -215,12 +215,42 @@ func (h *NotificationHandler) NotifUsersForPost(w http.ResponseWriter, r *http.R
 		CreatedAt:     time.Now(),
 	}
 
-	// Send the notification to each follower
-	for _, f := range followers {
-		notification.UserID = f.FollowerID
-		_, err := h.NotificationRepository.Create(notification)
+	if req.Type == "post_created" {
+		// req.UserID is the ID of the post owner
+		followers, err := h.FollowerRepository.GetFollowers(req.UserID)
 		if err != nil {
-			continue
+			http.Error(w, "Failed to get followers", http.StatusInternalServerError)
+			return
+		}
+
+		// Send the notification to each follower
+		for _, f := range followers {
+			notification.UserID = f.FollowerID
+			_, err := h.NotificationRepository.Create(notification)
+			if err != nil {
+				continue
+			}
+		}
+	}
+
+	if strings.Contains(req.Type, "group") {
+		// req.ReferenceID is the ID of the group
+		groupMembers, err := h.GroupRepository.GetMembersByGroupID(req.ReferenceID)
+		if err != nil {
+			http.Error(w, "Failed to get group members", http.StatusInternalServerError)
+			return
+		}
+
+		// Send the notification to each group member
+		for _, member := range groupMembers {
+			if member.UserID == req.UserID {
+				continue // Skip the sender
+			}
+			notification.UserID = member.UserID
+			_, err := h.NotificationRepository.Create(notification)
+			if err != nil {
+				continue
+			}
 		}
 	}
 

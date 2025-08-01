@@ -65,7 +65,7 @@ func main() {
 	followerHandler := appHandlers.NewFollowerHandler(followerRepo, notificationRepo)
 	messageHandler := appHandlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
 	websocketHandler := websocket.NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo)
-	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo, followerRepo)
+	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo, followerRepo, groupRepo)
 	eventHandler := appHandlers.NewEventHandler(eventRepo)
 
 
