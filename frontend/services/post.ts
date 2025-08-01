@@ -4,7 +4,7 @@ const url = "http://localhost:8080/api"
 export interface Post {
   id: number;
   userId: string;
-  userName: string;
+  userName: any;
   content: string;
   privacy: number;
   imageUrl?: string;
@@ -81,6 +81,8 @@ export async function getPosts(jwt?:string): Promise<Post[]> {
 
                 }
         posts.push(newPost)
+        console.log(newPost)
+        console.log(newPost.userName)
       }
     }
   } catch (err) {
@@ -129,7 +131,7 @@ export async function getSpecificPost(post_id: number, jwt?: string): Promise<Po
       newPost = {
         id: r.post.id,
         userId: r.post.user_id,
-        userName: r.user,
+        userName: r.user ?? r.post.post_author ?? "Unknown",
         imageUrl: r.post.image_path,
         privacy: r.post.privacy_type,
         createdAt: new Date(Date.parse(r.post.created_at)),

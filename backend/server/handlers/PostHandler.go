@@ -132,6 +132,15 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Post not found", http.StatusNotFound)
 		return
 	}
+	
+
+	p, ok := post["post"].(*models.Post)
+	if !ok {
+		http.Error(w, "Internal server error: invalid post type", http.StatusInternalServerError)
+		return
+	}
+	postAuthor, err := h.PostService.GetPostAuthor(p)
+	post["user"] = postAuthor
 
 	json.NewEncoder(w).Encode(post)
 }

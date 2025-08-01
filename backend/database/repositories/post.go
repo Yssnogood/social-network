@@ -137,7 +137,7 @@ func (r *PostRepository) GetPosts(ps *services.PostService, curr_user *models.Us
 		if !isPrivate {
 			posts = append(posts, map[string]any{
 				"post":       post,
-				"user":       user.Username,
+				"user":       user,
 				"like":       len(likes),
 				"user_liked": slices.Contains(likes, curr_user.Username),
 			})

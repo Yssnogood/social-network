@@ -172,6 +172,7 @@ export default function Home() {
                         posts={posts}
                         isLoading={isLoading}
                         jwt={cookies.get("jwt")}
+                        onlineUser={cookies.get("user") }
                     />
                 </div>
             </div>
