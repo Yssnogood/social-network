@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useCookies } from "next-client-cookies";
-import { fetchUsersByUsername } from "../../services/contact";
 import { getUserIdFromToken } from "../../services/user";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { searchInstances } from "../../services/search";
 
 export default function SearchBar() {
     const [query, setQuery] = useState('');
@@ -16,7 +16,6 @@ export default function SearchBar() {
     const router = useRouter();
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Ferme le dropdown si on clique à l’extérieur
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
@@ -31,21 +30,33 @@ export default function SearchBar() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // Logique de recherche avec timeout
     useEffect(() => {
         const timeout = setTimeout(async () => {
             if (query.trim()) {
                 const token = cookies.get("jwt");
                 const userId = await getUserIdFromToken(token);
                 try {
-                    const res = await fetchUsersByUsername(query, userId || "error");
-                    if ((res && Array.isArray(res)) && res.length > 0) {
-                        const mapped = res.map((user: any) => ({
-                            id: user.id,
-                            username: user.username,
-                            avatar: user.avatar_path || '/social-placeholder.png',
-                            status: user.status || 'offline',
-                        }));
+                    const res = await searchInstances(query, userId ? parseInt(userId) : 0);
+
+                    if (res && (Array.isArray(res.users) || Array.isArray(res.groups))) {
+                        const mapped = [
+                            ...(res.users || []).map((user: any) => ({
+                                type: "user",
+                                id: user.id,
+                                username: user.username,
+                                avatar: user.avatar_path || '/defaultPP.webp',
+                                isFollowing: user.is_following,
+                                isFollowedBy: user.is_followed_by,
+                            })),
+                            ...(res.groups || []).map((group: any) => ({
+                                type: "group",
+                                id: group.id,
+                                name: group.title,
+                                description: group.description,
+                                avatar: '/group.png',
+                                isMember: group.is_member,
+                            }))
+                        ];
                         setResults(mapped);
                     } else {
                         setResults([]);
@@ -72,6 +83,18 @@ export default function SearchBar() {
         setShowDropdown(false);
     };
 
+    // Helper functions to determine follow status and group membership to display in the dropdown
+    const getFollowStatus = (isFollowing: boolean, isFollowedBy: boolean) => {
+        if (isFollowing && isFollowedBy) return "Suivi mutuel";
+        if (isFollowing) return "Vous suivez";
+        if (isFollowedBy) return "Vous suit";
+        return null;
+    };
+
+    const getGroupMembershipStatus = (isMember: boolean) => {
+        return isMember ? "Membre" : null;
+    };
+
     return (
         <div className="relative w-full max-w-xs z-50" ref={containerRef}>
             <input
@@ -92,22 +115,46 @@ export default function SearchBar() {
             {query.trim() && showDropdown && (
                 <div className="absolute top-10 left-0 w-full bg-white text-black shadow-lg rounded-xl overflow-hidden max-h-64 overflow-y-auto">
                     {results.length > 0 ? (
-                        results.map((user) => (
+                        results.map((item) => (
                             <div
-                                key={user.id}
+                                key={`${item.type}-${item.id}`}
                                 className="flex items-center gap-2 px-3 py-2 hover:bg-gray-200 cursor-pointer"
-                                onClick={() => startConversation(user.id)}
+                                onClick={() => {
+                                    if (item.type === "user") startConversation(item.id);
+                                    else router.push(`/groups/${item.id}`);
+                                }}
                             >
                                 <Image
-                                    src={user.avatar}
-                                    alt={user.username}
+                                    src={item.avatar}
+                                    alt={item.type === "user" ? item.username : item.name}
                                     width={30}
                                     height={30}
                                     className="rounded-full"
                                 />
-                                <span>{user.username}</span>
-                                {user.status === 'online' && (
-                                    <div className="w-2 h-2 bg-green-500 rounded-full ml-auto"></div>
+                                <div className="flex flex-col">
+                                    {item.type === "user" && (
+                                        <span>{item.username}</span>
+                                    )}
+                                    {item.type === "group" && (
+                                        <>
+                                            <span className="font-semibold">{item.name}</span>
+                                            {item.description && (
+                                                <p className="text-xs text-gray-500">{item.description}</p>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+
+                                {item.type === "user" && (
+                                    <span className="ml-auto text-xs text-green-600 font-medium">
+                                        {getFollowStatus(item.isFollowing, item.isFollowedBy)}
+                                    </span>
+                                )}
+
+                                {item.type === "group" && item.isMember && (
+                                    <span className="ml-auto text-xs text-blue-600 font-medium">
+                                        {getGroupMembershipStatus(item.isMember)}
+                                    </span>
                                 )}
                             </div>
                         ))
