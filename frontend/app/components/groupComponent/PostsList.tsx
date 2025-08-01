@@ -14,7 +14,7 @@ interface PostsListProps {
 	onCreatePost: (content: string) => Promise<void>;
 	onToggleComments: (postId: number) => Promise<void>;
 	onCommentChange: (postId: number, value: string) => void;
-	onCreateComment: (postId: number) => Promise<void>;
+	onCreateComment: (postId: number, userId: number, username: string) => Promise<void>;
 }
 
 export default function PostsList({
@@ -59,7 +59,7 @@ export default function PostsList({
 						newComment={newCommentByPost[post.id] || ""}
 						onToggleComments={() => onToggleComments(post.id)}
 						onCommentChange={(value) => onCommentChange(post.id, value)}
-						onCreateComment={() => onCreateComment(post.id)}
+						onCreateComment={() => onCreateComment(post.id, post.user_id, post.username)}
 					/>
 				))}
 			</div>

@@ -4,7 +4,7 @@ const url = "http://localhost:8080/api"
 export interface Post {
   id: number;
   userId: string;
-  userName: string;
+  userName: any;
   content: string;
   privacy: number;
   imageUrl?: string;
@@ -81,6 +81,8 @@ export async function getPosts(jwt?:string): Promise<Post[]> {
 
                 }
         posts.push(newPost)
+        console.log(newPost)
+        console.log(newPost.userName)
       }
     }
   } catch (err) {
@@ -129,7 +131,7 @@ export async function getSpecificPost(post_id: number, jwt?: string): Promise<Po
       newPost = {
         id: r.post.id,
         userId: r.post.user_id,
-        userName: r.user,
+        userName: r.user ?? r.post.post_author ?? "Unknown",
         imageUrl: r.post.image_path,
         privacy: r.post.privacy_type,
         createdAt: new Date(Date.parse(r.post.created_at)),
@@ -154,7 +156,8 @@ export async function getSpecificPost(post_id: number, jwt?: string): Promise<Po
  */
 export async function createPost(postData: { 
   content: string;
-  privacy: number
+  privacy: number;
+  viewers: number[];
   imageUrl?: string;
 },jwt?:string): Promise<Post> {
   let newPost: Post = {
@@ -168,7 +171,6 @@ export async function createPost(postData: {
     liked:false,
     comments: 0
   };
-  console.log(postData.imageUrl)
         try {
             const resp = await fetch(url+"/post",{
                 method: "POST",
@@ -176,6 +178,7 @@ export async function createPost(postData: {
                     jwt: jwt,
                     content: postData.content,
                     image_path: postData.imageUrl,
+                    viewers: postData.viewers,
                     privacy_type: postData.privacy
                 })
             })
@@ -213,6 +216,7 @@ export async function getPostsByUserID(userID: number): Promise<Post[]> {
     const resp = await fetch(url + "/posts_user", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         user_id: userID
       })

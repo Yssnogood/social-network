@@ -16,6 +16,23 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
+type SearchResult struct {
+	Type        string  `json:"type"`
+	ID          int     `json:"id"`
+	Username    *string `json:"username,omitempty"`
+	AvatarPath  *string `json:"avatar,omitempty"`
+	Title       *string `json:"title,omitempty"`
+	Description *string `json:"description,omitempty"`
+	IsFollowing *bool   `json:"is_following,omitempty"`
+	IsFollowedBy *bool   `json:"is_followed_by,omitempty"`
+	IsMember    *bool   `json:"is_member,omitempty"`
+}
+
+type SearchGroupedResult struct {
+	Users  []SearchResult `json:"users"`
+	Groups []SearchResult `json:"groups"`
+}
+
 // Create a new user in the database
 func (r *UserRepository) Create(user *models.User) (int64, error) {
 	stmt, err := r.db.Prepare(`
@@ -157,6 +174,41 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	return user, nil
 }
 
+func (r *UserRepository) GetFriendsByUserID(userID int64) ([]*models.User, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT u.id, u.username, u.avatar_path
+		FROM users u
+		INNER JOIN followers f1 ON f1.followed_id = u.id AND f1.follower_id = ? AND f1.accepted = TRUE
+		INNER JOIN followers f2 ON f2.follower_id = u.id AND f2.followed_id = ? AND f2.accepted = TRUE
+		ORDER BY u.username
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query(userID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*models.User
+	for rows.Next() {
+		user := &models.User{}
+		err := rows.Scan(&user.ID, &user.Username, &user.AvatarPath)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
 func (r *UserRepository) GetUsersForContact(currentUserID int64, query string) ([]*models.User, error) {
 	stmt, err := r.db.Prepare(`
 		SELECT u.id, u.username, u.avatar_path
@@ -200,7 +252,7 @@ func (r *UserRepository) GetUsersForContact(currentUserID int64, query string) (
 func (r *UserRepository) Update(user *models.User) error {
 
 	// case where the PassWord is not getting change
-	if(user.PasswordHash == ""){
+	if user.PasswordHash == "" {
 		stmt, err := r.db.Prepare(`
 		UPDATE users SET
 			email = ?, first_name = ?, last_name = ?,
@@ -208,31 +260,31 @@ func (r *UserRepository) Update(user *models.User) error {
 			is_public = ?, updated_at = ?
 		WHERE id = ?
 	`)
-	if err != nil {
-		return err
-	}
+		if err != nil {
+			return err
+		}
 
 		defer stmt.Close()
 
-	_, err = stmt.Exec(
-		user.Email,
-		user.FirstName,
-		user.LastName,
-		user.BirthDate,
-		user.AvatarPath,
-		user.Username,
-		user.AboutMe,
-		user.IsPublic,
-		user.UpdatedAt,
-		user.ID,
-	)
-	if err != nil {
-		return err
-	}
+		_, err = stmt.Exec(
+			user.Email,
+			user.FirstName,
+			user.LastName,
+			user.BirthDate,
+			user.AvatarPath,
+			user.Username,
+			user.AboutMe,
+			user.IsPublic,
+			user.UpdatedAt,
+			user.ID,
+		)
+		if err != nil {
+			return err
+		}
 
-	return nil
+		return nil
 
-	}else {
+	} else {
 		//Case the password is getting changed
 		stmt, err := r.db.Prepare(`
 			UPDATE users SET
@@ -245,26 +297,26 @@ func (r *UserRepository) Update(user *models.User) error {
 			return err
 		}
 
-			defer stmt.Close()
+		defer stmt.Close()
 
-	_, err = stmt.Exec(
-		user.Email,
-		user.PasswordHash,
-		user.FirstName,
-		user.LastName,
-		user.BirthDate,
-		user.AvatarPath,
-		user.Username,
-		user.AboutMe,
-		user.IsPublic,
-		user.UpdatedAt,
-		user.ID,
-	)
-	if err != nil {
-		return err
-	}
+		_, err = stmt.Exec(
+			user.Email,
+			user.PasswordHash,
+			user.FirstName,
+			user.LastName,
+			user.BirthDate,
+			user.AvatarPath,
+			user.Username,
+			user.AboutMe,
+			user.IsPublic,
+			user.UpdatedAt,
+			user.ID,
+		)
+		if err != nil {
+			return err
+		}
 
-	return nil
+		return nil
 	}
 
 }
@@ -285,4 +337,96 @@ func (r *UserRepository) Delete(id int64) error {
 	}
 
 	return nil
+}
+
+func (r *UserRepository) SearchInstance(query string, currentUserId int) ([]SearchResult, []SearchResult, error) {
+	var users []SearchResult
+	var groups []SearchResult
+
+	escapedQuery := "%" + query + "%"
+
+	// Rechercher les utilisateurs + les statuts is_following + is_followed_by
+	userStmt, err := r.db.Prepare(`
+		SELECT u.id, u.username, u.avatar_path,
+		EXISTS (
+			SELECT 1 FROM followers f
+			WHERE f.follower_id = ? AND f.followed_id = u.id AND f.accepted = 1
+		) AS is_following,
+		EXISTS (
+			SELECT 1 FROM followers f2
+			WHERE f2.follower_id = u.id AND f2.followed_id = ? AND f2.accepted = 1
+		) AS is_followed_by
+		FROM users u
+		WHERE u.id != ? AND (
+			u.username LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?
+		)
+		LIMIT 10
+	`)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer userStmt.Close()
+
+	userRows, err := userStmt.Query(currentUserId, currentUserId, currentUserId, escapedQuery, escapedQuery, escapedQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer userRows.Close()
+
+	for userRows.Next() {
+		var res SearchResult
+		res.Type = "user"
+		var username, avatar *string
+		var isFollowing, isFollowedBy bool
+
+		if err := userRows.Scan(&res.ID, &username, &avatar, &isFollowing, &isFollowedBy); err != nil {
+			return nil, nil, err
+		}
+
+		res.Username = username
+		res.AvatarPath = avatar
+		res.IsFollowing = &isFollowing
+		res.IsFollowedBy = &isFollowedBy
+		users = append(users, res)
+	}
+
+	// Rechercher les groupes + le statut is_member
+	groupStmt, err := r.db.Prepare(`
+		SELECT g.id, g.title, g.description,
+		EXISTS (
+			SELECT 1 FROM group_members gm
+			WHERE gm.group_id = g.id AND gm.user_id = ? AND gm.accepted = 1
+		) AS is_member
+		FROM groups g
+		WHERE g.title LIKE ?
+		LIMIT 10
+	`)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer groupStmt.Close()
+
+	groupRows, err := groupStmt.Query(currentUserId, escapedQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer groupRows.Close()
+
+	for groupRows.Next() {
+		var res SearchResult
+		res.Type = "group"
+		var title, description *string
+		var isMember bool
+
+		if err := groupRows.Scan(&res.ID, &title, &description, &isMember); err != nil {
+			return nil, nil, err
+		}
+
+		res.Title = title
+		res.Description = description
+		res.IsMember = &isMember
+		groups = append(groups, res)
+	}
+
+	return users, groups, nil
 }

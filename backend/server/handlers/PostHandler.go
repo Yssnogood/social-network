@@ -10,6 +10,7 @@ import (
 	"social-network/backend/app/services"
 	"social-network/backend/database/models"
 	repository "social-network/backend/database/repositories"
+	"social-network/backend/server/middlewares"
 )
 
 type PostHandler struct {
@@ -20,18 +21,19 @@ type PostHandler struct {
 }
 
 func NewPostHandler(ps *services.PostService, pr *repository.PostRepository, sr *repository.SessionRepository, ur *repository.UserRepository) *PostHandler {
-    return &PostHandler{
-        PostService:       ps,
-        PostRepository:    pr,
-        SessionRepository: sr,
-        UserRepository:    ur,
-    }
+	return &PostHandler{
+		PostService:       ps,
+		PostRepository:    pr,
+		SessionRepository: sr,
+		UserRepository:    ur,
+	}
 }
 
 type CreatePostRequest struct {
 	JWT         string  `json:"jwt"`
 	Content     string  `json:"content"`
 	ImagePath   *string `json:"image_path,omitempty"`
+	Viewers     []int64 `json:"viewers"`
 	PrivacyType int64   `json:"privacy_type"`
 }
 
@@ -72,6 +74,11 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = h.PostRepository.UpdateViewersPrivacy(id, req.Viewers, h.PostService)
+	if err != nil {
+		http.Error(w, "Error Updating Viewers Privacy", http.StatusInternalServerError)
+	}
+
 	post.ID = id
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]any{
@@ -85,18 +92,17 @@ type GetPostRequest struct {
 	JWT string `json:"jwt"`
 }
 
-type GetPostRequestFromUserByID struct{
+type GetPostRequestFromUserByID struct {
 	ID int64 `json:"user_id"`
 }
 
 type PostResponse struct {
-	Post         *models.Post `json:"post"`
-	User         string       `json:"user"`
-	Like         int          `json:"like"`
-	UserLiked    bool         `json:"user_liked"`
-	CommentsCount int         `json:"comments_count"`
+	Post          *models.Post `json:"post"`
+	User          string       `json:"user"`
+	Like          int          `json:"like"`
+	UserLiked     bool         `json:"user_liked"`
+	CommentsCount int          `json:"comments_count"`
 }
-
 
 // GetPost retrieves a post by ID from JSON body.
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +118,6 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-
 	user := h.SessionRepository.GetUserBySession(session)
 
 	// Extract ID from URL path, assuming /post/{id}
@@ -127,6 +132,15 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Post not found", http.StatusNotFound)
 		return
 	}
+	
+
+	p, ok := post["post"].(*models.Post)
+	if !ok {
+		http.Error(w, "Internal server error: invalid post type", http.StatusInternalServerError)
+		return
+	}
+	postAuthor, err := h.PostService.GetPostAuthor(p)
+	post["user"] = postAuthor
 
 	json.NewEncoder(w).Encode(post)
 }
@@ -239,8 +253,13 @@ func (h *PostHandler) GetPostsFromUserByID(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-
-	posts, err := h.PostRepository.GetPostsFromUserByID(req.ID)
+	token, err := r.Cookie("jwt")
+	if err != nil {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+	userID := middlewares.CheckJWT(token.Value)
+	posts, err := h.PostRepository.GetPostsFromUserByID(req.ID, userID, h.PostService)
 	if err != nil {
 		http.Error(w, "Failed to retrieve posts", http.StatusInternalServerError)
 		return
@@ -267,10 +286,10 @@ func (h *PostHandler) GetPostsFromUserByID(w http.ResponseWriter, r *http.Reques
 
 		// Nombre de commentaires pour ce post
 		commentsCount, err := h.PostRepository.GetCommentsCountByPostID(post.ID)
-			if err != nil {
-				http.Error(w, "Error retrieving comment count", http.StatusInternalServerError)
-				return
-			}
+		if err != nil {
+			http.Error(w, "Error retrieving comment count", http.StatusInternalServerError)
+			return
+		}
 
 		response = append(response, PostResponse{
 			Post:          post,
@@ -284,8 +303,6 @@ func (h *PostHandler) GetPostsFromUserByID(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
-
-
 
 func (h *PostHandler) GetLikedPostsByUserId(w http.ResponseWriter, r *http.Request) {
 	type Request struct {

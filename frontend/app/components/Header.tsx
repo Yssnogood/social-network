@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCookies } from "next-client-cookies";
 import Notifications from "./NotificationPanel";
+import SearchBar from "./SearchBar";
 
 export interface HeaderProps {
 	username: string | undefined;
@@ -52,6 +53,9 @@ export default function Header({
 				<Link href="/home" className="font-bold text-lg text-white">
 					Social Network
 				</Link>
+
+				<SearchBar />
+
 				<nav className="flex gap-4 items-center">
 					<Link
 						href="/contact"

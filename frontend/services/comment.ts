@@ -8,6 +8,7 @@ export interface Comment {
     content: string;
     imageUrl?: string;
     createdAt: Date;
+    author:any;
 }
 
 export async function getComments(postId: number, jwt?: string): Promise<Comment[]> {
@@ -32,7 +33,8 @@ export async function getComments(postId: number, jwt?: string): Promise<Comment
                 id: comment.id,
                 postId: comment.post_id,
                 userId: comment.user_id,
-                userName: comment.username || "User",
+                userName: comment.author.username || "User",
+                author: comment.author,
                 content: comment.content,
                 imageUrl: comment.image_path,
                 createdAt: new Date(Date.parse(comment.created_at))
@@ -58,17 +60,16 @@ export async function getCommentsByUserID(userID: number): Promise<Comment[]> {
         if (resp.ok) {
             const commentsData = await resp.json();
 
-            console.log(commentsData)
-
-            comments = commentsData.map((comment: any) => ({
+            comments = commentsData ? commentsData.map((comment: any) => ({
                 id: comment.id,
                 postId: comment.post_id,
                 userId: comment.user_id,
                 userName: comment.username || "User",
+                author: comment.author,
                 content: comment.content,
                 imageUrl: comment.image_path,
                 createdAt: new Date(Date.parse(comment.created_at))
-            }));
+            })) : [];
         }
     } catch (error) {
         console.error("Failed to fetch comments:", error);
@@ -92,7 +93,8 @@ export async function createComment(
         userName: "",
         content: commentData.content,
         imageUrl: commentData.imageUrl,
-        createdAt: new Date()
+        createdAt: new Date(),
+        author:""
     };
 
     try {
@@ -115,7 +117,8 @@ export async function createComment(
                 userName: r.username || "User",
                 content: r.comment.content,
                 imageUrl: r.comment.image_path,
-                createdAt: new Date(Date.parse(r.comment.created_at))
+                createdAt: new Date(Date.parse(r.comment.created_at)),
+                author:""
             };
         }
     } catch (error) {

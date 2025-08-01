@@ -217,6 +217,25 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *UserHandler) GetUserFriends(w http.ResponseWriter, r *http.Request) {
+	token, err := r.Cookie("jwt")
+	if err != nil {
+		http.Error(w, "No Credentials", http.StatusUnauthorized)
+		return
+	}
+
+	current := middlewares.CheckJWT(token.Value)
+	fmt.Println(current)
+	users, err := h.UserRepository.GetFriendsByUserID(int64(current))
+	if err != nil {
+		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
+}
+
 func (h *UserHandler) SearchUsers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
@@ -230,7 +249,7 @@ func (h *UserHandler) SearchUsers(w http.ResponseWriter, r *http.Request) {
 
 	val := strings.TrimPrefix(path, prefix)
 	name := strings.TrimSpace(val)[0:strings.Index(val, "/")]
-	current, err := strconv.Atoi(strings.Split(val, "/")[1])
+	current, _ := strconv.Atoi(strings.Split(val, "/")[1])
 
 	users, err := h.UserRepository.GetUsersForContact(int64(current), name)
 	if err != nil {
@@ -240,6 +259,50 @@ func (h *UserHandler) SearchUsers(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(users)
+}
+
+func (h *UserHandler) Search(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
+	// Vérifie que la méthode est bien POST
+	if r.Method != http.MethodPost {
+		http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse le body JSON
+	var requestData struct {
+		Query   string `json:"query"`
+		Current int    `json:"current"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
+		http.Error(w, "Corps de requête invalide", http.StatusBadRequest)
+		return
+	}
+
+	if requestData.Query == "" || requestData.Current == 0 {
+		http.Error(w, "Les champs 'query' et 'current' sont requis", http.StatusBadRequest)
+		return
+	}
+
+	users, groups, err := h.UserRepository.SearchInstance(requestData.Query, requestData.Current)
+	if err != nil {
+		http.Error(w, "Erreur lors de la recherche", http.StatusInternalServerError)
+		return
+	}
+
+	response := repository.SearchGroupedResult{
+		Users:  users,
+		Groups: groups,
+	}
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "Erreur lors de l'encodage JSON", http.StatusInternalServerError)
+		return
+	}
 }
 
 // GetUser retrieves a user by Username from the request.

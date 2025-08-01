@@ -38,10 +38,6 @@ type acceptFollowerRequest struct {
 	FollowedID int64 `json:"followed_id"`
 }
 
-type getFollowersRequest struct {
-	UserID int64 `json:"user_id"`
-}
-
 // Handlers
 
 // CreateFollower creates a new follow request (or direct follow if accepted by default).
@@ -106,8 +102,6 @@ func (h *FollowerHandler) GetFollowers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(followers)
 }
 
-
-
 // UnCreateFollower removes a follower relationship.
 func (h *FollowerHandler) DeleteFollower(w http.ResponseWriter, r *http.Request) {
 	var req followRequest
@@ -131,14 +125,12 @@ func (h *FollowerHandler) DeleteFollower(w http.ResponseWriter, r *http.Request)
 	})
 }
 
-
 func (h *FollowerHandler) CheckIfFollowing(w http.ResponseWriter, r *http.Request) {
 	var req followRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-
 
 	isFollowing, err := h.FollowerRepository.IsFollowing(req.FollowerID, req.FollowedID)
 	if err != nil {
@@ -158,11 +150,10 @@ func (h *FollowerHandler) CheckIfFollowing(w http.ResponseWriter, r *http.Reques
 }
 
 type FollowerUserResponse struct {
-	ID        int64  `json:"id"`
-	Username string `json:"username"`
+	ID          int64  `json:"id"`
+	Username    string `json:"username"`
 	Avatar_path string `json:"avatar_path"`
 }
-
 
 func (h *FollowerHandler) GetFollowersHandler(w http.ResponseWriter, r *http.Request) {
 	// Lire userID depuis la query string : ?userID=123
@@ -178,7 +169,6 @@ func (h *FollowerHandler) GetFollowersHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-
 	followers, err := h.FollowerRepository.GetFollowerUsers(userID)
 	if err != nil {
 		http.Error(w, "Failed to fetch followers", http.StatusInternalServerError)
@@ -188,8 +178,8 @@ func (h *FollowerHandler) GetFollowersHandler(w http.ResponseWriter, r *http.Req
 	response := make([]*FollowerUserResponse, 0, len(followers))
 	for _, f := range followers {
 		response = append(response, &FollowerUserResponse{
-			ID:        f.ID,
-			Username: f.Username,
+			ID:          f.ID,
+			Username:    f.Username,
 			Avatar_path: f.Avatar_path,
 		})
 	}
