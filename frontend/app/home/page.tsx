@@ -72,14 +72,14 @@ export default function Home() {
     const handleSubmitPost = async (postData: { content: string; privacy: number; imageUrl?: string }) => {
         try {
             const newPost = await createPost(postData, cookies.get("jwt"));
-			
-			createNotification({
-				userId: parseInt(newPost.userId),
-				type: 'post_created',
-				content: `New post created by ${newPost.userName}`,
-				referenceId: newPost.id,
-				referenceType: 'post'
-			})
+
+            createNotification({
+                userId: parseInt(newPost.userId),
+                type: 'post_created',
+                content: `New post created by ${newPost.userName}`,
+                referenceId: newPost.id,
+                referenceType: 'post'
+            })
             setPosts([newPost, ...posts]);
             handleCloseModal();
         } catch (error) {
