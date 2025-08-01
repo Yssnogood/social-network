@@ -17,6 +17,8 @@ tree.md
 copy-ATransmettre.sh
 ATransmettre/
 
+claude.md
+CLAUDE.md
 
 # Exclure les fichiers de build
 build/
