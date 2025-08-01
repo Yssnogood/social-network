@@ -35,6 +35,10 @@ export default function SearchBar() {
             if (query.trim()) {
                 const token = cookies.get("jwt");
                 const userId = await getUserIdFromToken(token);
+                
+                console.log("🔍 SearchBar - Token:", token ? "présent" : "absent");
+                console.log("🔍 SearchBar - UserID:", userId);
+                
                 try {
                     const res = await searchInstances(query, userId ? parseInt(userId) : 0);
 
@@ -57,12 +61,14 @@ export default function SearchBar() {
                                 isMember: group.is_member,
                             }))
                         ];
+                        console.log("🔍 SearchBar - Mapped results:", mapped);
                         setResults(mapped);
                     } else {
+                        console.log("🔍 SearchBar - No valid results from API");
                         setResults([]);
                     }
                     setShowDropdown(true);
-                } catch (e) {
+                } catch (e: any) {
                     console.error("🔍 search error", e);
                     setResults([]);
                     setShowDropdown(true);
@@ -74,7 +80,7 @@ export default function SearchBar() {
         }, 500);
 
         return () => clearTimeout(timeout);
-    }, [query]);
+    }, [query, cookies]);
 
     const startConversation = (userId: number) => {
         router.push(`/contact?start=${userId}`);
