@@ -16,6 +16,23 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
+type SearchResult struct {
+	Type        string  `json:"type"`
+	ID          int     `json:"id"`
+	Username    *string `json:"username,omitempty"`
+	AvatarPath  *string `json:"avatar,omitempty"`
+	Title       *string `json:"title,omitempty"`
+	Description *string `json:"description,omitempty"`
+	IsFollowing *bool   `json:"is_following,omitempty"`
+	IsFollowedBy *bool   `json:"is_followed_by,omitempty"`
+	IsMember    *bool   `json:"is_member,omitempty"`
+}
+
+type SearchGroupedResult struct {
+	Users  []SearchResult `json:"users"`
+	Groups []SearchResult `json:"groups"`
+}
+
 // Create a new user in the database
 func (r *UserRepository) Create(user *models.User) (int64, error) {
 	stmt, err := r.db.Prepare(`
@@ -320,4 +337,96 @@ func (r *UserRepository) Delete(id int64) error {
 	}
 
 	return nil
+}
+
+func (r *UserRepository) SearchInstance(query string, currentUserId int) ([]SearchResult, []SearchResult, error) {
+	var users []SearchResult
+	var groups []SearchResult
+
+	escapedQuery := "%" + query + "%"
+
+	// Rechercher les utilisateurs + les statuts is_following + is_followed_by
+	userStmt, err := r.db.Prepare(`
+		SELECT u.id, u.username, u.avatar_path,
+		EXISTS (
+			SELECT 1 FROM followers f
+			WHERE f.follower_id = ? AND f.followed_id = u.id AND f.accepted = 1
+		) AS is_following,
+		EXISTS (
+			SELECT 1 FROM followers f2
+			WHERE f2.follower_id = u.id AND f2.followed_id = ? AND f2.accepted = 1
+		) AS is_followed_by
+		FROM users u
+		WHERE u.id != ? AND (
+			u.username LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?
+		)
+		LIMIT 10
+	`)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer userStmt.Close()
+
+	userRows, err := userStmt.Query(currentUserId, currentUserId, currentUserId, escapedQuery, escapedQuery, escapedQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer userRows.Close()
+
+	for userRows.Next() {
+		var res SearchResult
+		res.Type = "user"
+		var username, avatar *string
+		var isFollowing, isFollowedBy bool
+
+		if err := userRows.Scan(&res.ID, &username, &avatar, &isFollowing, &isFollowedBy); err != nil {
+			return nil, nil, err
+		}
+
+		res.Username = username
+		res.AvatarPath = avatar
+		res.IsFollowing = &isFollowing
+		res.IsFollowedBy = &isFollowedBy
+		users = append(users, res)
+	}
+
+	// Rechercher les groupes + le statut is_member
+	groupStmt, err := r.db.Prepare(`
+		SELECT g.id, g.title, g.description,
+		EXISTS (
+			SELECT 1 FROM group_members gm
+			WHERE gm.group_id = g.id AND gm.user_id = ? AND gm.accepted = 1
+		) AS is_member
+		FROM groups g
+		WHERE g.title LIKE ?
+		LIMIT 10
+	`)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer groupStmt.Close()
+
+	groupRows, err := groupStmt.Query(currentUserId, escapedQuery)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer groupRows.Close()
+
+	for groupRows.Next() {
+		var res SearchResult
+		res.Type = "group"
+		var title, description *string
+		var isMember bool
+
+		if err := groupRows.Scan(&res.ID, &title, &description, &isMember); err != nil {
+			return nil, nil, err
+		}
+
+		res.Title = title
+		res.Description = description
+		res.IsMember = &isMember
+		groups = append(groups, res)
+	}
+
+	return users, groups, nil
 }
