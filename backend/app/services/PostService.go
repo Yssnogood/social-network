@@ -93,7 +93,7 @@ func (s *PostService) IsAuthorFriend(author_id int64, user_id int64) bool {
 	if err = stmt.QueryRow(author_id, user_id, author_id, user_id).Scan(&count); err != nil {
 		return false
 	}
-	return true
+	return count > 0
 }
 
 func (s *PostService) GetCurrentViewers(post_id int64) ([]int64, error) {

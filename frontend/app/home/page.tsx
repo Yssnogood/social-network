@@ -57,8 +57,10 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
     // Charger les posts
     useEffect(() => {
         async function loadPosts() {
+            console.log("Loading posts with JWT:", cookies.get("jwt"));
             try {
                 const fetchedPosts = await getPosts(cookies.get("jwt"));
+                console.log("Fetched posts:", fetchedPosts);
                 setPosts(fetchedPosts);
             } catch (error) {
                 console.error("Failed to fetch posts:", error);
@@ -197,6 +199,7 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
                         posts={posts}
                         isLoading={isLoading}
                         jwt={cookies.get("jwt") || ""}
+                        onOpenPostModal={handleOpenPostModal}
                     />
 
                     {/* Modal pour créer un post */}
@@ -212,17 +215,6 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
                         onClose={handleCloseGroupModal}
                         onSubmit={handleSubmitGroup}
                     />
-
-                    {/* Bouton flottant pour créer un post */}
-                    <button
-                        onClick={handleOpenPostModal}
-                        className="fixed bottom-8 right-8 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center z-30 transition-colors"
-                        title="Créer un post"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                    </button>
 
                     {/* Bouton pour basculer vers le mode traditionnel */}
                     <button

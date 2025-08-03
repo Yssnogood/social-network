@@ -22,6 +22,8 @@ interface OnePageLayoutProps {
   posts: any[];
   isLoading: boolean;
   jwt: string;
+  // Props pour le bouton de création de post
+  onOpenPostModal?: () => void;
 }
 
 export default function OnePageLayout({
@@ -31,7 +33,8 @@ export default function OnePageLayout({
   onToggleNotifications,
   posts,
   isLoading,
-  jwt
+  jwt,
+  onOpenPostModal
 }: OnePageLayoutProps) {
   const { centralView, selectedGroup, selectedEvent } = useOnePage();
 
@@ -58,10 +61,27 @@ export default function OnePageLayout({
       default: // 'feed'
         return (
           <div className="h-full overflow-y-auto">
+            {/* Bouton de création de post intégré dans le feed */}
+            {onOpenPostModal && (
+              <div className="mb-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
+                <button
+                  onClick={onOpenPostModal}
+                  className="w-full p-4 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white rounded-lg border-2 border-dashed border-gray-600 hover:border-blue-500 transition-colors text-left"
+                >
+                  <div className="flex items-center space-x-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Qu'avez-vous en tête, {username}?</span>
+                  </div>
+                </button>
+              </div>
+            )}
             <PostsList
               posts={posts}
               isLoading={isLoading}
               jwt={jwt}
+              onlineUser={username}
             />
           </div>
         );

@@ -1,4 +1,4 @@
-social-network % tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|ATransmettre'
+tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|ATransmettre'
 .
 ├── backend
 │   ├── app
@@ -10,6 +10,8 @@ social-network % tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|AT
 │   │   ├── utils
 │   │   └── validation
 │   ├── cmd
+│   │   ├── seed
+│   │   │   └── main.go
 │   │   ├── server
 │   │   │   └── main.go
 │   │   └── tools
@@ -56,7 +58,10 @@ social-network % tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|AT
 │   │   │       ├── 019_create_typing_status_table.down.sql
 │   │   │       ├── 019_create_typing_status_table.up.sql
 │   │   │       ├── 020_create_post_like_table.down.sql
-│   │   │       └── 020_create_post_like_table.up.sql
+│   │   │       ├── 020_create_post_like_table.up.sql
+│   │   │       ├── 021_create_group_posts_table.down.sql
+│   │   │       ├── 021_create_group_posts_table.up copy.sql
+│   │   │       └── 021_create_group_posts_table.up.sql
 │   │   ├── models
 │   │   │   └── models.go
 │   │   ├── repositories
@@ -87,6 +92,8 @@ social-network % tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|AT
 │   │   └── sqlite
 │   │       ├── add_follow.sql
 │   │       ├── data.db
+│   │       ├── data.db-shm
+│   │       ├── data.db-wal
 │   │       └── sqlite.go
 │   ├── server
 │   │   ├── config
@@ -124,33 +131,84 @@ social-network % tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|AT
 │       ├── router.go
 │       └── websocket_type.go
 ├── build-local.sh
+├── commandes_git_et_serveur.md
 ├── copy-ATransmettre.sh
 ├── dev.sh
 ├── docker-compose.yml
 ├── Dockerfile.backend
 ├── Dockerfile.frontend
+├── docs
+│   ├── EVENT_WIZARD_SPEC.md
+│   ├── WORKFLOW_DIFFERENCES.md
+│   └── WORKFLOWS_ANALYSIS.md
 ├── frontend
 │   ├── app
 │   │   ├── components
+│   │   │   ├── BackButton.tsx
+│   │   │   ├── ChatDrawer.tsx
 │   │   │   ├── ChatModal.tsx
+│   │   │   ├── ChatPanel.tsx
+│   │   │   ├── ClientOnly.tsx
+│   │   │   ├── CommentForm.tsx
+│   │   │   ├── CommentItem.tsx
+│   │   │   ├── CommentsList.tsx
+│   │   │   ├── CreateGroupButton.tsx
+│   │   │   ├── CreatePostButton.tsx
+│   │   │   ├── CreatePostModal.tsx
+│   │   │   ├── EventsPanel.tsx
+│   │   │   ├── EventView.tsx
 │   │   │   ├── FollowersSection.tsx
+│   │   │   ├── groupComponent
+│   │   │   │   ├── EventCreator.tsx
+│   │   │   │   ├── EventsList.tsx
+│   │   │   │   ├── GroupHeader.tsx
+│   │   │   │   ├── MembersList.tsx
+│   │   │   │   ├── MessageInput.tsx
+│   │   │   │   ├── MessageItem.tsx
+│   │   │   │   ├── MessagesList.tsx
+│   │   │   │   ├── PostComments.tsx
+│   │   │   │   ├── PostCreator.tsx
+│   │   │   │   ├── PostItem.tsx
+│   │   │   │   ├── PostsList.tsx
+│   │   │   │   ├── TabNavigation.tsx
+│   │   │   │   └── UserInvitation.tsx
 │   │   │   ├── GroupModal.tsx
-│   │   │   ├── navbar.tsx
+│   │   │   ├── GroupsList.tsx
+│   │   │   ├── GroupsPanel.tsx
+│   │   │   ├── GroupView.tsx
+│   │   │   ├── Header.tsx
+│   │   │   ├── LoadingSpinner.tsx
+│   │   │   ├── logout.tsx
+│   │   │   ├── MultiSelect.tsx
+│   │   │   ├── NotFoundMessage.tsx
 │   │   │   ├── NotificationPanel.tsx
-│   │   │   └── post_form.tsx
+│   │   │   ├── OnePageLayout.tsx
+│   │   │   ├── post_form.tsx
+│   │   │   ├── PostDetail.tsx
+│   │   │   ├── PostItem.tsx
+│   │   │   ├── PostsList.tsx
+│   │   │   ├── ProfileHoverCard.tsx
+│   │   │   ├── SearchBar.tsx
+│   │   │   ├── SearchBarDebug.tsx
+│   │   │   ├── SimpleHeader.tsx
+│   │   │   └── UsersListPanel.tsx
 │   │   ├── contact
 │   │   │   └── page.tsx
+│   │   ├── contexts
+│   │   │   └── OnePageContext.tsx
 │   │   ├── favicon.ico
 │   │   ├── globals.css
 │   │   ├── groups
 │   │   │   └── [id]
 │   │   │       └── page.tsx
 │   │   ├── home
-│   │   │   └── page.tsx
+│   │   │   ├── page.tsx
+│   │   │   └── page1.tsx
+│   │   ├── hooks
+│   │   │   ├── useGroupData.ts
+│   │   │   └── useGroupWebSocket.ts
 │   │   ├── layout.tsx
 │   │   ├── login
-│   │   │   └── page.tsx
-│   │   ├── logout
 │   │   │   └── page.tsx
 │   │   ├── page.tsx
 │   │   ├── post
@@ -163,9 +221,19 @@ social-network % tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|AT
 │   │   │       ├── page.tsx
 │   │   │       ├── Profile.tsx
 │   │   │       └── ProfileTabs.tsx
-│   │   └── register
-│   │       └── page.tsx
+│   │   ├── register
+│   │   │   └── page.tsx
+│   │   └── types
+│   │       └── group.ts
+│   ├── components
+│   │   └── ui
+│   │       ├── badge.tsx
+│   │       ├── command.tsx
+│   │       └── dialog.tsx
+│   ├── components.json
 │   ├── eslint.config.mjs
+│   ├── lib
+│   │   └── utils.ts
 │   ├── next-env.d.ts
 │   ├── next.config.ts
 │   ├── package-lock.json
@@ -175,6 +243,7 @@ social-network % tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|AT
 │   │   ├── defaultPP.webp
 │   │   ├── file.svg
 │   │   ├── globe.svg
+│   │   ├── group.png
 │   │   ├── next.svg
 │   │   ├── social-placeholder.png
 │   │   ├── vercel.svg
@@ -183,20 +252,27 @@ social-network % tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|AT
 │   ├── services
 │   │   ├── comment.ts
 │   │   ├── contact.ts
+│   │   ├── follow.ts
 │   │   ├── notifications.ts
 │   │   ├── post.ts
+│   │   ├── search.ts
 │   │   ├── user.ts
 │   │   └── utils.ts
-│   └── tsconfig.json
+│   ├── tsconfig.json
+│   └── tsconfig.tsbuildinfo
+├── .env
 ├── go.mod
 ├── go.sum
+├── one_page.png
 ├── package-lock.json
 ├── readme.DOCKER.md
+├── README.md
+├── seed_database.sh
+├── seed.sh
 ├── start-sans-docker.sh
 ├── tampon.go
 ├── tampon.md
 ├── tampon.tsx
-├── tree.md
-└── tree2.md
+└── tree.md
 
-43 directories, 156 files
+51 directories, 223 files

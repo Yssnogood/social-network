@@ -77,7 +77,10 @@ func (r *PostRepository) GetByID(id int64, ps *services.PostService, curr_user *
 	if err != nil {
 		return nil, err
 	}
-	user, _ := ps.GetPostAuthor(post)
+	user, err := ps.GetPostAuthor(post)
+	if err != nil || user == nil {
+		return nil, err
+	}
 	likes, _ := ps.GetLikes(post.ID)
 	return map[string]any{
 		"post":  post,
@@ -124,7 +127,11 @@ func (r *PostRepository) GetPosts(ps *services.PostService, curr_user *models.Us
 			return nil, err
 		}
 		post.CommentsCount = commentCount
-		user, _ := ps.GetPostAuthor(post)
+		user, err := ps.GetPostAuthor(post)
+		if err != nil || user == nil {
+			// Skip this post if we can't find the author
+			continue
+		}
 		isPrivate := user.ID != curr_user.ID && post.PrivacyType != 0
 		if isPrivate {
 			switch post.PrivacyType {

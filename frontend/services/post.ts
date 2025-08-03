@@ -1,5 +1,3 @@
-import { getCookies } from "next-client-cookies/server";
-
 const url = "http://localhost:8080/api"
 export interface Post {
   id: number;
@@ -14,42 +12,6 @@ export interface Post {
   comments: number;
 }
 
-// Mock data for posts
-const MOCK_POSTS: Post[] = [
-  {
-    id: 1,
-    userId: 'user1',
-    userName: 'Jane Doe',
-    content: 'Just joined this amazing social network! Looking forward to connecting with everyone.',
-    privacy: 0,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-    likes: 15,
-    liked:true,
-    comments: 3
-  },
-  {
-    id: 2,
-    userId: 'user2',
-    userName: 'John Smith',
-    content: 'Hello everyone! This is my first post. I\'m excited to share my journey with all of you.',
-    privacy: 0,
-    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
-    likes: 8,
-    liked:true,
-    comments: 2
-  },
-  {
-    id: 3,
-    userId: 'user3',
-    userName: 'Alex Johnson',
-    content: 'Just read about the latest advancements in AI. The future looks promising! What do you think?',
-    privacy: 0,
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-    likes: 23,
-    liked:true,
-    comments: 7
-  }
-];
 
 /**
  * Fetches all posts
@@ -60,13 +22,17 @@ export async function getPosts(jwt?:string): Promise<Post[]> {
   try {
     const resp = await fetch(url+"/posts",{
       method: "POST",
-      body: JSON.stringify({
-        jwt: jwt
-      })
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${jwt}`
+      },
+      credentials: "include"
     })
     if (resp.ok) {
       const r = await resp.json()
+      console.log("Raw response from getPosts:", r)
       for (const post of r) {
+        console.log("Processing post:", post)
         const newPost : Post = {
                   id: post.post.id,
                   userId: post.post.user_id,
@@ -80,10 +46,12 @@ export async function getPosts(jwt?:string): Promise<Post[]> {
                   comments: post.post.comments_count
 
                 }
+        console.log("Mapped post:", newPost)
+        console.log("Post content:", newPost.content)
         posts.push(newPost)
-        console.log(newPost)
-        console.log(newPost.userName)
       }
+    } else {
+      console.error("getPosts failed:", resp.status, resp.statusText)
     }
   } catch (err) {
     if (err) {
@@ -96,8 +64,12 @@ export async function getPosts(jwt?:string): Promise<Post[]> {
 export async function LikePost(post_id:number, jwt?:string) {
   const resp = await fetch(url+'/like',{
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${jwt}`
+    },
+    credentials: "include",
     body: JSON.stringify({
-      jwt: jwt,
       post_id: post_id
     })
   })
@@ -124,7 +96,11 @@ export async function getSpecificPost(post_id: number, jwt?: string): Promise<Po
   try {
     const resp = await fetch(url+`/posts/${post_id}`, {
       method: "POST",
-      body: JSON.stringify({ jwt })
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${jwt}`
+      },
+      credentials: "include"
     });
     if (resp.ok) {
       const r = await resp.json();
@@ -174,8 +150,12 @@ export async function createPost(postData: {
         try {
             const resp = await fetch(url+"/post",{
                 method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${jwt}`
+                },
+                credentials: "include",
                 body: JSON.stringify({
-                    jwt: jwt,
                     content: postData.content,
                     image_path: postData.imageUrl,
                     viewers: postData.viewers,
@@ -184,22 +164,24 @@ export async function createPost(postData: {
             })
             if (resp.ok) {
                 const r = await resp.json()
+                console.log("Raw response from createPost:", r)
                 newPost = {
                   id: r.post.id,
                   userId: r.post.user_id,
-                  userName: r.username,
+                  userName: r.user,
                   imageUrl: r.post.image_path,
                   privacy: r.post.privacy_type,
                   createdAt: new Date(Date.parse(r.post.created_at)),
                   content: r.post.content,
-                  likes: 0,
-                  liked:false,
+                  likes: r.like,
+                  liked: r.user_liked,
                   comments: 0
 
                 }
-                console.log(newPost)
+                console.log("Mapped createPost:", newPost)
+                console.log("Create post content:", newPost.content)
             } else {
-                console.log(resp.status)
+                console.log("createPost failed:", resp.status, resp.statusText)
             }
         } catch (err) {
             console.log(err)
@@ -215,7 +197,9 @@ export async function getPostsByUserID(userID: number): Promise<Post[]> {
   try {
     const resp = await fetch(url + "/posts_user", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json"
+      },
       credentials: "include",
       body: JSON.stringify({
         user_id: userID
@@ -251,6 +235,7 @@ export async function getLikedPostsByUserID(userID: number): Promise<Post[]> {
     const resp = await fetch(url + "/liked_posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         user_id: userID
       })

@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
+	gorillaHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
-	gorillaHandlers "github.com/gorilla/handlers"
 
 	"social-network/backend/app/services"
 	repository "social-network/backend/database/repositories"
@@ -23,9 +23,28 @@ import (
 func main() {
 	r := mux.NewRouter()
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Erreur loading .env")
+	// Try multiple paths for .env file
+	envPaths := []string{
+		".env",                    // from project root
+		"../../../.env",          // from backend/cmd/server
+		"../../.env",             // from backend/
+		"/Users/jacquesaupepin/Documents/javaScript/social-network/.env", // absolute path
+	}
+	
+	var err error
+	loaded := false
+	for _, path := range envPaths {
+		err = godotenv.Load(path)
+		if err == nil {
+			log.Printf("Loaded .env from: %s", path)
+			loaded = true
+			break
+		}
+	}
+	
+	if !loaded {
+		log.Printf("Could not load .env from any path. Last error: %v", err)
+		log.Fatal("Could not load .env file")
 	}
 
 	// Appliquer le middleware CORS
@@ -38,7 +57,7 @@ func main() {
 	allowedOrigins := strings.Split(allowedOriginsEnv, ",")
 	log.Println("ALLOWED_ORIGINS loaded:", allowedOriginsEnv)
 	log.Println("Parsed origins:", allowedOrigins)
-	
+
 	originsOk := gorillaHandlers.AllowedOrigins(allowedOrigins)
 	credentialsOk := gorillaHandlers.AllowCredentials()
 	methodsOk := gorillaHandlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"})
@@ -63,7 +82,6 @@ func main() {
 	notificationRepo := repository.NewNotificationRepository(db)
 	eventRepo := repository.NewEventRepository(db)
 
-
 	// Services
 	userService := services.NewUserService(db)
 	postService := services.NewPostService(db)
@@ -78,9 +96,7 @@ func main() {
 	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo, followerRepo, groupRepo)
 	eventHandler := appHandlers.NewEventHandler(eventRepo)
 
-
 	groupHandler := appHandlers.NewGroupHandler(groupRepo, sessionRepo, userRepo, notificationRepo)
-
 
 	// CORS handled by Gorilla handlers at the end
 
@@ -93,7 +109,6 @@ func main() {
 	routes.MessageRoutes(r, messageHandler)
 	routes.NotificationsRoutes(r, notificationHandler)
 	routes.EventsRoutes(r, eventHandler)
-
 
 	// WebSocket
 	wsHandler := middlewares.JWTMiddleware(http.HandlerFunc(websocketHandler.HandleWebSocket))

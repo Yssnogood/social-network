@@ -41,7 +41,12 @@ func JWTMiddleware(next http.Handler) http.Handler {
 		}
 
 		claims := token.Claims.(jwt.MapClaims)
-		userID := int64(claims["user_id"].(float64))
+		userIDFloat, ok := claims["user_id"].(float64)
+		if !ok {
+			http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+			return
+		}
+		userID := int64(userIDFloat)
 
 		ctx := context.WithValue(r.Context(), UserIDKey, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))

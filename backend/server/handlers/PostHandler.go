@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
 	"social-network/backend/app/services"
 	"social-network/backend/database/models"
 	repository "social-network/backend/database/repositories"
@@ -43,30 +43,33 @@ type LikePostRequest struct {
 }
 
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
 	var req CreatePostRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
-	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
+	user, err := h.UserRepository.GetByID(userID)
 	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		http.Error(w, "Failed to get user information: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	now := time.Now()
 	post := &models.Post{
-		UserID:      session.UserID,
+		UserID:      userID,
 		Content:     req.Content,
 		ImagePath:   req.ImagePath,
 		PrivacyType: req.PrivacyType,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
-
-	user, _ := h.PostService.GetPostAuthor(post)
 
 	id, err := h.PostRepository.Create(post)
 	if err != nil {
@@ -77,13 +80,17 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	err = h.PostRepository.UpdateViewersPrivacy(id, req.Viewers, h.PostService)
 	if err != nil {
 		http.Error(w, "Error Updating Viewers Privacy", http.StatusInternalServerError)
+		return
 	}
 
 	post.ID = id
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]any{
-		"post":     post,
-		"username": user.Username,
+		"post":       post,
+		"user":       user,
+		"like":       0,
+		"user_liked": false,
 	})
 }
 
@@ -106,33 +113,37 @@ type PostResponse struct {
 
 // GetPost retrieves a post by ID from JSON body.
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	var req GetPostRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
 
-	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
+	user, err := h.UserRepository.GetByID(userID)
 	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		http.Error(w, "Failed to get user information: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	user := h.SessionRepository.GetUserBySession(session)
 
-	// Extract ID from URL path, assuming /post/{id}
-	parts := strings.Split(r.URL.Path, "/")
-	postID, err := strconv.Atoi(parts[3])
+	// Extract ID from URL path using mux.Vars
+	vars := mux.Vars(r)
+	postIDStr, exists := vars["id"]
+	if !exists {
+		http.Error(w, "Missing post ID in path", http.StatusBadRequest)
+		return
+	}
+	
+	postID, err := strconv.ParseInt(postIDStr, 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid post ID", http.StatusBadRequest)
 		return
 	}
-	post, err := h.PostRepository.GetByID(int64(postID), h.PostService, user)
+
+	post, err := h.PostRepository.GetByID(postID, h.PostService, user)
 	if err != nil {
-		http.Error(w, "Post not found", http.StatusNotFound)
+		http.Error(w, "Post not found: "+err.Error(), http.StatusNotFound)
 		return
 	}
-	
 
 	p, ok := post["post"].(*models.Post)
 	if !ok {
@@ -140,50 +151,55 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	postAuthor, err := h.PostService.GetPostAuthor(p)
+	if err != nil {
+		http.Error(w, "Failed to get post author: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 	post["user"] = postAuthor
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(post)
 }
 
 func (h *PostHandler) LikePost(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
 	var req LikePostRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
-	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-	h.PostRepository.Like(req.Post_ID, session.UserID)
+	h.PostRepository.Like(req.Post_ID, userID)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 }
 
 // GetRecentsPosts retrieves recents posts.
 func (h *PostHandler) GetRecentsPosts(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	var req GetPostRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
 
-	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
+	user, err := h.UserRepository.GetByID(userID)
 	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		http.Error(w, "Failed to get user information: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	user := h.SessionRepository.GetUserBySession(session)
 
 	posts, err := h.PostRepository.GetPosts(h.PostService, user)
 	if err != nil {
-		http.Error(w, "Post not found", http.StatusNotFound)
+		http.Error(w, "Failed to retrieve posts: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(posts)
 }
 
