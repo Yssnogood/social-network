@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -22,16 +23,25 @@ import (
 func main() {
 	r := mux.NewRouter()
 
-	// Appliquer le middleware CORS
-	headersOk := gorillaHandlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
-	originsOk := gorillaHandlers.AllowedOrigins([]string{"http://localhost:3000"})
-	credentialsOk := gorillaHandlers.AllowCredentials()
-	methodsOk := gorillaHandlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"})
-
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Erreur loading .env")
 	}
+
+	// Appliquer le middleware CORS
+	headersOk := gorillaHandlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
+	// Récupérer les origins autorisées depuis .env
+	allowedOriginsEnv := os.Getenv("ALLOWED_ORIGINS")
+	if allowedOriginsEnv == "" {
+		allowedOriginsEnv = "http://localhost:3000" // valeur par défaut
+	}
+	allowedOrigins := strings.Split(allowedOriginsEnv, ",")
+	log.Println("ALLOWED_ORIGINS loaded:", allowedOriginsEnv)
+	log.Println("Parsed origins:", allowedOrigins)
+	
+	originsOk := gorillaHandlers.AllowedOrigins(allowedOrigins)
+	credentialsOk := gorillaHandlers.AllowCredentials()
+	methodsOk := gorillaHandlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"})
 
 	log.Println("DB_PATH =", os.Getenv("DB_PATH"))
 
@@ -72,8 +82,7 @@ func main() {
 	groupHandler := appHandlers.NewGroupHandler(groupRepo, sessionRepo, userRepo, notificationRepo)
 
 
-	// CORS
-	r.Use(middlewares.CORSMiddleware)
+	// CORS handled by Gorilla handlers at the end
 
 	// Routes
 	routes.UserRoutes(r, userHandler)
@@ -92,9 +101,7 @@ func main() {
 
 	r.Handle("/ws/groups", middlewares.JWTMiddleware(http.HandlerFunc(appHandlers.HandleGroupWebSocket)))
 
-	r.Handle("/api/messages/conversation", middlewares.CORSMiddleware(
-		http.HandlerFunc(websocketHandler.HandleGetConversation),
-	)).Methods("POST", "OPTIONS")
+	r.Handle("/api/messages/conversation", http.HandlerFunc(websocketHandler.HandleGetConversation)).Methods("POST", "OPTIONS")
 
 	// Lancement du serveur HTTP
 	port := os.Getenv("PORT")

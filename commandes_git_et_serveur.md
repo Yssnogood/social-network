@@ -1,6 +1,6 @@
 
 # Trouver le PID
-lsof -i :3000
+lsof -i :8080
 
 # Supposons que le PID soit 12345
 kill -9 12345
