@@ -18,6 +18,7 @@ export interface ChatContact {
   username: string;
   avatar_path: string;
   isOnline?: boolean;
+  conversationId?: number;
 }
 
 interface OnePageContextType {

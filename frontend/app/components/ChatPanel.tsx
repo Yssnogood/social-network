@@ -4,36 +4,48 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useCookies } from "next-client-cookies";
 import { fetchUserConversation } from '../../services/contact';
+import { fetchUserConversations, ConversationResponse } from '../../services/message';
 import { useOnePage } from '../contexts/OnePageContext';
 
 export default function ChatPanel() {
     const cookies = useCookies();
     const { navigateToChat } = useOnePage();
     
-    const [contacts, setContacts] = useState<any[]>([]);
+    const [conversations, setConversations] = useState<ConversationResponse[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isNewConversationModalOpen, setIsNewConversationModalOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        // Fetch existed conversations
-        fetchUserConversation()
-            .then((data) => setContacts(data || []))
-            .catch((error) => {
+        const loadConversations = async () => {
+            try {
+                setIsLoading(true);
+                // Utiliser l'ancien service qui fonctionne
+                const data = await fetchUserConversation();
+                setConversations(data || []);
+            } catch (error) {
                 console.error("Error fetching conversations:", error);
-                setContacts([]);
-            });
+                setConversations([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadConversations();
     }, []);
 
-    const filteredContacts = (contacts || []).filter(({contact}) =>
+    const filteredConversations = conversations.filter(({contact}) =>
         contact && contact.username && contact.username.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const handleContactClick = (contact: any) => {
+    const handleContactClick = (conversationResponse: ConversationResponse) => {
+        const { contact, conversation } = conversationResponse;
         navigateToChat({
             id: contact.id,
             username: contact.username,
             avatar_path: contact.avatar_path,
-            isOnline: contact.isOnline
+            isOnline: contact.isOnline,
+            conversationId: conversation.id // Ajout de l'ID de conversation
         });
     };
 
@@ -51,7 +63,7 @@ export default function ChatPanel() {
             <div className="p-4 border-b border-gray-700">
                 <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold text-white">Chat</h2>
-                    <span className="text-xs text-gray-400">{contacts.length} contacts</span>
+                    <span className="text-xs text-gray-400">{conversations.length} conversations</span>
                 </div>
                 
                 {/* Search */}
@@ -86,47 +98,63 @@ export default function ChatPanel() {
                 </button>
             </div>
 
-            {/* Contacts List */}
+            {/* Conversations List */}
             <div className="flex-1 overflow-y-auto">
-                {filteredContacts.length === 0 ? (
+                {isLoading ? (
+                    <div className="flex justify-center items-center p-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                    </div>
+                ) : filteredConversations.length === 0 ? (
                     <div className="p-4 text-center text-gray-400 text-sm">
                         {searchTerm ? 'Aucun contact trouvé' : 'Aucune conversation'}
                     </div>
                 ) : (
-                    filteredContacts.map(({conversation, contact, messages}) => (
-                        <div
-                            key={contact.id}
-                            onClick={() => handleContactClick(contact)}
-                            className="flex items-center p-3 border-b border-gray-700 hover:bg-gray-700 cursor-pointer transition-colors"
-                        >
-                            <div className="relative">
-                                <Image 
-                                    src={contact.avatar_path || '/defaultPP.webp'} 
-                                    alt={contact.username} 
-                                    width={40} 
-                                    height={40} 
-                                    className="rounded-full object-cover" 
-                                />
-                                {contact.isOnline && (
-                                    <div className="w-3 h-3 bg-green-500 rounded-full absolute bottom-0 right-0 border-2 border-gray-800"></div>
-                                )}
-                            </div>
-                            <div className="ml-3 flex-1 min-w-0">
-                                <div className="flex justify-between items-center">
-                                    <h3 className="font-medium text-white text-sm truncate">{contact.username}</h3>
-                                    <span className="text-xs text-gray-400">
-                                        {messages && messages.length > 0 ? 'Récent' : ''}
-                                    </span>
+                    filteredConversations.map((conversationResponse) => {
+                        const { conversation, contact, messages } = conversationResponse;
+                        const lastMessage = messages && messages.length > 0 ? messages[messages.length - 1] : null;
+                        
+                        return (
+                            <div
+                                key={conversation.id}
+                                onClick={() => handleContactClick(conversationResponse)}
+                                className="flex items-center p-3 border-b border-gray-700 hover:bg-gray-700 cursor-pointer transition-colors"
+                            >
+                                <div className="relative">
+                                    <Image 
+                                        src={contact.avatar_path || '/defaultPP.webp'} 
+                                        alt={contact.username} 
+                                        width={40} 
+                                        height={40} 
+                                        className="rounded-full object-cover" 
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.src = '/defaultPP.webp';
+                                        }}
+                                    />
+                                    {contact.isOnline && (
+                                        <div className="w-3 h-3 bg-green-500 rounded-full absolute bottom-0 right-0 border-2 border-gray-800"></div>
+                                    )}
                                 </div>
-                                <p className="text-xs text-gray-400 truncate">
-                                    {messages && messages.length > 0 
-                                        ? messages[messages.length - 1]?.content?.substring(0, 30) + '...'
-                                        : 'Démarrer une conversation'
-                                    }
-                                </p>
+                                <div className="ml-3 flex-1 min-w-0">
+                                    <div className="flex justify-between items-center">
+                                        <h3 className="font-medium text-white text-sm truncate">{contact.username}</h3>
+                                        <span className="text-xs text-gray-400">
+                                            {lastMessage ? new Date(lastMessage.created_at).toLocaleTimeString('fr-FR', { 
+                                                hour: '2-digit', 
+                                                minute: '2-digit' 
+                                            }) : ''}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-gray-400 truncate">
+                                        {lastMessage 
+                                            ? lastMessage.content.substring(0, 30) + (lastMessage.content.length > 30 ? '...' : '')
+                                            : 'Démarrer une conversation'
+                                        }
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
 

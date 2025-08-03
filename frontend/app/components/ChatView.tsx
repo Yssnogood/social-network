@@ -3,14 +3,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useOnePage } from '../contexts/OnePageContext';
-
-interface Message {
-  id: number;
-  content: string;
-  sender_id: number;
-  sender_username: string;
-  created_at: string;
-}
+import { fetchMessages } from '../../services/contact';
+import { 
+  sendMessage, 
+  getCurrentUserId,
+  formatMessageTime,
+  formatMessageDate,
+  Message,
+  SendMessageRequest 
+} from '../../services/message';
 
 interface ChatViewProps {
   contact: {
@@ -18,6 +19,7 @@ interface ChatViewProps {
     username: string;
     avatar_path: string;
     isOnline?: boolean;
+    conversationId?: number;
   };
 }
 
@@ -26,6 +28,7 @@ export default function ChatView({ contact }: ChatViewProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom when new messages arrive
@@ -37,84 +40,86 @@ export default function ChatView({ contact }: ChatViewProps) {
     scrollToBottom();
   }, [messages]);
 
-  // TODO: Load messages from API
+  // Récupérer l'ID de l'utilisateur actuel
   useEffect(() => {
-    // Simuler le chargement des messages
-    setIsLoading(true);
-    
-    // Simuler des messages pour le développement
-    const mockMessages: Message[] = [
-      {
-        id: 1,
-        content: 'Salut ! Comment ça va ?',
-        sender_id: contact.id,
-        sender_username: contact.username,
-        created_at: new Date(Date.now() - 3600000).toISOString()
-      },
-      {
-        id: 2,
-        content: 'Ça va bien, merci ! Et toi ?',
-        sender_id: 1, // Current user
-        sender_username: 'Moi',
-        created_at: new Date(Date.now() - 3000000).toISOString()
-      },
-      {
-        id: 3,
-        content: 'Super ! Tu as vu le dernier post sur les mangas ?',
-        sender_id: contact.id,
-        sender_username: contact.username,
-        created_at: new Date(Date.now() - 1800000).toISOString()
+    const userId = getCurrentUserId();
+    setCurrentUserId(userId);
+  }, []);
+
+  // Charger les messages de la conversation
+  useEffect(() => {
+    const loadMessages = async () => {
+      if (!contact.conversationId) {
+        console.warn('No conversation ID provided for contact:', contact.username);
+        return;
       }
-    ];
 
-    setTimeout(() => {
-      setMessages(mockMessages);
-      setIsLoading(false);
-    }, 500);
-  }, [contact.id, contact.username]);
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
-
-    // TODO: Send message via API
-    const message: Message = {
-      id: Date.now(),
-      content: newMessage,
-      sender_id: 1, // Current user ID
-      sender_username: 'Moi',
-      created_at: new Date().toISOString()
+      try {
+        setIsLoading(true);
+        const messagesData = await fetchMessages(contact.conversationId);
+        setMessages(messagesData || []);
+      } catch (error) {
+        console.error('Error loading messages:', error);
+        setMessages([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    setMessages(prev => [...prev, message]);
-    setNewMessage('');
-  };
+    loadMessages();
+  }, [contact.conversationId]);
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('fr-FR', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !contact.conversationId) return;
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    const tempId = Date.now();
+    const messageContent = newMessage.trim();
+    
+    try {
+      // Créer un message temporaire pour l'affichage immédiat
+      const tempMessage: Message = {
+        id: tempId,
+        conversation_id: contact.conversationId,
+        sender_id: currentUserId || 1, // Fallback si currentUserId est null
+        receiver_id: contact.id,
+        content: messageContent,
+        created_at: new Date().toISOString()
+      };
 
-    if (date.toDateString() === today.toDateString()) {
-      return 'Aujourd\'hui';
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Hier';
-    } else {
-      return date.toLocaleDateString('fr-FR', { 
-        day: 'numeric', 
-        month: 'long' 
-      });
+      // Ajouter immédiatement à l'affichage pour un feedback instantané
+      setMessages(prev => [...prev, tempMessage]);
+      setNewMessage('');
+
+      // Envoyer au serveur en arrière-plan
+      const messageData: SendMessageRequest = {
+        conversation_id: contact.conversationId,
+        sender_id: currentUserId || 1, // Le backend utilisera l'ID du JWT
+        receiver_id: contact.id,
+        content: messageContent
+      };
+
+      const sentMessage = await sendMessage(messageData);
+      
+      // Remplacer le message temporaire par le vrai message du serveur
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === tempId ? sentMessage : msg
+        )
+      );
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // En cas d'erreur, supprimer le message temporaire
+      setMessages(prev => 
+        prev.filter(msg => msg.id !== tempId)
+      );
+      // Remettre le texte dans l'input
+      setNewMessage(messageContent);
     }
   };
+
+  // Utilisation des fonctions utilitaires du service
+  // const formatTime et formatDate sont importées depuis message.ts
 
   return (
     <div className="h-full flex flex-col bg-gray-900">
@@ -197,16 +202,16 @@ export default function ChatView({ contact }: ChatViewProps) {
         ) : (
           <>
             {messages.map((message, index) => {
-              const isCurrentUser = message.sender_id === 1; // TODO: Use real current user ID
+              const isCurrentUser = message.sender_id === currentUserId;
               const showDateSeparator = index === 0 || 
-                formatDate(messages[index - 1].created_at) !== formatDate(message.created_at);
+                formatMessageDate(messages[index - 1].created_at) !== formatMessageDate(message.created_at);
 
               return (
                 <div key={message.id}>
                   {showDateSeparator && (
                     <div className="flex justify-center mb-4">
                       <span className="bg-gray-700 text-gray-300 text-xs px-3 py-1 rounded-full">
-                        {formatDate(message.created_at)}
+                        {formatMessageDate(message.created_at)}
                       </span>
                     </div>
                   )}
@@ -221,7 +226,7 @@ export default function ChatView({ contact }: ChatViewProps) {
                       <p className={`text-xs mt-1 ${
                         isCurrentUser ? 'text-blue-200' : 'text-gray-400'
                       }`}>
-                        {formatTime(message.created_at)}
+                        {formatMessageTime(message.created_at)}
                       </p>
                     </div>
                   </div>
