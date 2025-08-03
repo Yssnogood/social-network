@@ -8,7 +8,7 @@ import { useOnePage } from '../contexts/OnePageContext';
 
 export default function ChatPanel() {
     const cookies = useCookies();
-    const { openChatDrawer } = useOnePage();
+    const { navigateToChat } = useOnePage();
     
     const [contacts, setContacts] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -29,7 +29,7 @@ export default function ChatPanel() {
     );
 
     const handleContactClick = (contact: any) => {
-        openChatDrawer({
+        navigateToChat({
             id: contact.id,
             username: contact.username,
             avatar_path: contact.avatar_path,

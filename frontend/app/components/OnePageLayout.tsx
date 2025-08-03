@@ -11,6 +11,7 @@ import ChatDrawer from './ChatDrawer';
 import PostsList from './PostsList';
 import GroupView from './GroupView';
 import EventView from './EventView';
+import ChatView from './ChatView';
 
 interface OnePageLayoutProps {
   children?: React.ReactNode;
@@ -36,7 +37,7 @@ export default function OnePageLayout({
   jwt,
   onOpenPostModal
 }: OnePageLayoutProps) {
-  const { centralView, selectedGroup, selectedEvent } = useOnePage();
+  const { centralView, selectedGroup, selectedEvent, selectedChatContact } = useOnePage();
 
   const renderCentralView = () => {
     switch (centralView) {
@@ -55,6 +56,15 @@ export default function OnePageLayout({
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">
             Sélectionnez un événement
+          </div>
+        );
+      
+      case 'chat':
+        return selectedChatContact ? (
+          <ChatView contact={selectedChatContact} />
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            Sélectionnez un contact pour démarrer une conversation
           </div>
         );
       

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Group, Event } from '../types/group';
 
-export type CentralViewType = 'feed' | 'group' | 'event';
+export type CentralViewType = 'feed' | 'group' | 'event' | 'chat';
 
 export interface SelectedGroup extends Group {
   // Ajout de propriétés spécifiques si nécessaire
@@ -33,9 +33,12 @@ interface OnePageContextType {
   selectedEvent: SelectedEvent | null;
   setSelectedEvent: (event: SelectedEvent | null) => void;
   
-  // Chat drawer
-  isChatDrawerOpen: boolean;
+  // Chat dans panneau central
   selectedChatContact: ChatContact | null;
+  setSelectedChatContact: (contact: ChatContact | null) => void;
+  
+  // Chat drawer (gardé pour compatibilité mais deprecated)
+  isChatDrawerOpen: boolean;
   openChatDrawer: (contact: ChatContact) => void;
   closeChatDrawer: () => void;
   
@@ -43,6 +46,7 @@ interface OnePageContextType {
   navigateToGroup: (group: SelectedGroup) => void;
   navigateToEvent: (event: SelectedEvent) => void;
   navigateToFeed: () => void;
+  navigateToChat: (contact: ChatContact) => void;
 }
 
 const OnePageContext = createContext<OnePageContextType | undefined>(undefined);
@@ -79,7 +83,15 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
   const navigateToFeed = useCallback(() => {
     setSelectedGroup(null);
     setSelectedEvent(null);
+    setSelectedChatContact(null);
     setCentralView('feed');
+  }, []);
+
+  const navigateToChat = useCallback((contact: ChatContact) => {
+    setSelectedChatContact(contact);
+    setSelectedGroup(null);
+    setSelectedEvent(null);
+    setCentralView('chat');
   }, []);
 
   const value: OnePageContextType = {
@@ -89,13 +101,15 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
     setSelectedGroup,
     selectedEvent,
     setSelectedEvent,
-    isChatDrawerOpen,
     selectedChatContact,
+    setSelectedChatContact,
+    isChatDrawerOpen,
     openChatDrawer,
     closeChatDrawer,
     navigateToGroup,
     navigateToEvent,
-    navigateToFeed
+    navigateToFeed,
+    navigateToChat
   };
 
   return (
