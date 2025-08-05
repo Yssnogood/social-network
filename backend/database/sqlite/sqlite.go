@@ -39,7 +39,14 @@ func InitDBAndMigrate() *sql.DB {
 	}
 
 	// Resolve the absolute path to the migration files
-	absPath, err := filepath.Abs("backend/database/migrations/sqlite")
+	// Check if we're running from project root or backend directory
+	migrationsPath := "database/migrations/sqlite"
+	if _, err := os.Stat(migrationsPath); os.IsNotExist(err) {
+		// Try from project root
+		migrationsPath = "backend/database/migrations/sqlite"
+	}
+	
+	absPath, err := filepath.Abs(migrationsPath)
 	if err != nil {
 		log.Fatalf("Cannot resolve absolute path for migrations: %v", err)
 	}

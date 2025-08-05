@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useOnePage } from '../contexts/OnePageContext';
-import { fetchFriends, fetchFollowing, fetchAllUsersWithStatus } from '../../services/contact';
+import { fetchFriends, fetchFollowing, fetchAllUsersWithStatus, fetchOnlineUsers } from '../../services/contact';
 import { followUser, unfollowUser } from '../../services/follow';
 import { getCurrentUserId } from '../../services/auth';
 
@@ -36,6 +36,7 @@ export default function UsersListPanel() {
     const [contacts, setContacts] = useState<BaseUser[]>([]);
     const [following, setFollowing] = useState<BaseUser[]>([]);
     const [allUsers, setAllUsers] = useState<UserWithStatus[]>([]);
+    const [onlineUsers, setOnlineUsers] = useState<number[]>([]);
 
     // Récupérer l'ID de l'utilisateur actuel
     useEffect(() => {
@@ -51,6 +52,28 @@ export default function UsersListPanel() {
 
         fetchUserId();
     }, []);
+
+    // Récupérer les utilisateurs en ligne périodiquement
+    useEffect(() => {
+        if (!currentUserId) return;
+
+        const fetchOnlineStatus = async () => {
+            try {
+                const onlineUserIds = await fetchOnlineUsers();
+                setOnlineUsers(onlineUserIds);
+            } catch (error) {
+                console.error('Error fetching online users:', error);
+            }
+        };
+
+        // Récupération initiale
+        fetchOnlineStatus();
+
+        // Mise à jour toutes les 30 secondes
+        const interval = setInterval(fetchOnlineStatus, 30000);
+
+        return () => clearInterval(interval);
+    }, [currentUserId]);
 
     // Charger les données selon l'onglet actif
     useEffect(() => {
@@ -112,7 +135,15 @@ export default function UsersListPanel() {
         );
     };
 
-    const filteredUsers = getFilteredUsers();
+    // Fonction utilitaire pour ajouter le statut en ligne
+    const addOnlineStatus = (users: (BaseUser | UserWithStatus)[]): (BaseUser | UserWithStatus)[] => {
+        return users.map(user => ({
+            ...user,
+            isOnline: onlineUsers.includes(user.id)
+        }));
+    };
+
+    const filteredUsers = addOnlineStatus(getFilteredUsers());
 
     // Actions
     const handleUserClick = (user: BaseUser | UserWithStatus) => {

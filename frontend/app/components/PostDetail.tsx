@@ -62,6 +62,8 @@ export default function PostDetail({ post, commentsCount, jwt }: PostDetailProps
               src={
                 post.userName.avatar_path.startsWith("http")
                   ? post.userName.avatar_path
+                  : post.userName.avatar_path.startsWith("/")
+                  ? post.userName.avatar_path
                   : `/uploads/${post.userName.avatar_path}`
               }
               alt={`${post.userName.username}'s avatar`}
@@ -93,6 +95,8 @@ export default function PostDetail({ post, commentsCount, jwt }: PostDetailProps
                   <img
                     src={
                       post.userName.avatar_path.startsWith("http")
+                        ? post.userName.avatar_path
+                        : post.userName.avatar_path.startsWith("/")
                         ? post.userName.avatar_path
                         : `/uploads/${post.userName.avatar_path}`
                     }

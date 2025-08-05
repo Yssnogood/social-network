@@ -82,3 +82,20 @@ export async function fetchAllUsersWithStatus() {
   console.log("All users with status:", r)
   return r
 }
+
+export async function fetchOnlineUsers() {
+  const resp = await fetch(url + "/users/online", {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+  if (!resp.ok) {
+    console.error("Failed to fetch online users:", resp.statusText)
+    return []
+  }
+  const r = await resp.json()
+  console.log("Online users:", r)
+  return r.online_users || []
+}

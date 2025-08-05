@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { getPosts, createPost, Post } from "../../services/post";
 import { useCookies } from "next-client-cookies";
 import { getCurrentUser, getCurrentUserId } from "../../services/auth";
+import { usePresence } from "../hooks/usePresence";
 import { createNotification, fetchNotifications } from "../../services/notifications";
 
 // Composants pour le système one page
@@ -28,6 +29,9 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
     const cookies = useCookies();
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    
+    // Établir la connexion de présence automatiquement
+    const { isConnected } = usePresence();
     const [showNotifications, setShowNotifications] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
     const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
@@ -41,7 +45,8 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
                 const userId = await getCurrentUserId();
                 if (!userId) {
                     // Pas d'utilisateur connecté, rediriger vers login
-                    window.location.href = '/login';
+                    // window.location.href = '/login'; // Temporairement désactivé pour éviter la boucle
+                    console.log('User not logged in');
                     return;
                 }
 
@@ -52,7 +57,7 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
             } catch (error) {
                 console.error("Failed to fetch notifications:", error);
                 // En cas d'erreur d'authentification, rediriger vers login
-                window.location.href = '/login';
+                // window.location.href = '/login'; // Temporairement désactivé pour éviter la boucle
             }
         };
 

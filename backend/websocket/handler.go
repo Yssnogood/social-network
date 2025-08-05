@@ -124,3 +124,13 @@ func (h *WebSocketHandler) GetConversationMessages(w http.ResponseWriter, r *htt
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(messages)
 }
+
+// GetOnlineUsers returns the list of online user IDs
+func (h *WebSocketHandler) GetOnlineUsers(w http.ResponseWriter, r *http.Request) {
+	onlineUserIDs := h.hub.GetOnlineUserIDs()
+	
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"online_users": onlineUserIDs,
+	})
+}

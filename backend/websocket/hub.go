@@ -124,9 +124,18 @@ func (h *Hub) handleBroadcast(message []byte) {
 	switch wsMsg.Type {
 	case "message_send":
 		h.handleMessageSend(wsMsg)
+	case "presence":
+		h.handlePresence(wsMsg)
 	default:
 		log.Printf("Unknown message type: %s", wsMsg.Type)
 	}
+}
+
+// handlePresence processes presence messages for online status
+func (h *Hub) handlePresence(wsMsg WSMessage) {
+	log.Printf("User %d presence update: %s", wsMsg.SenderID, wsMsg.Content)
+	// La présence est déjà gérée par l'enregistrement/désenregistrement du client
+	// Ceci confirme juste que l'utilisateur est actif
 }
 
 // handleMessageSend processes new message sending between two users
@@ -201,5 +210,26 @@ func (h *Hub) sendToClient(client *Client, message WSMessage) {
 		// Client's send channel is full, close it
 		h.unregisterClient(client)
 	}
+}
+
+// GetOnlineUserIDs returns a slice of user IDs that are currently online
+func (h *Hub) GetOnlineUserIDs() []int64 {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+	
+	userIDs := make([]int64, 0, len(h.userClients))
+	for userID := range h.userClients {
+		userIDs = append(userIDs, userID)
+	}
+	return userIDs
+}
+
+// IsUserOnline checks if a specific user is currently online
+func (h *Hub) IsUserOnline(userID int64) bool {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+	
+	_, exists := h.userClients[userID]
+	return exists
 }
 

@@ -55,7 +55,13 @@ export default function ProfileHoverCard({ user, isMobile, children }: ProfileHo
             <div className="w-12 h-12 rounded-full overflow-hidden mr-3 bg-gray-700">
               {user.avatar_path && (
                 <img
-                  src={user.avatar_path.startsWith("http") ? user.avatar_path : `/uploads/${user.avatar_path}`}
+                  src={
+                    user.avatar_path.startsWith("http")
+                      ? user.avatar_path
+                      : user.avatar_path.startsWith("/")
+                      ? user.avatar_path
+                      : `/uploads/${user.avatar_path}`
+                  }
                   alt="Avatar"
                   className="w-full h-full object-cover"
                 />

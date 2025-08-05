@@ -66,6 +66,8 @@ export default function CommentItem({ comment, isOwn }: CommentItemProps) {
                   src={
                     user.avatar_path.startsWith("http")
                       ? user.avatar_path
+                      : user.avatar_path.startsWith("/")
+                      ? user.avatar_path
                       : `/uploads/${user.avatar_path}`
                   }
                  alt="Profile"
@@ -98,6 +100,8 @@ export default function CommentItem({ comment, isOwn }: CommentItemProps) {
                   <img
                     src={
                       user.avatar_path.startsWith("http")
+                        ? user.avatar_path
+                        : user.avatar_path.startsWith("/")
                         ? user.avatar_path
                         : `/uploads/${user.avatar_path}`
                     }

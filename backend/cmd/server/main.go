@@ -117,6 +117,7 @@ func main() {
 	r.Handle("/ws/groups", middlewares.JWTMiddleware(http.HandlerFunc(appHandlers.HandleGroupWebSocket)))
 
 	r.Handle("/api/messages/conversation", http.HandlerFunc(websocketHandler.HandleGetConversation)).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/users/online", websocketHandler.GetOnlineUsers).Methods("GET", "OPTIONS")
 
 	// Lancement du serveur HTTP
 	port := os.Getenv("PORT")
