@@ -29,9 +29,6 @@ export default function EventsPanel() {
                 // D'abord, récupérer tous les groupes
                 const groupsResponse = await fetch("http://localhost:8080/api/groups", {
                     method: "GET",
-                    headers: {
-                        Authorization: `Bearer ${cookies.get("jwt")}`,
-                    },
                     credentials: "include",
                 });
                 
@@ -47,9 +44,6 @@ export default function EventsPanel() {
                     try {
                         const eventsResponse = await fetch(`http://localhost:8080/api/groups/${group.id}/events`, {
                             method: "GET",
-                            headers: {
-                                Authorization: `Bearer ${cookies.get("jwt")}`,
-                            },
                             credentials: "include",
                         });
                         
@@ -96,8 +90,7 @@ export default function EventsPanel() {
             const response = await fetch(`http://localhost:8080/api/groups/${newEvent.group_id}/events`, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${cookies.get("jwt")}`
+                    "Content-Type": "application/json"
                 },
                 credentials: "include",
                 body: JSON.stringify(formattedEvent),

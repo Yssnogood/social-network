@@ -118,16 +118,16 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	h.SessionRepository.Create(session)
 
-	// // Écrit le token dans un cookie sécurisé
-	// http.SetCookie(w, &http.Cookie{
-	// 	Name:     "jwt",
-	// 	Value:    token,
-	// 	Path:     "/",
-	// 	HttpOnly: true,
-	// 	Secure:   false, // à mettre sur true en HTTPS
-	// 	SameSite: http.SameSiteLaxMode,
-	// 	MaxAge:   86400, // 24h
-	// })
+	// Écrit le token dans un cookie sécurisé
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false, // à mettre sur true en HTTPS
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   86400, // 24h
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{

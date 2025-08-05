@@ -17,14 +17,13 @@ export interface Post {
  * Fetches all posts
  * In a real app, this would make an API call to get posts
  */
-export async function getPosts(jwt?:string): Promise<Post[]> {
+export async function getPosts(): Promise<Post[]> {
   let posts: Post[] = [];
   try {
     const resp = await fetch(url+"/posts",{
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${jwt}`
+        "Content-Type": "application/json"
       },
       credentials: "include"
     })
@@ -61,12 +60,11 @@ export async function getPosts(jwt?:string): Promise<Post[]> {
   return posts;
 }
 
-export async function LikePost(post_id:number, jwt?:string) {
+export async function LikePost(post_id:number) {
   const resp = await fetch(url+'/like',{
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${jwt}`
+      "Content-Type": "application/json"
     },
     credentials: "include",
     body: JSON.stringify({
@@ -91,14 +89,13 @@ export async function LikePost(post_id:number, jwt?:string) {
   }
 }
 
-export async function getSpecificPost(post_id: number, jwt?: string): Promise<Post | null> {
+export async function getSpecificPost(post_id: number): Promise<Post | null> {
   let newPost: Post | null = null;
   try {
     const resp = await fetch(url+`/posts/${post_id}`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${jwt}`
+        "Content-Type": "application/json"
       },
       credentials: "include"
     });
@@ -135,7 +132,7 @@ export async function createPost(postData: {
   privacy: number;
   viewers: number[];
   imageUrl?: string;
-},jwt?:string): Promise<Post> {
+}): Promise<Post> {
   let newPost: Post = {
     userId: "",
     userName: "",
@@ -151,8 +148,7 @@ export async function createPost(postData: {
             const resp = await fetch(url+"/post",{
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${jwt}`
+                    "Content-Type": "application/json"
                 },
                 credentials: "include",
                 body: JSON.stringify({

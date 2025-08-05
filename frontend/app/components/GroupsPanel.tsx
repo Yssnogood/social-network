@@ -21,9 +21,6 @@ export default function GroupsPanel() {
                 setIsLoading(true);
                 const response = await fetch("http://localhost:8080/api/groups", {
                     method: "GET",
-                    headers: {
-                        Authorization: `Bearer ${cookies.get("jwt")}`,
-                    },
                     credentials: "include",
                 });
                 
@@ -53,8 +50,7 @@ export default function GroupsPanel() {
             const response = await fetch('http://localhost:8080/api/groups', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${cookies.get("jwt")}`
+                    'Content-Type': 'application/json'
                 },
                 credentials: "include",
                 body: JSON.stringify({

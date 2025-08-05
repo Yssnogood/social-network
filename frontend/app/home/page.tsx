@@ -57,9 +57,9 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
     // Charger les posts
     useEffect(() => {
         async function loadPosts() {
-            console.log("Loading posts with JWT:", cookies.get("jwt"));
+            console.log("Loading posts...");
             try {
-                const fetchedPosts = await getPosts(cookies.get("jwt"));
+                const fetchedPosts = await getPosts();
                 console.log("Fetched posts:", fetchedPosts);
                 setPosts(fetchedPosts);
             } catch (error) {
@@ -78,9 +78,7 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
             try {
                 const response = await fetch("http://localhost:8080/api/groups", {
                     method: "GET",
-                    headers: {
-                        Authorization: `Bearer ${cookies.get("jwt")}`,
-                    },
+                    credentials: "include",
                 });
                 if (!response.ok) throw new Error("Erreur lors de la récupération des groupes");
                 const allGroups = await response.json();
@@ -116,7 +114,7 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
 
     const handleSubmitPost = async (postData: { content: string; privacy: number; viewers: number[], imageUrl?: string }) => {
         try {
-            const newPost = await createPost(postData, cookies.get("jwt"));
+            const newPost = await createPost(postData);
 
             createNotification({
                 userId: parseInt(newPost.userId),
@@ -138,8 +136,7 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
             const response = await fetch('http://localhost:8080/api/groups', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${cookies.get("jwt")}`
+                    'Content-Type': 'application/json'
                 },
                 credentials: 'include',
                 body: JSON.stringify({
@@ -159,9 +156,7 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
             // Recharger la liste des groupes
             const updatedGroupsResponse = await fetch("http://localhost:8080/api/groups", {
                 method: "GET",
-                headers: {
-                    Authorization: `Bearer ${cookies.get("jwt")}`,
-                },
+                credentials: "include",
             });
             
             if (updatedGroupsResponse.ok) {
