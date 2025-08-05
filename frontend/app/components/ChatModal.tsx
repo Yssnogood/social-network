@@ -22,7 +22,7 @@ export default function ChatModal({
 		const fetchOrCreateConversation = async () => {
 			console.log("Fetching or creating conversation between", currentUserId, "and", targetUserId);
 			try {
-				const res = await fetch("http://localhost:8080/api/messages/conversation", {
+				const res = await fetch("http://localhost:8090/api/messages/conversation", {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
@@ -40,7 +40,7 @@ export default function ChatModal({
 				const convo = await res.json();
 				console.log("✅ Conversation ID:", convo.id);
 
-				const historyRes = await fetch(`http://localhost:8080/api/messages?conversation_id=${convo.id}`, {
+				const historyRes = await fetch(`http://localhost:8090/api/messages?conversation_id=${convo.id}`, {
 					method: "GET",
 					credentials: "include",
 				});
@@ -56,7 +56,7 @@ export default function ChatModal({
 					setMessages(Array.isArray(history) ? history : []);
 				}
 
-				ws.current = new WebSocket("ws://localhost:8080/ws");
+				ws.current = new WebSocket("ws://localhost:8090/ws");
 
 				ws.current.onopen = () => {
 					console.log("✅ WebSocket connection opened");

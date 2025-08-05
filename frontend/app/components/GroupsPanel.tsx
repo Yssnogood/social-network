@@ -19,7 +19,7 @@ export default function GroupsPanel() {
         const fetchGroups = async () => {
             try {
                 setIsLoading(true);
-                const response = await fetch("http://localhost:8080/api/groups", {
+                const response = await fetch("http://localhost:8090/api/groups", {
                     method: "GET",
                     credentials: "include",
                 });
@@ -47,7 +47,7 @@ export default function GroupsPanel() {
         if (!newGroup.title.trim()) return;
 
         try {
-            const response = await fetch('http://localhost:8080/api/groups', {
+            const response = await fetch('http://localhost:8090/api/groups', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

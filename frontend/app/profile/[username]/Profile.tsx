@@ -35,7 +35,7 @@ export default function ClientProfile({
   useEffect(() => {
     const fetchIsFollowingStatus = async () => {
       try {
-        const res = await fetch(`http://localhost:8080/api/followers/check`,{
+        const res = await fetch(`http://localhost:8090/api/followers/check`,{
           method : "POST",
           headers : {
             "Content-Type" : "application/json",
@@ -69,7 +69,7 @@ export default function ClientProfile({
 
   const fetchFollowers = async () => {
     try {
-      const res = await fetch(`http://localhost:8080/api/followersDetails?userID=${profile.id}`);
+      const res = await fetch(`http://localhost:8090/api/followersDetails?userID=${profile.id}`);
       if (!res.ok) throw new Error("Échec du fetch des followers");
       const data = await res.json();
       setFollowerList(data);

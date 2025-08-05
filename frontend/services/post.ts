@@ -1,4 +1,4 @@
-const url = "http://localhost:8080/api"
+const url = "http://localhost:8090/api"
 export interface Post {
   id: number;
   userId: string;

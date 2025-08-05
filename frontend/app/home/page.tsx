@@ -76,7 +76,7 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
     useEffect(() => {
         async function fetchGroups() {
             try {
-                const response = await fetch("http://localhost:8080/api/groups", {
+                const response = await fetch("http://localhost:8090/api/groups", {
                     method: "GET",
                     credentials: "include",
                 });
@@ -133,7 +133,7 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
 
     const handleSubmitGroup = async (groupData: { title: string; description: string }) => {
         try {
-            const response = await fetch('http://localhost:8080/api/groups', {
+            const response = await fetch('http://localhost:8090/api/groups', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -154,7 +154,7 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
             console.log('Group created successfully:', data);
 
             // Recharger la liste des groupes
-            const updatedGroupsResponse = await fetch("http://localhost:8080/api/groups", {
+            const updatedGroupsResponse = await fetch("http://localhost:8090/api/groups", {
                 method: "GET",
                 credentials: "include",
             });

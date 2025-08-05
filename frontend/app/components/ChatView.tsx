@@ -42,11 +42,17 @@ export default function ChatView({ contact }: ChatViewProps) {
 
   // Récupérer l'ID de l'utilisateur actuel via l'API backend
   useEffect(() => {
-    // SOLUTION TEMPORAIRE: Hard-code l'ID utilisateur
-    // D'après les logs du serveur, l'utilisateur connecté a l'ID 2
-    const userId = 2;
-    console.log('DEBUG - Using hardcoded userId:', userId);
-    setCurrentUserId(userId);
+    const fetchUserId = async () => {
+      try {
+        const userId = await getCurrentUserId();
+        setCurrentUserId(userId);
+      } catch (error) {
+        console.error('Error getting current user ID:', error);
+        setCurrentUserId(null);
+      }
+    };
+
+    fetchUserId();
   }, []);
 
   // Charger les messages de la conversation
@@ -207,14 +213,6 @@ export default function ChatView({ contact }: ChatViewProps) {
             {messages.map((message, index) => {
               // CORRECTION: Conversion de type pour comparaison robuste
               const isCurrentUser = Number(message.sender_id) === Number(currentUserId);
-              console.log('DEBUG - Message:', {
-                messageId: message.id,
-                senderId: message.sender_id,
-                currentUserId: currentUserId,
-                isCurrentUser: isCurrentUser,
-                senderIdType: typeof message.sender_id,
-                currentUserIdType: typeof currentUserId
-              });
               const showDateSeparator = index === 0 || 
                 formatMessageDate(messages[index - 1].created_at) !== formatMessageDate(message.created_at);
 

@@ -40,7 +40,7 @@ export default function GroupView({ groupId }: GroupViewProps) {
                 setError(null);
 
                 // Charger les informations utilisateur actuel
-                const userRes = await fetch("http://localhost:8080/api/users/me", {
+                const userRes = await fetch("http://localhost:8090/api/users/me", {
                     method: "GET",
                     credentials: "include",
                 });
@@ -51,16 +51,16 @@ export default function GroupView({ groupId }: GroupViewProps) {
 
                 // Charger les données du groupe en parallèle
                 const [groupRes, membersRes, messagesRes, eventsRes] = await Promise.all([
-                    fetch(`http://localhost:8080/api/groups/${groupId}`, {
+                    fetch(`http://localhost:8090/api/groups/${groupId}`, {
                         credentials: "include",
                     }),
-                    fetch(`http://localhost:8080/api/groups/${groupId}/members`, {
+                    fetch(`http://localhost:8090/api/groups/${groupId}/members`, {
                         credentials: "include",
                     }),
-                    fetch(`http://localhost:8080/api/groups/${groupId}/messages`, {
+                    fetch(`http://localhost:8090/api/groups/${groupId}/messages`, {
                         credentials: "include",
                     }),
-                    fetch(`http://localhost:8080/api/groups/${groupId}/events`, {
+                    fetch(`http://localhost:8090/api/groups/${groupId}/events`, {
                         credentials: "include",
                     })
                 ]);
@@ -103,7 +103,7 @@ export default function GroupView({ groupId }: GroupViewProps) {
         if (posts.length > 0) return; // Déjà chargés
 
         try {
-            const response = await fetch(`http://localhost:8080/api/groups/${groupId}/posts`, {
+            const response = await fetch(`http://localhost:8090/api/groups/${groupId}/posts`, {
                 credentials: "include",
             });
             
@@ -119,7 +119,7 @@ export default function GroupView({ groupId }: GroupViewProps) {
     // Actions
     const sendMessage = async (content: string) => {
         try {
-            const res = await fetch(`http://localhost:8080/api/groups/${groupId}/messages`, {
+            const res = await fetch(`http://localhost:8090/api/groups/${groupId}/messages`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -136,7 +136,7 @@ export default function GroupView({ groupId }: GroupViewProps) {
 
     const createPost = async (content: string) => {
         try {
-            const res = await fetch(`http://localhost:8080/api/groups/${groupId}/posts`, {
+            const res = await fetch(`http://localhost:8090/api/groups/${groupId}/posts`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -154,7 +154,7 @@ export default function GroupView({ groupId }: GroupViewProps) {
 
     const handleEventResponse = async (eventId: number, status: string) => {
         try {
-            const res = await fetch(`http://localhost:8080/api/events/${eventId}/response`, {
+            const res = await fetch(`http://localhost:8090/api/events/${eventId}/response`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -176,7 +176,7 @@ export default function GroupView({ groupId }: GroupViewProps) {
 
     const deleteEvent = async (eventId: number) => {
         try {
-            const res = await fetch(`http://localhost:8080/api/events/${eventId}`, {
+            const res = await fetch(`http://localhost:8090/api/events/${eventId}`, {
                 method: "DELETE",
                 credentials: "include",
             });

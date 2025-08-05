@@ -36,7 +36,7 @@ export default function ChatDrawer() {
     const initWS = () => {
         if (ws.current?.readyState === WebSocket.OPEN) return;
         
-        ws.current = new WebSocket("ws://localhost:8080/ws");
+        ws.current = new WebSocket("ws://localhost:8090/ws");
 
         ws.current.onopen = () => {
             console.log("✅ WebSocket connection opened for chat drawer");
@@ -76,7 +76,7 @@ export default function ChatDrawer() {
                 setIsLoading(true);
                 
                 // Créer ou récupérer la conversation
-                const response = await fetch("http://localhost:8080/api/messages/conversation", {
+                const response = await fetch("http://localhost:8090/api/messages/conversation", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",

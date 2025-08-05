@@ -50,7 +50,7 @@ export default function ContactPage() {
   },[])
   
   const initWS = () => {
-    ws.current = new WebSocket("ws://localhost:8080/ws");
+    ws.current = new WebSocket("ws://localhost:8090/ws");
 
 				ws.current.onopen = () => {
 					console.log("✅ WebSocket connection opened");

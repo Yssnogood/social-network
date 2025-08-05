@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 
 // Fetch the notifications to display on their notification panel
 export async function fetchNotifications(token: string, user_id: string) {
-  const res = await fetch(`http://localhost:8080/api/notifications/get`, {
+  const res = await fetch(`http://localhost:8090/api/notifications/get`, {
     method: "POST",
     credentials: "include",
     body: JSON.stringify({ user_id: parseInt(user_id) }),
@@ -23,7 +23,7 @@ export async function createNotification(notification: {
   referenceId?: number;
   referenceType?: string;
 }) {
-  const res = await fetch("http://localhost:8080/api/notifications", {
+  const res = await fetch("http://localhost:8090/api/notifications", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -47,7 +47,7 @@ export async function createNotification(notification: {
 
 // Accept a follow request (from the notification)
 export async function acceptFollowRequestNotif(notificationId: number, user_id: number, reference_id: number) {
-  const res = await fetch("http://localhost:8080/api/followers/accept", {
+  const res = await fetch("http://localhost:8090/api/followers/accept", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -68,7 +68,7 @@ export async function acceptFollowRequestNotif(notificationId: number, user_id: 
 
 // Decline a follow request (from the notification)
 export async function declineFollowRequestNotif(notificationId: number, user_id: number, reference_id: number) {
-  const res = await fetch("http://localhost:8080/api/followers/decline", {
+  const res = await fetch("http://localhost:8090/api/followers/decline", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -89,7 +89,7 @@ export async function declineFollowRequestNotif(notificationId: number, user_id:
 
 // Accept a join group request (from the notification)
 export async function acceptGroupJoinRequest(reference_id: number, user_id: number, reference_type: string) {
-  const res = await fetch("http://localhost:8080/api/groups/accept-invitation", {
+  const res = await fetch("http://localhost:8090/api/groups/accept-invitation", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -112,7 +112,7 @@ export async function acceptGroupJoinRequest(reference_id: number, user_id: numb
 
 // Decline a join group request (from the notification)
 export async function declineGroupJoinRequest(reference_id: number, user_id: number, reference_type: string) {
-  const res = await fetch("http://localhost:8080/api/groups/decline-invitation", {
+  const res = await fetch("http://localhost:8090/api/groups/decline-invitation", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

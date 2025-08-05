@@ -11,7 +11,7 @@ export const useGroupWebSocket = (
 		let socket: WebSocket;
 
 		const connectWebSocket = () => {
-			socket = new WebSocket(`ws://localhost:8080/ws/groups?groupId=${groupId}`);
+			socket = new WebSocket(`ws://localhost:8090/ws/groups?groupId=${groupId}`);
 
 			socket.onopen = () => {
 				console.log("WebSocket group connected ✅");

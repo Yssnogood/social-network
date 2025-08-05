@@ -81,7 +81,7 @@ export default function GroupPage() {
 	useEffect(() => {
 		const fetchCurrentUser = async () => {
 			try {
-				const res = await fetch("http://localhost:8080/api/users/me", {
+				const res = await fetch("http://localhost:8090/api/users/me", {
 					method: "GET",
 					credentials: "include",
 				});
@@ -116,7 +116,7 @@ export default function GroupPage() {
 		if (!newMessage.trim()) return;
 
 		try {
-			const res = await fetch(`http://localhost:8080/api/groups/${id}/messages`, {
+			const res = await fetch(`http://localhost:8090/api/groups/${id}/messages`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				credentials: "include",
@@ -144,7 +144,7 @@ export default function GroupPage() {
 	// Actions pour les invitations
 	const inviteUser = async (userIdToInvite: number) => {
 		try {
-			const res = await fetch(`http://localhost:8080/api/groups/${id}/members`, {
+			const res = await fetch(`http://localhost:8090/api/groups/${id}/members`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				credentials: "include",
@@ -171,7 +171,7 @@ export default function GroupPage() {
 	// Actions pour les posts
 	const createPost = async (content: string) => {
 		try {
-			const res = await fetch(`http://localhost:8080/api/groups/${id}/posts`, {
+			const res = await fetch(`http://localhost:8090/api/groups/${id}/posts`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				credentials: "include",
@@ -224,7 +224,7 @@ export default function GroupPage() {
 
 		try {
 			const res = await fetch(
-				`http://localhost:8080/api/groups/${id}/posts/${postId}/comments`,
+				`http://localhost:8090/api/groups/${id}/posts/${postId}/comments`,
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -274,7 +274,7 @@ export default function GroupPage() {
 				event_date: new Date(eventData.event_date).toISOString()
 			};
 
-			const res = await fetch(`http://localhost:8080/api/groups/${id}/events`, {
+			const res = await fetch(`http://localhost:8090/api/groups/${id}/events`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				credentials: "include",
@@ -303,7 +303,7 @@ export default function GroupPage() {
 
 	const handleEventResponse = async (eventId: number, status: string) => {
 		try {
-			const res = await fetch(`http://localhost:8080/api/events/${eventId}/response`, {
+			const res = await fetch(`http://localhost:8090/api/events/${eventId}/response`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				credentials: "include",
@@ -323,7 +323,7 @@ export default function GroupPage() {
 
 	const deleteEvent = async (eventId: number) => {
 		try {
-			const res = await fetch(`http://localhost:8080/api/events/${eventId}`, {
+			const res = await fetch(`http://localhost:8090/api/events/${eventId}`, {
 				method: "DELETE",
 				credentials: "include",
 			});

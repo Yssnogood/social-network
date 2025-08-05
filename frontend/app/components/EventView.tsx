@@ -32,7 +32,7 @@ export default function EventView({ event }: EventViewProps) {
                 setIsLoading(true);
 
                 // Charger l'utilisateur actuel
-                const userRes = await fetch("http://localhost:8080/api/users/me", {
+                const userRes = await fetch("http://localhost:8090/api/users/me", {
                     method: "GET",
                     credentials: "include",
                 });
@@ -43,7 +43,7 @@ export default function EventView({ event }: EventViewProps) {
 
                 // Charger les informations du groupe
                 if (event.group_id) {
-                    const groupRes = await fetch(`http://localhost:8080/api/groups/${event.group_id}`, {
+                    const groupRes = await fetch(`http://localhost:8090/api/groups/${event.group_id}`, {
                         credentials: "include",
                     });
                     if (groupRes.ok) {
@@ -53,7 +53,7 @@ export default function EventView({ event }: EventViewProps) {
                 }
 
                 // Charger les réponses à l'événement
-                const responsesRes = await fetch(`http://localhost:8080/api/events/${event.id}/responses`, {
+                const responsesRes = await fetch(`http://localhost:8090/api/events/${event.id}/responses`, {
                     credentials: "include",
                 });
                 
@@ -82,7 +82,7 @@ export default function EventView({ event }: EventViewProps) {
 
     const handleResponse = async (status: 'going' | 'not_going') => {
         try {
-            const res = await fetch(`http://localhost:8080/api/events/${event.id}/response`, {
+            const res = await fetch(`http://localhost:8090/api/events/${event.id}/response`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",

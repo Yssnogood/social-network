@@ -8,7 +8,7 @@ export async function searchInstances(query: string, currentUserId: number): Pro
 	}
 	
 	try {
-		const response = await fetch("http://localhost:8080/api/search", {
+		const response = await fetch("http://localhost:8090/api/search", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",

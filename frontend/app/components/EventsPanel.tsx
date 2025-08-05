@@ -27,7 +27,7 @@ export default function EventsPanel() {
                 setIsLoading(true);
                 
                 // D'abord, récupérer tous les groupes
-                const groupsResponse = await fetch("http://localhost:8080/api/groups", {
+                const groupsResponse = await fetch("http://localhost:8090/api/groups", {
                     method: "GET",
                     credentials: "include",
                 });
@@ -42,7 +42,7 @@ export default function EventsPanel() {
                 
                 for (const group of groups || []) {
                     try {
-                        const eventsResponse = await fetch(`http://localhost:8080/api/groups/${group.id}/events`, {
+                        const eventsResponse = await fetch(`http://localhost:8090/api/groups/${group.id}/events`, {
                             method: "GET",
                             credentials: "include",
                         });
@@ -87,7 +87,7 @@ export default function EventsPanel() {
                 event_date: new Date(newEvent.event_date).toISOString()
             };
 
-            const response = await fetch(`http://localhost:8080/api/groups/${newEvent.group_id}/events`, {
+            const response = await fetch(`http://localhost:8090/api/groups/${newEvent.group_id}/events`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

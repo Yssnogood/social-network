@@ -14,7 +14,7 @@ export interface FollowerUser {
 
 export async function followUser(followerId: number, followedId: number, is_public: boolean) {
   console.log("Following user:", followerId, followedId, is_public);
-  const res = await fetch("http://localhost:8080/api/followers", {
+  const res = await fetch("http://localhost:8090/api/followers", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -29,7 +29,7 @@ export async function followUser(followerId: number, followedId: number, is_publ
 }
 
 export async function unfollowUser(followerId: number, followedId: number) {
-  const res = await fetch(`http://localhost:8080/api/followers/${followedId}`, {
+  const res = await fetch(`http://localhost:8090/api/followers/${followedId}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -43,7 +43,7 @@ export async function unfollowUser(followerId: number, followedId: number) {
 
 export const fetchFollowers = async (userId: number): Promise<FollowerUser[]> => {
   try {
-    const response = await fetch(`http://localhost:8080/api/followersDetails?userID=${userId}`, {
+    const response = await fetch(`http://localhost:8090/api/followersDetails?userID=${userId}`, {
       method: "GET",
       cache: "no-store",
     });

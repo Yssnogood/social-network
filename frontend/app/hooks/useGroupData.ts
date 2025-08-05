@@ -37,7 +37,7 @@ export const useGroupData = (groupId: string, setters: UseGroupDataProps) => {
 
 	const fetchGroup = async () => {
 		try {
-			const res = await fetch(`http://localhost:8080/api/groups/${groupId}`, {
+			const res = await fetch(`http://localhost:8090/api/groups/${groupId}`, {
 				credentials: "include",
 			});
 			if (!res.ok) throw new Error(await res.text());
@@ -58,7 +58,7 @@ export const useGroupData = (groupId: string, setters: UseGroupDataProps) => {
 
 	const fetchMembers = async () => {
 		try {
-			const res = await fetch(`http://localhost:8080/api/groups/${groupId}/members`, {
+			const res = await fetch(`http://localhost:8090/api/groups/${groupId}/members`, {
 				credentials: "include",
 			});
 			if (!res.ok) throw new Error(await res.text());
@@ -79,7 +79,7 @@ export const useGroupData = (groupId: string, setters: UseGroupDataProps) => {
 
 	const fetchFollowers = async () => {
 		try {
-			const res = await fetch(`http://localhost:8080/api/followers`, {
+			const res = await fetch(`http://localhost:8090/api/followers`, {
 				credentials: "include",
 			});
 			if (!res.ok) throw new Error(await res.text());
@@ -92,7 +92,7 @@ export const useGroupData = (groupId: string, setters: UseGroupDataProps) => {
 
 	const fetchMessages = async () => {
 		try {
-			const res = await fetch(`http://localhost:8080/api/groups/${groupId}/messages`, {
+			const res = await fetch(`http://localhost:8090/api/groups/${groupId}/messages`, {
 				credentials: "include",
 			});
 			if (!res.ok) throw new Error(await res.text());
@@ -106,7 +106,7 @@ export const useGroupData = (groupId: string, setters: UseGroupDataProps) => {
 	const fetchPosts = async () => {
 		setIsLoadingPosts(true);
 		try {
-			const res = await fetch(`http://localhost:8080/api/groups/${groupId}/posts`, {
+			const res = await fetch(`http://localhost:8090/api/groups/${groupId}/posts`, {
 				credentials: "include",
 			});
 			if (!res.ok) throw new Error(await res.text());
@@ -121,7 +121,7 @@ export const useGroupData = (groupId: string, setters: UseGroupDataProps) => {
 
 	const fetchEvents = async () => {
 		try {
-			const res = await fetch(`http://localhost:8080/api/groups/${groupId}/events`, {
+			const res = await fetch(`http://localhost:8090/api/groups/${groupId}/events`, {
 				credentials: "include",
 			});
 			if (!res.ok) throw new Error(await res.text());
@@ -137,7 +137,7 @@ export const useGroupData = (groupId: string, setters: UseGroupDataProps) => {
 		setLoadingComments((prev) => ({ ...prev, [postId]: true }));
 		try {
 			const res = await fetch(
-				`http://localhost:8080/api/groups/${groupId}/posts/${postId}/comments`,
+				`http://localhost:8090/api/groups/${groupId}/posts/${postId}/comments`,
 				{
 					credentials: "include",
 				}

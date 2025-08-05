@@ -6,7 +6,7 @@ export async function fetchUsersByUsername(query: string, current: string): Prom
     return [];
   }
   try {
-    const res = await fetch(`http://localhost:8080/api/users/search/${encodeURIComponent(query)}/${current}`);
+    const res = await fetch(`http://localhost:8090/api/users/search/${encodeURIComponent(query)}/${current}`);
     if (!res.ok) throw new Error('Failed to fetch users');
     return await res.json();
   } catch (err) {
