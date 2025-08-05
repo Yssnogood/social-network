@@ -26,6 +26,7 @@ type SearchResult struct {
 	IsFollowing *bool   `json:"is_following,omitempty"`
 	IsFollowedBy *bool   `json:"is_followed_by,omitempty"`
 	IsMember    *bool   `json:"is_member,omitempty"`
+	IsFriend    *bool   `json:"is_friend,omitempty"`
 }
 
 type SearchGroupedResult struct {
@@ -176,7 +177,7 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 
 func (r *UserRepository) GetFriendsByUserID(userID int64) ([]*models.User, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT u.id, u.username, u.avatar_path
+		SELECT u.id, u.username, COALESCE(u.avatar_path, '/defaultPP.webp') as avatar_path
 		FROM users u
 		INNER JOIN followers f1 ON f1.followed_id = u.id AND f1.follower_id = ? AND f1.accepted = TRUE
 		INNER JOIN followers f2 ON f2.follower_id = u.id AND f2.followed_id = ? AND f2.accepted = TRUE
@@ -239,6 +240,102 @@ func (r *UserRepository) GetUsersForContact(currentUserID int64, query string) (
 			return nil, err
 		}
 		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// GetFollowingByUserID retrieves the list of users that the current user is following
+func (r *UserRepository) GetFollowingByUserID(userID int64) ([]*models.User, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT u.id, u.username, COALESCE(u.avatar_path, '/defaultPP.webp') as avatar_path
+		FROM users u
+		INNER JOIN followers f ON f.followed_id = u.id
+		WHERE f.follower_id = ? AND f.accepted = TRUE
+		ORDER BY u.username
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+	
+	rows, err := stmt.Query(userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*models.User
+	for rows.Next() {
+		user := &models.User{}
+		err := rows.Scan(&user.ID, &user.Username, &user.AvatarPath)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// GetAllUsersWithStatus retrieves all users with their follow status relative to current user
+func (r *UserRepository) GetAllUsersWithStatus(currentUserID int64) ([]SearchResult, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT u.id, u.username, COALESCE(u.avatar_path, '/defaultPP.webp') as avatar_path,
+		EXISTS (
+			SELECT 1 FROM followers f
+			WHERE f.follower_id = ? AND f.followed_id = u.id AND f.accepted = 1
+		) AS is_following,
+		EXISTS (
+			SELECT 1 FROM followers f2
+			WHERE f2.follower_id = u.id AND f2.followed_id = ? AND f2.accepted = 1
+		) AS is_followed_by,
+		EXISTS (
+			SELECT 1 FROM followers f1
+			JOIN followers f2 ON f1.follower_id = f2.followed_id AND f1.followed_id = f2.follower_id
+			WHERE f1.follower_id = ? AND f1.followed_id = u.id AND f1.accepted = 1 AND f2.accepted = 1
+		) AS is_friend
+		FROM users u
+		WHERE u.id != ?
+		ORDER BY u.username
+		LIMIT 50
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(currentUserID, currentUserID, currentUserID, currentUserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []SearchResult
+	for rows.Next() {
+		var res SearchResult
+		res.Type = "user"
+		var username, avatar *string
+		var isFollowing, isFollowedBy, isFriend bool
+
+		if err := rows.Scan(&res.ID, &username, &avatar, &isFollowing, &isFollowedBy, &isFriend); err != nil {
+			return nil, err
+		}
+
+		res.Username = username
+		res.AvatarPath = avatar
+		res.IsFollowing = &isFollowing
+		res.IsFollowedBy = &isFollowedBy
+		res.IsFriend = &isFriend
+		users = append(users, res)
 	}
 
 	if err = rows.Err(); err != nil {

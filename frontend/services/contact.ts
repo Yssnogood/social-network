@@ -48,3 +48,37 @@ export async function fetchFriends() {
   console.log(r)
   return r
 }
+
+export async function fetchFollowing() {
+  const resp = await fetch(url + "/users/following", {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+  if (!resp.ok) {
+    console.error("Failed to fetch following users:", resp.statusText)
+    return []
+  }
+  const r = await resp.json()
+  console.log("Following users:", r)
+  return r
+}
+
+export async function fetchAllUsersWithStatus() {
+  const resp = await fetch(url + "/users/all-with-status", {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+  if (!resp.ok) {
+    console.error("Failed to fetch all users:", resp.statusText)
+    return []
+  }
+  const r = await resp.json()
+  console.log("All users with status:", r)
+  return r
+}

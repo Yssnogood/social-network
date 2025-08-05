@@ -255,6 +255,40 @@ func (h *UserHandler) SearchUsers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(users)
 }
 
+func (h *UserHandler) GetFollowingUsers(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	users, err := h.UserRepository.GetFollowingByUserID(userID)
+	if err != nil {
+		http.Error(w, "Failed to fetch following users: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
+}
+
+func (h *UserHandler) GetAllUsersWithStatus(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	users, err := h.UserRepository.GetAllUsersWithStatus(userID)
+	if err != nil {
+		http.Error(w, "Failed to fetch all users: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
+}
+
 func (h *UserHandler) Search(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

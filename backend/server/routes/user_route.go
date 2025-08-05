@@ -23,6 +23,8 @@ func UserRoutes(r *mux.Router, userHandler *handlers.UserHandler) {
 	r.HandleFunc("/api/user/{id}", userHandler.GetUser).Methods("POST")
 	r.HandleFunc("/api/users/search/{name}/{current}", userHandler.SearchUsers).Methods("GET")
 	r.Handle("/api/users/friends", middlewares.JWTMiddleware(http.HandlerFunc(userHandler.GetUserFriends))).Methods("GET", "OPTIONS")
+	r.Handle("/api/users/following", middlewares.JWTMiddleware(http.HandlerFunc(userHandler.GetFollowingUsers))).Methods("GET", "OPTIONS")
+	r.Handle("/api/users/all-with-status", middlewares.JWTMiddleware(http.HandlerFunc(userHandler.GetAllUsersWithStatus))).Methods("GET", "OPTIONS")
 	// get user by JWT
 	r.Handle("/api/users/me", middlewares.JWTMiddleware(http.HandlerFunc(userHandler.GetCurrentUser))).Methods("GET")
 }
