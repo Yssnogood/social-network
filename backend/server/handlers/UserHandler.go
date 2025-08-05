@@ -84,7 +84,6 @@ type logoutRequest struct {
 
 // Login handles user login.
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req loginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		fmt.Println(err)
@@ -139,7 +138,6 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 // Logout handles user logout.
 func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req logoutRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -164,7 +162,6 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 // CreateUser create a new user.
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req createUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Request invalid", http.StatusBadRequest)
@@ -235,7 +232,6 @@ func (h *UserHandler) GetUserFriends(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) SearchUsers(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	path := r.URL.Path
 	prefix := "/api/users/search/"
@@ -260,7 +256,6 @@ func (h *UserHandler) SearchUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) Search(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 
 	// Vérifie que la méthode est bien POST
@@ -305,7 +300,6 @@ func (h *UserHandler) Search(w http.ResponseWriter, r *http.Request) {
 
 // GetUser retrieves a user by Username from the request.
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req getUserRequest
 
 	username := path.Base((r.URL.Path))
@@ -407,7 +401,6 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 // DeleteUser deletes a user by ID from JSON body.
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var req deleteUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)

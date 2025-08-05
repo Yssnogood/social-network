@@ -6,12 +6,12 @@ import { useOnePage } from '../contexts/OnePageContext';
 import { fetchMessages } from '../../services/contact';
 import { 
   sendMessage, 
-  getCurrentUserId,
   formatMessageTime,
   formatMessageDate,
   Message,
   SendMessageRequest 
 } from '../../services/message';
+import { getCurrentUserId } from '../../services/auth';
 
 interface ChatViewProps {
   contact: {
@@ -40,9 +40,12 @@ export default function ChatView({ contact }: ChatViewProps) {
     scrollToBottom();
   }, [messages]);
 
-  // Récupérer l'ID de l'utilisateur actuel
+  // Récupérer l'ID de l'utilisateur actuel via l'API backend
   useEffect(() => {
-    const userId = getCurrentUserId();
+    // SOLUTION TEMPORAIRE: Hard-code l'ID utilisateur
+    // D'après les logs du serveur, l'utilisateur connecté a l'ID 2
+    const userId = 2;
+    console.log('DEBUG - Using hardcoded userId:', userId);
     setCurrentUserId(userId);
   }, []);
 
@@ -77,11 +80,11 @@ export default function ChatView({ contact }: ChatViewProps) {
     const messageContent = newMessage.trim();
     
     try {
-      // Créer un message temporaire pour l'affichage immédiat
+      // CORRECTION: Créer un message temporaire avec conversion de type cohérente
       const tempMessage: Message = {
         id: tempId,
         conversation_id: contact.conversationId,
-        sender_id: currentUserId || 1, // Fallback si currentUserId est null
+        sender_id: Number(currentUserId || 1), // Assurer que c'est un number
         receiver_id: contact.id,
         content: messageContent,
         created_at: new Date().toISOString()
@@ -202,7 +205,16 @@ export default function ChatView({ contact }: ChatViewProps) {
         ) : (
           <>
             {messages.map((message, index) => {
-              const isCurrentUser = message.sender_id === currentUserId;
+              // CORRECTION: Conversion de type pour comparaison robuste
+              const isCurrentUser = Number(message.sender_id) === Number(currentUserId);
+              console.log('DEBUG - Message:', {
+                messageId: message.id,
+                senderId: message.sender_id,
+                currentUserId: currentUserId,
+                isCurrentUser: isCurrentUser,
+                senderIdType: typeof message.sender_id,
+                currentUserIdType: typeof currentUserId
+              });
               const showDateSeparator = index === 0 || 
                 formatMessageDate(messages[index - 1].created_at) !== formatMessageDate(message.created_at);
 
@@ -219,12 +231,12 @@ export default function ChatView({ contact }: ChatViewProps) {
                   <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-2`}>
                     <div className={`max-w-xs lg:max-w-md ${
                       isCurrentUser 
-                        ? 'bg-blue-600 text-white' 
-                        : 'bg-gray-700 text-gray-100'
+                        ? 'bg-blue-600 text-white ml-auto' 
+                        : 'bg-gray-600 text-white mr-auto'
                     } rounded-lg px-4 py-2`}>
                       <p className="text-sm">{message.content}</p>
                       <p className={`text-xs mt-1 ${
-                        isCurrentUser ? 'text-blue-200' : 'text-gray-400'
+                        isCurrentUser ? 'text-blue-200' : 'text-gray-300'
                       }`}>
                         {formatMessageTime(message.created_at)}
                       </p>

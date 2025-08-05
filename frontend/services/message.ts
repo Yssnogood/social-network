@@ -143,6 +143,7 @@ export const markMessageAsRead = async (messageId: number): Promise<void> => {
 export const createOrGetPrivateConversation = async (recipientId: number): Promise<Conversation> => {
   // TODO: Implémenter l'endpoint backend pour créer/récupérer une conversation privée
   // Pour l'instant, on simule en retournant une nouvelle conversation
+  console.log(`Creating conversation with recipient ${recipientId}`);
   return {
     id: Date.now(), // Simulation d'ID
     name: '',
@@ -196,10 +197,54 @@ export const groupMessagesByDate = (messages: Message[]): { [date: string]: Mess
   }, {} as { [date: string]: Message[] });
 };
 
-// Récupère l'ID de l'utilisateur actuel depuis le JWT
-// Cette fonction sera mise à jour pour utiliser la méthode d'auth du projet
+// Récupère l'ID de l'utilisateur actuel depuis le JWT côté client
 export const getCurrentUserId = (): number | null => {
-  // TODO: Implémenter la récupération de l'user ID selon l'auth du projet
-  // Pour l'instant, retourner null et se baser sur le middleware backend
-  return null;
+  try {
+    // DEBUG: Voir tous les cookies disponibles
+    console.log('DEBUG - All cookies:', document.cookie);
+    
+    // Récupérer le cookie JWT côté client
+    const cookies = document.cookie.split(';');
+    const jwtCookie = cookies.find(cookie => cookie.trim().startsWith('jwt='));
+    
+    console.log('DEBUG - Found JWT cookie:', jwtCookie);
+    
+    if (!jwtCookie) {
+      console.warn('JWT cookie not found');
+      return null;
+    }
+    
+    const token = jwtCookie.split('=')[1];
+    console.log('DEBUG - Extracted token:', token);
+    if (!token) {
+      console.warn('JWT token is empty');
+      return null;
+    }
+    
+    // Décoder le JWT (partie payload seulement, pas de vérification de signature côté client)
+    const base64Url = token.split('.')[1];
+    console.log('DEBUG - Base64Url part:', base64Url);
+    if (!base64Url) {
+      console.warn('Invalid JWT format');
+      return null;
+    }
+    
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      window.atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    
+    console.log('DEBUG - Decoded payload:', jsonPayload);
+    
+    const decoded = JSON.parse(jsonPayload) as { user_id?: number };
+    console.log('DEBUG - Parsed decoded:', decoded);
+    console.log('DEBUG - Final user_id:', decoded.user_id);
+    return decoded.user_id || null;
+  } catch (error) {
+    console.error('Error decoding JWT for user ID:', error);
+    return null;
+  }
 };

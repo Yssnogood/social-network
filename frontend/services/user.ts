@@ -62,7 +62,7 @@ export async function getUserProfile(userName?: string, useMockData: boolean = f
 
     // Will be changed for the real API endpoint
     try {
-        const response = await fetch(`http://localhost:8080/api/user/${userName || 'current'}`,{
+        const response = await fetch(`http://localhost:8090/api/user/${userName || 'current'}`,{
             method: "POST",
             body: JSON.stringify({
                 jwt: cookies.get("jwt")
@@ -79,7 +79,7 @@ export async function getUserProfile(userName?: string, useMockData: boolean = f
 export async function getCurrentUser(): Promise<UserProfile> {
     const cookies = await getCookies();
     try {
-        const response = await fetch("http://localhost:8080/api/user", {
+        const response = await fetch("http://localhost:8090/api/user", {
             method: "POST",
             body: JSON.stringify({
                 jwt: cookies.get("jwt")

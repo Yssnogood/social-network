@@ -5,7 +5,7 @@ import Head from "next/head";
 import React, { useState } from 'react'
 import { redirect } from "next/navigation";
 import { useCookies } from "next-client-cookies";
-export const url = "http://localhost:8080/api"
+export const url = "http://localhost:8090/api"
 export default function Login() {
     const cookies = useCookies()
     if (cookies.get('jwt') != undefined) {
