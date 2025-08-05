@@ -138,19 +138,30 @@ export const markMessageAsRead = async (messageId: number): Promise<void> => {
 
 /**
  * Crée ou récupère une conversation privée entre deux utilisateurs
- * Note: Cette fonction nécessiterait un endpoint backend dédié
  */
 export const createOrGetPrivateConversation = async (recipientId: number): Promise<Conversation> => {
-  // TODO: Implémenter l'endpoint backend pour créer/récupérer une conversation privée
-  // Pour l'instant, on simule en retournant une nouvelle conversation
-  console.log(`Creating conversation with recipient ${recipientId}`);
-  return {
-    id: Date.now(), // Simulation d'ID
-    name: '',
-    is_group: false,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  };
+  try {
+    const response = await fetch(url + "/conversations/private", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        recipient_id: recipientId
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const conversation = await response.json();
+    return conversation;
+  } catch (error) {
+    console.error('Error creating/getting private conversation:', error);
+    throw error;
+  }
 };
 
 /**

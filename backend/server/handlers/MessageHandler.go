@@ -61,6 +61,10 @@ type getUserConversationRequest struct {
 	JWT string `json:"jwt"`
 }
 
+type createPrivateConversationRequest struct {
+	RecipientID int64 `json:"recipient_id"`
+}
+
 // Handlers
 
 // CreateMessage creates a new message.
@@ -202,4 +206,34 @@ func (h *MessageHandler) GetUserConversation(w http.ResponseWriter, r *http.Requ
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(conversations)
+}
+
+// CreatePrivateConversation creates or retrieves a private conversation between current user and recipient
+func (h *MessageHandler) CreatePrivateConversation(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middlewares.GetUserID(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req createPrivateConversationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	// Prevent creating conversation with self
+	if userID == req.RecipientID {
+		http.Error(w, "Cannot create conversation with yourself", http.StatusBadRequest)
+		return
+	}
+
+	conversation, err := h.ConversationRepository.CreateOrGetPrivateConversation(userID, req.RecipientID)
+	if err != nil {
+		http.Error(w, "Failed to create/get private conversation", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(conversation)
 }

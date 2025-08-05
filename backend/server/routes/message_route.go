@@ -27,4 +27,7 @@ func MessageRoutes(r *mux.Router, messageHandler *handlers.MessageHandler) {
 	r.Handle("/api/messages/user/conversations", middlewares.CORSMiddleware(middlewares.JWTMiddleware(
 		http.HandlerFunc(messageHandler.GetUserConversation)))).Methods("GET")
 
+	r.Handle("/api/conversations/private", middlewares.CORSMiddleware(middlewares.JWTMiddleware(
+		http.HandlerFunc(messageHandler.CreatePrivateConversation)))).Methods("POST", "OPTIONS")
+
 }

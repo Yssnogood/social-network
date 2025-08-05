@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Group, Event } from '../types/group';
+import { createOrGetPrivateConversation } from '../../services/message';
 
 export type CentralViewType = 'feed' | 'group' | 'event' | 'chat';
 
@@ -48,6 +49,10 @@ interface OnePageContextType {
   navigateToEvent: (event: SelectedEvent) => void;
   navigateToFeed: () => void;
   navigateToChat: (contact: ChatContact) => void;
+  
+  // Callback pour recharger les conversations du ChatPanel
+  onConversationCreated: ((contact: ChatContact) => void) | null;
+  setOnConversationCreated: (callback: ((contact: ChatContact) => void) | null) => void;
 }
 
 const OnePageContext = createContext<OnePageContextType | undefined>(undefined);
@@ -58,6 +63,7 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
   const [selectedEvent, setSelectedEvent] = useState<SelectedEvent | null>(null);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
   const [selectedChatContact, setSelectedChatContact] = useState<ChatContact | null>(null);
+  const [onConversationCreated, setOnConversationCreated] = useState<((contact: ChatContact) => void) | null>(null);
 
   const openChatDrawer = useCallback((contact: ChatContact) => {
     setSelectedChatContact(contact);
@@ -88,11 +94,38 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
     setCentralView('feed');
   }, []);
 
-  const navigateToChat = useCallback((contact: ChatContact) => {
-    setSelectedChatContact(contact);
-    setSelectedGroup(null);
-    setSelectedEvent(null);
-    setCentralView('chat');
+  const navigateToChat = useCallback(async (contact: ChatContact) => {
+    try {
+      let isNewConversation = false;
+      
+      // Si pas de conversationId, créer/récupérer la conversation
+      if (!contact.conversationId) {
+        console.log(`Creating conversation with user ${contact.id}`);
+        const conversation = await createOrGetPrivateConversation(contact.id);
+        contact.conversationId = conversation.id;
+        console.log(`Conversation created/retrieved with ID: ${conversation.id}`);
+        isNewConversation = true;
+      }
+
+      setSelectedChatContact(contact);
+      setSelectedGroup(null);
+      setSelectedEvent(null);
+      setCentralView('chat');
+      
+      // Notifier le ChatPanel qu'une nouvelle conversation a été créée
+      if (onConversationCreated && isNewConversation) {
+        // Si c'était une nouvelle conversation, passer le contact
+        onConversationCreated(contact);
+      }
+    } catch (error) {
+      console.error('Error navigating to chat:', error);
+      // Même en cas d'erreur, on peut essayer d'ouvrir le chat sans conversationId
+      // L'utilisateur verra un message d'erreur approprié
+      setSelectedChatContact(contact);
+      setSelectedGroup(null);
+      setSelectedEvent(null);
+      setCentralView('chat');
+    }
   }, []);
 
   const value: OnePageContextType = {
@@ -110,7 +143,9 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
     navigateToGroup,
     navigateToEvent,
     navigateToFeed,
-    navigateToChat
+    navigateToChat,
+    onConversationCreated,
+    setOnConversationCreated
   };
 
   return (

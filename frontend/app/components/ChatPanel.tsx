@@ -5,34 +5,77 @@ import Image from 'next/image';
 import { useCookies } from "next-client-cookies";
 import { fetchUserConversation } from '../../services/contact';
 import { fetchUserConversations, ConversationResponse } from '../../services/message';
-import { useOnePage } from '../contexts/OnePageContext';
+import { useOnePage, ChatContact } from '../contexts/OnePageContext';
 
 export default function ChatPanel() {
     const cookies = useCookies();
-    const { navigateToChat } = useOnePage();
+    const { navigateToChat, setOnConversationCreated } = useOnePage();
     
     const [conversations, setConversations] = useState<ConversationResponse[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isNewConversationModalOpen, setIsNewConversationModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    useEffect(() => {
-        const loadConversations = async () => {
-            try {
-                setIsLoading(true);
-                // Utiliser l'ancien service qui fonctionne
-                const data = await fetchUserConversation();
-                setConversations(data || []);
-            } catch (error) {
-                console.error("Error fetching conversations:", error);
-                setConversations([]);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    const loadConversations = async () => {
+        try {
+            setIsLoading(true);
+            // Utiliser l'ancien service qui fonctionne
+            const data = await fetchUserConversation();
+            setConversations(data || []);
+        } catch (error) {
+            console.error("Error fetching conversations:", error);
+            setConversations([]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
+    useEffect(() => {
         loadConversations();
     }, []);
+
+    // Enregistrer le callback pour ajouter une nouvelle conversation
+    useEffect(() => {
+        const handleNewConversation = (contact: ChatContact) => {
+            // Créer une nouvelle conversation response pour l'ajouter en tête
+            const newConversationResponse: ConversationResponse = {
+                contact: {
+                    id: contact.id,
+                    username: contact.username,
+                    avatar_path: contact.avatar_path,
+                    isOnline: contact.isOnline
+                },
+                conversation: {
+                    id: contact.conversationId!,
+                    name: '',
+                    is_group: false,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                },
+                messages: []
+            };
+            
+            // Vérifier si cette conversation n'existe pas déjà
+            setConversations(prev => {
+                const exists = prev.some(conv => conv.contact.id === contact.id);
+                if (exists) {
+                    // Si elle existe, juste la mettre à jour et la déplacer en tête
+                    const updated = prev.filter(conv => conv.contact.id !== contact.id);
+                    return [newConversationResponse, ...updated];
+                } else {
+                    // Sinon, l'ajouter en tête
+                    return [newConversationResponse, ...prev];
+                }
+            });
+        };
+        
+        setOnConversationCreated(() => handleNewConversation);
+        
+        // Cleanup: retirer le callback quand le composant est démonté
+        return () => {
+            setOnConversationCreated(null);
+        };
+    }, [setOnConversationCreated]);
 
     const filteredConversations = conversations.filter(({contact}) =>
         contact && contact.username && contact.username.toLowerCase().includes(searchTerm.toLowerCase())
