@@ -1,9 +1,12 @@
 import jwt from "jsonwebtoken";
 
 // Fetch the notifications to display on their notification panel
-export async function fetchNotifications(token: string, user_id: string) {
+export async function fetchNotifications(token: string | null, user_id: string) {
   const res = await fetch(`http://localhost:8090/api/notifications/get`, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
     credentials: "include",
     body: JSON.stringify({ user_id: parseInt(user_id) }),
   });

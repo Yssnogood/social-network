@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { getPosts, createPost, Post } from "../../services/post";
 import { useCookies } from "next-client-cookies";
-import { getUserIdFromToken } from "../../services/user";
+import { getCurrentUser, getCurrentUserId } from "../../services/auth";
 import { createNotification, fetchNotifications } from "../../services/notifications";
 
 // Composants pour le système one page
@@ -37,17 +37,22 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
     // Charger les notifications
     useEffect(() => {
         const getNotif = async () => {
-            const token = cookies.get("jwt");
-            const userId = await getUserIdFromToken(token);
-            if (!token || !userId) return;
-
             try {
-                const fetchedNotifications = await fetchNotifications(token, userId);
+                const userId = await getCurrentUserId();
+                if (!userId) {
+                    // Pas d'utilisateur connecté, rediriger vers login
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const fetchedNotifications = await fetchNotifications(null, userId);
                 if (Array.isArray(fetchedNotifications)) {
                     setNotifications(fetchedNotifications);
                 }
             } catch (error) {
                 console.error("Failed to fetch notifications:", error);
+                // En cas d'erreur d'authentification, rediriger vers login
+                window.location.href = '/login';
             }
         };
 
@@ -193,7 +198,7 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
                         onToggleNotifications={handleToggleNotifications}
                         posts={posts}
                         isLoading={isLoading}
-                        jwt={cookies.get("jwt") || ""}
+                        jwt=""
                         onOpenPostModal={handleOpenPostModal}
                     />
 
@@ -254,7 +259,7 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
                     <PostsList
                         posts={posts}
                         isLoading={isLoading}
-                        jwt={cookies.get("jwt")}
+                        jwt=""
                         onlineUser={cookies.get("user")}
                     />
                 </div>

@@ -30,16 +30,9 @@ export default function Login() {
       })
       if (resp.ok) {
         console.log("OK")
-        const r = await resp.json()
-        cookies.set('jwt',r.jwt,{
-          expires:1,
-          path: '/',
-        })
-        cookies.set('user',r.user,{
-          expires:1,
-          path: '/',
-      })
-        redirect('/home')
+        // Le backend a déjà défini le cookie HTTP-only JWT
+        // On fait une redirection forcée pour recharger l'état d'authentification
+        window.location.href = '/home'
       } else {
         console.error('Invalid Credentials')
       }
