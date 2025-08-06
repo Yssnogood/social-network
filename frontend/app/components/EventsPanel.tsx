@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useCookies } from "next-client-cookies";
 import { useOnePage } from '../contexts/OnePageContext';
 import { Event } from '../types/group';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
 export default function EventsPanel() {
     const cookies = useCookies();
     const { navigateToEvent } = useOnePage();
     
-    const [events, setEvents] = useState<Event[]>([]);
+    const [allEvents, setAllEvents] = useState<Event[]>([]);
+    const [displayedEvents, setDisplayedEvents] = useState<Event[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [availableGroups, setAvailableGroups] = useState<any[]>([]);
@@ -19,6 +21,9 @@ export default function EventsPanel() {
         event_date: '',
         group_id: ''
     });
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const ITEMS_PER_PAGE = 10;
 
     // Charger les événements de tous les groupes
     useEffect(() => {
@@ -60,11 +65,19 @@ export default function EventsPanel() {
 
                 // Trier les événements par date
                 allEvents.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
-                setEvents(allEvents);
+                setAllEvents(allEvents);
+                // Charger initialement les 10 premiers événements
+                const initialEvents = allEvents.slice(0, ITEMS_PER_PAGE);
+                setDisplayedEvents(initialEvents);
+                setHasMore(allEvents.length > ITEMS_PER_PAGE);
+                
+                console.log(`[EventsPanel] Total events: ${allEvents.length}, Displayed: ${initialEvents.length}, HasMore: ${allEvents.length > ITEMS_PER_PAGE}`);
                 
             } catch (error) {
                 console.error("Erreur de chargement des événements:", error);
-                setEvents([]);
+                setAllEvents([]);
+                setDisplayedEvents([]);
+                setHasMore(false);
             } finally {
                 setIsLoading(false);
             }
@@ -72,6 +85,49 @@ export default function EventsPanel() {
 
         fetchAllEvents();
     }, [cookies]);
+    
+    // Fonction pour charger plus d'événements
+    const loadMoreEvents = () => {
+        if (isLoadingMore) return; // Prévenir les appels multiples
+        
+        setIsLoadingMore(true);
+        
+        // Utiliser displayedEvents.length au lieu de page
+        const startIndex = displayedEvents.length;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        const newEvents = allEvents.slice(startIndex, endIndex);
+        
+        console.log(`[EventsPanel] LoadMore - Start: ${startIndex}, End: ${endIndex}, New: ${newEvents.length}, Total: ${allEvents.length}, Current: ${displayedEvents.length}`);
+        
+        // Simule un petit délai pour éviter le scroll jump
+        setTimeout(() => {
+            if (newEvents.length > 0) {
+                setDisplayedEvents(prev => {
+                    const updated = [...prev, ...newEvents];
+                    console.log(`[EventsPanel] DisplayedEvents updated: ${updated.length}/${allEvents.length}`);
+                    return updated;
+                });
+                setHasMore(endIndex < allEvents.length);
+            } else {
+                console.log('[EventsPanel] No more events to load');
+                setHasMore(false);
+            }
+            setIsLoadingMore(false);
+        }, 100);
+    };
+    
+    // Utiliser le hook infinite scroll SANS root personnalisé pour éviter les conflits
+    const infiniteScrollRef = useInfiniteScroll(
+        loadMoreEvents,
+        hasMore,
+        isLoadingMore,
+        {
+            threshold: 0.1,
+            debounceMs: 300,
+            rootMargin: '50px'
+            // Pas de root: utilise le viewport par défaut pour éviter les conflits
+        }
+    );
 
     const handleEventClick = (event: Event) => {
         navigateToEvent(event);
@@ -99,9 +155,18 @@ export default function EventsPanel() {
             if (!response.ok) throw new Error(await response.text());
             
             const createdEvent = await response.json();
-            setEvents(prev => [createdEvent, ...prev].sort((a, b) => 
+            // Ajouter et trier les événements
+            const updatedEvents = [createdEvent, ...allEvents].sort((a, b) => 
                 new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
-            ));
+            );
+            setAllEvents(updatedEvents);
+            // Réinitialiser l'affichage pour montrer le nouvel événement
+            const initialEvents = updatedEvents.slice(0, ITEMS_PER_PAGE);
+            setDisplayedEvents(initialEvents);
+            setHasMore(updatedEvents.length > ITEMS_PER_PAGE);
+            setIsLoadingMore(false);
+            
+            console.log(`[EventsPanel] Event created - Total: ${updatedEvents.length}, Displayed: ${initialEvents.length}`);
             
             setNewEvent({ title: '', description: '', event_date: '', group_id: '' });
             setIsCreateModalOpen(false);
@@ -147,7 +212,12 @@ export default function EventsPanel() {
                         </svg>
                     </button>
                 </div>
-                <p className="text-xs text-gray-400">{events.length} événements</p>
+                <p className="text-xs text-gray-400">
+                    {displayedEvents.length} / {allEvents.length} événements
+                    {hasMore && displayedEvents.length > 0 && (
+                        <span className="ml-1 text-blue-400">• {allEvents.length - displayedEvents.length} restants</span>
+                    )}
+                </p>
             </div>
 
             {/* Events List */}
@@ -157,7 +227,7 @@ export default function EventsPanel() {
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500 mx-auto"></div>
                         <p className="mt-2">Chargement...</p>
                     </div>
-                ) : events.length === 0 ? (
+                ) : displayedEvents.length === 0 ? (
                     <div className="p-4 text-center text-gray-400 text-sm">
                         <div className="mb-3">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -168,7 +238,8 @@ export default function EventsPanel() {
                         <p className="text-xs mt-1">Créez votre premier événement !</p>
                     </div>
                 ) : (
-                    events.map((event) => {
+                    <>
+                        {displayedEvents.map((event) => {
                         const passed = isEventPassed(event.event_date);
                         const group = availableGroups.find(g => g.id === event.group_id);
                         
@@ -206,7 +277,25 @@ export default function EventsPanel() {
                                 </div>
                             </div>
                         );
-                    })
+                    })}
+                    
+                    {/* Element pour déclencher le chargement de plus d'événements avec hauteur fixe */}
+                    {hasMore && displayedEvents.length > 0 && (
+                        <div 
+                            ref={infiniteScrollRef} 
+                            className="h-16 flex items-center justify-center border-t border-gray-700"
+                        >
+                            <div className="flex items-center justify-center space-x-2">
+                                {isLoadingMore && (
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-500"></div>
+                                )}
+                                <span className="text-xs text-gray-400">
+                                    {isLoadingMore ? 'Chargement...' : 'Scroll pour plus'} ({displayedEvents.length}/{allEvents.length})
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                    </>
                 )}
             </div>
 

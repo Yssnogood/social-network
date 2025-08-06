@@ -99,7 +99,7 @@ export default function OnePageLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="h-screen overflow-hidden bg-gray-900 text-white">
       <Header
         username={username}
         notifications={notifications}
@@ -107,17 +107,17 @@ export default function OnePageLayout({
         onToggleNotifications={onToggleNotifications}
       />
       
-      {/* Layout 3 colonnes - Responsive */}
-      <div className="flex h-screen pt-16">
-        {/* Colonne gauche - Chat et Users - Masquée sur mobile */}
-        <div className="hidden lg:flex w-80 bg-gray-800 border-r border-gray-700 flex-col">
+      {/* Layout 5 colonnes - Responsive avec hauteur calculée */}
+      <div className="flex h-[calc(100vh-3rem)] mt-12">
+        {/* Colonne gauche - Chat et Users */}
+        <div className="hidden lg:flex w-64 xl:w-80 bg-gray-800 border-r border-gray-700 flex-col">
           {/* Chat Panel - Moitié supérieure */}
-          <div className="flex-1 border-b border-gray-700">
+          <div className="h-1/2 border-b border-gray-700 overflow-hidden">
             <ChatPanel />
           </div>
           
           {/* Users List Panel - Moitié inférieure */}
-          <div className="flex-1">
+          <div className="h-1/2 overflow-hidden">
             <UsersListPanel />
           </div>
         </div>
@@ -129,15 +129,15 @@ export default function OnePageLayout({
           </div>
         </div>
 
-        {/* Colonne droite - Groupes et Événements - Masquée sur tablette et mobile */}
-        <div className="hidden xl:flex w-80 bg-gray-800 border-l border-gray-700 flex-col">
+        {/* Colonne droite - Groupes et Événements */}
+        <div className="hidden lg:flex w-64 xl:w-80 bg-gray-800 border-l border-gray-700 flex-col">
           {/* Groups Panel - Moitié supérieure */}
-          <div className="flex-1 border-b border-gray-700">
+          <div className="h-1/2 border-b border-gray-700 overflow-hidden">
             <GroupsPanel />
           </div>
           
           {/* Events Panel - Moitié inférieure */}
-          <div className="flex-1">
+          <div className="h-1/2 overflow-hidden">
             <EventsPanel />
           </div>
         </div>

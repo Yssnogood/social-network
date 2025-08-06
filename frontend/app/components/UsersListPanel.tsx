@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { useOnePage } from '../contexts/OnePageContext';
 import { fetchFriends, fetchFollowing, fetchAllUsersWithStatus, fetchOnlineUsers } from '../../services/contact';
 import { followUser, unfollowUser } from '../../services/follow';
 import { getCurrentUserId } from '../../services/auth';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
 // Types pour les différents onglets
 type TabType = 'contacts' | 'following' | 'all';
@@ -37,6 +38,14 @@ export default function UsersListPanel() {
     const [following, setFollowing] = useState<BaseUser[]>([]);
     const [allUsers, setAllUsers] = useState<UserWithStatus[]>([]);
     const [onlineUsers, setOnlineUsers] = useState<number[]>([]);
+    
+    // State pour la pagination
+    const [displayedContacts, setDisplayedContacts] = useState<BaseUser[]>([]);
+    const [displayedFollowing, setDisplayedFollowing] = useState<BaseUser[]>([]);
+    const [displayedAllUsers, setDisplayedAllUsers] = useState<UserWithStatus[]>([]);
+    const [page, setPage] = useState({ contacts: 1, following: 1, all: 1 });
+    const [hasMore, setHasMore] = useState({ contacts: true, following: true, all: true });
+    const ITEMS_PER_PAGE = 10;
 
     // Récupérer l'ID de l'utilisateur actuel
     useEffect(() => {
@@ -86,19 +95,28 @@ export default function UsersListPanel() {
                     case 'contacts':
                         if (contacts.length === 0) {
                             const friendsData = await fetchFriends();
-                            setContacts(Array.isArray(friendsData) ? friendsData : []);
+                            const data = Array.isArray(friendsData) ? friendsData : [];
+                            setContacts(data);
+                            setDisplayedContacts(data.slice(0, ITEMS_PER_PAGE));
+                            setHasMore(prev => ({ ...prev, contacts: data.length > ITEMS_PER_PAGE }));
                         }
                         break;
                     case 'following':
                         if (following.length === 0) {
                             const followingData = await fetchFollowing();
-                            setFollowing(Array.isArray(followingData) ? followingData : []);
+                            const data = Array.isArray(followingData) ? followingData : [];
+                            setFollowing(data);
+                            setDisplayedFollowing(data.slice(0, ITEMS_PER_PAGE));
+                            setHasMore(prev => ({ ...prev, following: data.length > ITEMS_PER_PAGE }));
                         }
                         break;
                     case 'all':
                         if (allUsers.length === 0) {
                             const allUsersData = await fetchAllUsersWithStatus();
-                            setAllUsers(Array.isArray(allUsersData) ? allUsersData : []);
+                            const data = Array.isArray(allUsersData) ? allUsersData : [];
+                            setAllUsers(data);
+                            setDisplayedAllUsers(data.slice(0, ITEMS_PER_PAGE));
+                            setHasMore(prev => ({ ...prev, all: data.length > ITEMS_PER_PAGE }));
                         }
                         break;
                 }
@@ -112,19 +130,53 @@ export default function UsersListPanel() {
         loadData();
     }, [activeTab, currentUserId, contacts.length, following.length, allUsers.length]);
 
+    // Fonction pour charger plus d'utilisateurs
+    const loadMoreUsers = () => {
+        const currentPage = page[activeTab];
+        const startIndex = currentPage * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        
+        switch (activeTab) {
+            case 'contacts':
+                const newContacts = contacts.slice(startIndex, endIndex);
+                if (newContacts.length > 0) {
+                    setDisplayedContacts(prev => [...prev, ...newContacts]);
+                    setPage(prev => ({ ...prev, contacts: prev.contacts + 1 }));
+                    setHasMore(prev => ({ ...prev, contacts: endIndex < contacts.length }));
+                }
+                break;
+            case 'following':
+                const newFollowing = following.slice(startIndex, endIndex);
+                if (newFollowing.length > 0) {
+                    setDisplayedFollowing(prev => [...prev, ...newFollowing]);
+                    setPage(prev => ({ ...prev, following: prev.following + 1 }));
+                    setHasMore(prev => ({ ...prev, following: endIndex < following.length }));
+                }
+                break;
+            case 'all':
+                const newAllUsers = allUsers.slice(startIndex, endIndex);
+                if (newAllUsers.length > 0) {
+                    setDisplayedAllUsers(prev => [...prev, ...newAllUsers]);
+                    setPage(prev => ({ ...prev, all: prev.all + 1 }));
+                    setHasMore(prev => ({ ...prev, all: endIndex < allUsers.length }));
+                }
+                break;
+        }
+    };
+
     // Filtrer les utilisateurs selon le terme de recherche
     const getFilteredUsers = () => {
         let users: (BaseUser | UserWithStatus)[] = [];
         
         switch (activeTab) {
             case 'contacts':
-                users = contacts;
+                users = displayedContacts;
                 break;
             case 'following':
-                users = following;
+                users = displayedFollowing;
                 break;
             case 'all':
-                users = allUsers;
+                users = displayedAllUsers;
                 break;
         }
 
@@ -143,7 +195,17 @@ export default function UsersListPanel() {
         }));
     };
 
-    const filteredUsers = addOnlineStatus(getFilteredUsers());
+    const filteredUsers = useMemo(() => 
+        addOnlineStatus(getFilteredUsers()),
+        [displayedContacts, displayedFollowing, displayedAllUsers, onlineUsers, searchTerm, activeTab]
+    );
+    
+    // Utiliser le hook infinite scroll
+    const infiniteScrollRef = useInfiniteScroll(
+        loadMoreUsers,
+        hasMore[activeTab] && !searchTerm, // Désactiver l'infinite scroll lors de la recherche
+        isLoading
+    );
 
     // Actions
     const handleUserClick = (user: BaseUser | UserWithStatus) => {
@@ -173,8 +235,12 @@ export default function UsersListPanel() {
                     setAllUsers(prev => prev.map(u => 
                         u.id === user.id ? { ...u, is_following: false, is_friend: false } : u
                     ));
+                    setDisplayedAllUsers(prev => prev.map(u => 
+                        u.id === user.id ? { ...u, is_following: false, is_friend: false } : u
+                    ));
                 } else if (activeTab === 'following') {
                     setFollowing(prev => prev.filter(u => u.id !== user.id));
+                    setDisplayedFollowing(prev => prev.filter(u => u.id !== user.id));
                 }
             } else {
                 // Déterminer si le profil est public (assume public pour l'instant)
@@ -182,6 +248,13 @@ export default function UsersListPanel() {
                 // Mettre à jour le state local
                 if (activeTab === 'all') {
                     setAllUsers(prev => prev.map(u => 
+                        u.id === user.id ? { 
+                            ...u, 
+                            is_following: true,
+                            is_friend: u.is_followed_by ? true : u.is_friend 
+                        } : u
+                    ));
+                    setDisplayedAllUsers(prev => prev.map(u => 
                         u.id === user.id ? { 
                             ...u, 
                             is_following: true,
@@ -360,7 +433,16 @@ export default function UsersListPanel() {
                         )}
                     </div>
                 ) : (
-                    filteredUsers.map((user, index) => renderUserItem(user, index))
+                    <>
+                        {filteredUsers.map((user, index) => renderUserItem(user, index))}
+                        
+                        {/* Element pour déclencher le chargement de plus d'utilisateurs */}
+                        {hasMore[activeTab] && !searchTerm && filteredUsers.length > 0 && (
+                            <div ref={infiniteScrollRef} className="p-4 text-center">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500 mx-auto"></div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>

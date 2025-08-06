@@ -1,33 +1,76 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { useCookies } from "next-client-cookies";
 import { fetchUserConversation } from '../../services/contact';
 import { fetchUserConversations, ConversationResponse } from '../../services/message';
 import { useOnePage, ChatContact } from '../contexts/OnePageContext';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
 export default function ChatPanel() {
     const cookies = useCookies();
     const { navigateToChat, setOnConversationCreated } = useOnePage();
     
-    const [conversations, setConversations] = useState<ConversationResponse[]>([]);
+    const [allConversations, setAllConversations] = useState<ConversationResponse[]>([]);
+    const [displayedConversations, setDisplayedConversations] = useState<ConversationResponse[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isNewConversationModalOpen, setIsNewConversationModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const ITEMS_PER_PAGE = 10;
 
     const loadConversations = async () => {
         try {
             setIsLoading(true);
             // Utiliser l'ancien service qui fonctionne
             const data = await fetchUserConversation();
-            setConversations(data || []);
+            const conversations = data || [];
+            setAllConversations(conversations);
+            // Charger initialement les 10 premières conversations
+            const initialConversations = conversations.slice(0, ITEMS_PER_PAGE);
+            setDisplayedConversations(initialConversations);
+            setHasMore(conversations.length > ITEMS_PER_PAGE);
+            
+            console.log(`[ChatPanel] Total conversations: ${conversations.length}, Displayed: ${initialConversations.length}, HasMore: ${conversations.length > ITEMS_PER_PAGE}`);
         } catch (error) {
             console.error("Error fetching conversations:", error);
-            setConversations([]);
+            setAllConversations([]);
+            setDisplayedConversations([]);
+            setHasMore(false);
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const loadMoreConversations = () => {
+        if (isLoadingMore) return; // Prévenir les appels multiples
+        
+        setIsLoadingMore(true);
+        
+        // Utiliser displayedConversations.length au lieu de page
+        const startIndex = displayedConversations.length;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        const newConversations = allConversations.slice(startIndex, endIndex);
+        
+        console.log(`[ChatPanel] LoadMore - Start: ${startIndex}, End: ${endIndex}, New: ${newConversations.length}, Total: ${allConversations.length}, Current: ${displayedConversations.length}`);
+        
+        // Simule un petit délai pour éviter le scroll jump
+        setTimeout(() => {
+            if (newConversations.length > 0) {
+                setDisplayedConversations(prev => {
+                    const updated = [...prev, ...newConversations];
+                    console.log(`[ChatPanel] DisplayedConversations updated: ${updated.length}/${allConversations.length}`);
+                    return updated;
+                });
+                setHasMore(endIndex < allConversations.length);
+            } else {
+                console.log('[ChatPanel] No more conversations to load');
+                setHasMore(false);
+            }
+            setIsLoadingMore(false);
+        }, 100);
     };
 
     useEffect(() => {
@@ -56,7 +99,7 @@ export default function ChatPanel() {
             };
             
             // Vérifier si cette conversation n'existe pas déjà
-            setConversations(prev => {
+            setAllConversations(prev => {
                 const exists = prev.some(conv => conv.contact.id === contact.id);
                 if (exists) {
                     // Si elle existe, juste la mettre à jour et la déplacer en tête
@@ -64,6 +107,17 @@ export default function ChatPanel() {
                     return [newConversationResponse, ...updated];
                 } else {
                     // Sinon, l'ajouter en tête
+                    return [newConversationResponse, ...prev];
+                }
+            });
+            
+            // Mettre à jour aussi les conversations affichées
+            setDisplayedConversations(prev => {
+                const exists = prev.some(conv => conv.contact.id === contact.id);
+                if (exists) {
+                    const updated = prev.filter(conv => conv.contact.id !== contact.id);
+                    return [newConversationResponse, ...updated];
+                } else {
                     return [newConversationResponse, ...prev];
                 }
             });
@@ -77,8 +131,24 @@ export default function ChatPanel() {
         };
     }, [setOnConversationCreated]);
 
-    const filteredConversations = conversations.filter(({contact}) =>
-        contact && contact.username && contact.username.toLowerCase().includes(searchTerm.toLowerCase())
+    // Filtrer les conversations affichées
+    const filteredConversations = useMemo(() => {
+        return displayedConversations.filter(({contact}) =>
+            contact && contact.username && contact.username.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [displayedConversations, searchTerm]);
+    
+    // Utiliser le hook infinite scroll SANS root personnalisé pour éviter les conflits
+    const infiniteScrollRef = useInfiniteScroll(
+        loadMoreConversations,
+        hasMore && !searchTerm, // Désactiver l'infinite scroll lors de la recherche
+        isLoadingMore,
+        {
+            threshold: 0.1,
+            debounceMs: 300,
+            rootMargin: '50px'
+            // Pas de root: utilise le viewport par défaut pour éviter les conflits
+        }
     );
 
     const handleContactClick = (conversationResponse: ConversationResponse) => {
@@ -106,7 +176,12 @@ export default function ChatPanel() {
             <div className="p-4 border-b border-gray-700">
                 <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold text-white">Chat</h2>
-                    <span className="text-xs text-gray-400">{conversations.length} conversations</span>
+                    <span className="text-xs text-gray-400">
+                        {displayedConversations.length} / {allConversations.length}
+                        {hasMore && displayedConversations.length > 0 && (
+                            <span className="ml-1 text-blue-400">• {allConversations.length - displayedConversations.length} restants</span>
+                        )}
+                    </span>
                 </div>
                 
                 {/* Search */}
@@ -142,7 +217,7 @@ export default function ChatPanel() {
             </div>
 
             {/* Conversations List */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto relative">
                 {isLoading ? (
                     <div className="flex justify-center items-center p-4">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
@@ -198,6 +273,23 @@ export default function ChatPanel() {
                             </div>
                         );
                     })
+                )}
+                
+                {/* Element pour déclencher le chargement de plus de conversations avec hauteur fixe */}
+                {hasMore && !searchTerm && filteredConversations.length > 0 && (
+                    <div 
+                        ref={infiniteScrollRef} 
+                        className="h-16 flex items-center justify-center border-t border-gray-700"
+                    >
+                        <div className="flex items-center justify-center space-x-2">
+                            {isLoadingMore && (
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                            )}
+                            <span className="text-xs text-gray-400">
+                                {isLoadingMore ? 'Chargement...' : 'Scroll pour plus'} ({displayedConversations.length}/{allConversations.length})
+                            </span>
+                        </div>
+                    </div>
                 )}
             </div>
 
