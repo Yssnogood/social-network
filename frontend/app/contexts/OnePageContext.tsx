@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Group, Event } from '../types/group';
 import { createOrGetPrivateConversation } from '../../services/message';
 
-export type CentralViewType = 'feed' | 'group' | 'event' | 'chat';
+export type CentralViewType = 'feed' | 'group' | 'event' | 'chat' | 'group-editor' | 'event-editor' | 'group-presentation' | 'event-presentation';
 
 export interface SelectedGroup extends Group {
   // Ajout de propriétés spécifiques si nécessaire
@@ -49,6 +49,12 @@ interface OnePageContextType {
   navigateToEvent: (event: SelectedEvent) => void;
   navigateToFeed: () => void;
   navigateToChat: (contact: ChatContact) => void;
+  
+  // Navigation vers les éditeurs et présentations
+  navigateToGroupEditor: () => void;
+  navigateToEventEditor: () => void;
+  navigateToGroupPresentation: (group: SelectedGroup) => void;
+  navigateToEventPresentation: (event: SelectedEvent) => void;
   
   // Callback pour recharger les conversations du ChatPanel
   onConversationCreated: ((contact: ChatContact) => void) | null;
@@ -128,6 +134,34 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const navigateToGroupEditor = useCallback(() => {
+    setSelectedGroup(null);
+    setSelectedEvent(null);
+    setSelectedChatContact(null);
+    setCentralView('group-editor');
+  }, []);
+
+  const navigateToEventEditor = useCallback(() => {
+    setSelectedGroup(null);
+    setSelectedEvent(null);
+    setSelectedChatContact(null);
+    setCentralView('event-editor');
+  }, []);
+
+  const navigateToGroupPresentation = useCallback((group: SelectedGroup) => {
+    setSelectedGroup(group);
+    setSelectedEvent(null);
+    setSelectedChatContact(null);
+    setCentralView('group-presentation');
+  }, []);
+
+  const navigateToEventPresentation = useCallback((event: SelectedEvent) => {
+    setSelectedEvent(event);
+    setSelectedGroup(null);
+    setSelectedChatContact(null);
+    setCentralView('event-presentation');
+  }, []);
+
   const value: OnePageContextType = {
     centralView,
     setCentralView,
@@ -144,6 +178,10 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
     navigateToEvent,
     navigateToFeed,
     navigateToChat,
+    navigateToGroupEditor,
+    navigateToEventEditor,
+    navigateToGroupPresentation,
+    navigateToEventPresentation,
     onConversationCreated,
     setOnConversationCreated
   };

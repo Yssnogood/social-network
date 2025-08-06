@@ -8,19 +8,11 @@ import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
 export default function EventsPanel() {
     const cookies = useCookies();
-    const { navigateToEvent } = useOnePage();
+    const { navigateToEvent, navigateToEventEditor } = useOnePage();
     
     const [allEvents, setAllEvents] = useState<Event[]>([]);
     const [displayedEvents, setDisplayedEvents] = useState<Event[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [availableGroups, setAvailableGroups] = useState<any[]>([]);
-    const [newEvent, setNewEvent] = useState({
-        title: '',
-        description: '',
-        event_date: '',
-        group_id: ''
-    });
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const ITEMS_PER_PAGE = 10;
@@ -40,7 +32,6 @@ export default function EventsPanel() {
                 if (!groupsResponse.ok) throw new Error("Erreur lors de la récupération des groupes");
                 
                 const groups = await groupsResponse.json();
-                setAvailableGroups(groups || []);
 
                 // Ensuite, récupérer les événements de chaque groupe
                 const allEvents: Event[] = [];
@@ -138,49 +129,6 @@ export default function EventsPanel() {
         navigateToEvent(event);
     };
 
-    const handleCreateEvent = async () => {
-        if (!newEvent.title.trim() || !newEvent.event_date || !newEvent.group_id) return;
-
-        try {
-            const formattedEvent = {
-                title: newEvent.title,
-                description: newEvent.description,
-                event_date: new Date(newEvent.event_date).toISOString()
-            };
-
-            const response = await fetch(`http://localhost:8090/api/groups/${newEvent.group_id}/events`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                credentials: "include",
-                body: JSON.stringify(formattedEvent),
-            });
-
-            if (!response.ok) throw new Error(await response.text());
-            
-            const createdEvent = await response.json();
-            // Ajouter et trier les événements
-            const updatedEvents = [createdEvent, ...allEvents].sort((a, b) => 
-                new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
-            );
-            setAllEvents(updatedEvents);
-            // Réinitialiser l'affichage pour montrer le nouvel événement
-            const initialEvents = updatedEvents.slice(0, ITEMS_PER_PAGE);
-            setDisplayedEvents(initialEvents);
-            setHasMore(updatedEvents.length > ITEMS_PER_PAGE);
-            setIsLoadingMore(false);
-            
-            console.log(`[EventsPanel] Event created - Total: ${updatedEvents.length}, Displayed: ${initialEvents.length}`);
-            
-            setNewEvent({ title: '', description: '', event_date: '', group_id: '' });
-            setIsCreateModalOpen(false);
-            
-        } catch (error) {
-            console.error('Error creating event:', error);
-            alert('Erreur lors de la création de l\'événement');
-        }
-    };
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString("fr-FR", {
@@ -195,11 +143,6 @@ export default function EventsPanel() {
         return new Date(dateString) < new Date();
     };
 
-    const getMinDateTime = () => {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        return now.toISOString().slice(0, 16);
-    };
 
     return (
         <div className="h-full flex flex-col bg-gray-800">
@@ -208,7 +151,7 @@ export default function EventsPanel() {
                 <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold text-white">Événements</h2>
                     <button
-                        onClick={() => setIsCreateModalOpen(true)}
+                        onClick={navigateToEventEditor}
                         className="w-8 h-8 bg-green-600 hover:bg-green-700 text-white rounded-full flex items-center justify-center transition-colors"
                         title="Créer un événement"
                     >
@@ -250,7 +193,6 @@ export default function EventsPanel() {
                         })()}
                         {displayedEvents.map((event) => {
                         const passed = isEventPassed(event.event_date);
-                        const group = availableGroups.find(g => g.id === event.group_id);
                         
                         return (
                             <div
@@ -269,11 +211,6 @@ export default function EventsPanel() {
                                         <p className="text-xs text-blue-400 truncate">
                                             📅 {formatDate(event.event_date)}
                                         </p>
-                                        {group && (
-                                            <p className="text-xs text-gray-400 truncate mt-1">
-                                                Dans : {group.title}
-                                            </p>
-                                        )}
                                         {event.description && (
                                             <p className="text-xs text-gray-500 truncate mt-1">
                                                 {event.description}
@@ -308,107 +245,6 @@ export default function EventsPanel() {
                 )}
             </div>
 
-            {/* Modal de création */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6 mx-4 max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-semibold text-white">Créer un événement</h2>
-                            <button 
-                                onClick={() => {
-                                    setIsCreateModalOpen(false);
-                                    setNewEvent({ title: '', description: '', event_date: '', group_id: '' });
-                                }}
-                                className="text-gray-400 hover:text-white"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Groupe *
-                                </label>
-                                <select
-                                    value={newEvent.group_id}
-                                    onChange={(e) => setNewEvent(prev => ({ ...prev, group_id: e.target.value }))}
-                                    className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                                >
-                                    <option value="">Sélectionnez un groupe</option>
-                                    {availableGroups.map(group => (
-                                        <option key={group.id} value={group.id}>
-                                            {group.title}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Titre de l'événement *
-                                </label>
-                                <input
-                                    type="text"
-                                    value={newEvent.title}
-                                    onChange={(e) => setNewEvent(prev => ({ ...prev, title: e.target.value }))}
-                                    className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                                    placeholder="Entrez le titre"
-                                    maxLength={100}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Date et heure *
-                                </label>
-                                <input
-                                    type="datetime-local"
-                                    value={newEvent.event_date}
-                                    onChange={(e) => setNewEvent(prev => ({ ...prev, event_date: e.target.value }))}
-                                    min={getMinDateTime()}
-                                    className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Description
-                                </label>
-                                <textarea
-                                    value={newEvent.description}
-                                    onChange={(e) => setNewEvent(prev => ({ ...prev, description: e.target.value }))}
-                                    className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-                                    placeholder="Décrivez votre événement (optionnel)"
-                                    rows={3}
-                                    maxLength={300}
-                                />
-                            </div>
-
-                            <div className="flex space-x-3 pt-4">
-                                <button
-                                    onClick={() => {
-                                        setIsCreateModalOpen(false);
-                                        setNewEvent({ title: '', description: '', event_date: '', group_id: '' });
-                                    }}
-                                    className="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-                                >
-                                    Annuler
-                                </button>
-                                <button
-                                    onClick={handleCreateEvent}
-                                    disabled={!newEvent.title.trim() || !newEvent.event_date || !newEvent.group_id}
-                                    className="flex-1 py-2 px-4 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                                >
-                                    Créer
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

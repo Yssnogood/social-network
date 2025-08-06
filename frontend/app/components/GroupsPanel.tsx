@@ -8,13 +8,11 @@ import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
 export default function GroupsPanel() {
     const cookies = useCookies();
-    const { navigateToGroup } = useOnePage();
+    const { navigateToGroup, navigateToGroupEditor } = useOnePage();
     
     const [allGroups, setAllGroups] = useState<Group[]>([]);
     const [displayedGroups, setDisplayedGroups] = useState<Group[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [newGroup, setNewGroup] = useState({ title: '', description: '' });
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const ITEMS_PER_PAGE = 10;
@@ -104,47 +102,6 @@ export default function GroupsPanel() {
         navigateToGroup(group);
     };
 
-    const handleCreateGroup = async () => {
-        if (!newGroup.title.trim()) return;
-
-        try {
-            const response = await fetch('http://localhost:8090/api/groups', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: "include",
-                body: JSON.stringify({
-                    title: newGroup.title,
-                    description: newGroup.description
-                })
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to create group: ${errorText}`);
-            }
-
-            const createdGroup = await response.json();
-            // Ajouter le nouveau groupe en tête des listes
-            const updatedGroups = [createdGroup, ...allGroups];
-            setAllGroups(updatedGroups);
-            // Réinitialiser l'affichage pour montrer le nouveau groupe
-            const initialGroups = updatedGroups.slice(0, ITEMS_PER_PAGE);
-            setDisplayedGroups(initialGroups);
-            setHasMore(updatedGroups.length > ITEMS_PER_PAGE);
-            setIsLoadingMore(false);
-            setNewGroup({ title: '', description: '' });
-            setIsCreateModalOpen(false);
-            
-            console.log(`[GroupsPanel] Group created - Total: ${updatedGroups.length}, Displayed: ${initialGroups.length}`);
-            
-            console.log('Group created successfully:', createdGroup);
-        } catch (error) {
-            console.error('Error creating group:', error);
-            alert('Erreur lors de la création du groupe');
-        }
-    };
 
     return (
         <div className="h-full flex flex-col bg-gray-800">
@@ -153,7 +110,7 @@ export default function GroupsPanel() {
                 <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold text-white">Groupes</h2>
                     <button
-                        onClick={() => setIsCreateModalOpen(true)}
+                        onClick={navigateToGroupEditor}
                         className="w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-colors"
                         title="Créer un groupe"
                     >
@@ -236,76 +193,6 @@ export default function GroupsPanel() {
                 )}
             </div>
 
-            {/* Modal de création */}
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6 mx-4">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-semibold text-white">Créer un groupe</h2>
-                            <button 
-                                onClick={() => {
-                                    setIsCreateModalOpen(false);
-                                    setNewGroup({ title: '', description: '' });
-                                }}
-                                className="text-gray-400 hover:text-white"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Nom du groupe *
-                                </label>
-                                <input
-                                    type="text"
-                                    value={newGroup.title}
-                                    onChange={(e) => setNewGroup(prev => ({ ...prev, title: e.target.value }))}
-                                    className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Entrez le nom du groupe"
-                                    maxLength={50}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Description
-                                </label>
-                                <textarea
-                                    value={newGroup.description}
-                                    onChange={(e) => setNewGroup(prev => ({ ...prev, description: e.target.value }))}
-                                    className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                                    placeholder="Décrivez votre groupe (optionnel)"
-                                    rows={3}
-                                    maxLength={200}
-                                />
-                            </div>
-
-                            <div className="flex space-x-3 pt-4">
-                                <button
-                                    onClick={() => {
-                                        setIsCreateModalOpen(false);
-                                        setNewGroup({ title: '', description: '' });
-                                    }}
-                                    className="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
-                                >
-                                    Annuler
-                                </button>
-                                <button
-                                    onClick={handleCreateGroup}
-                                    disabled={!newGroup.title.trim()}
-                                    className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                                >
-                                    Créer
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

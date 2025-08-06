@@ -12,6 +12,8 @@ import PostsList from './PostsList';
 import GroupView from './GroupView';
 import EventView from './EventView';
 import ChatView from './ChatView';
+import EditorPanel from './editor/EditorPanel';
+import PresentationPanel from './presentation/PresentationPanel';
 
 interface OnePageLayoutProps {
   children?: React.ReactNode;
@@ -37,7 +39,17 @@ export default function OnePageLayout({
   jwt,
   onOpenPostModal
 }: OnePageLayoutProps) {
-  const { centralView, selectedGroup, selectedEvent, selectedChatContact } = useOnePage();
+  const { 
+    centralView, 
+    selectedGroup, 
+    selectedEvent, 
+    selectedChatContact,
+    setCentralView,
+    setSelectedGroup,
+    setSelectedEvent,
+    setSelectedChatContact,
+    navigateToFeed
+  } = useOnePage();
 
   const renderCentralView = () => {
     switch (centralView) {
@@ -65,6 +77,46 @@ export default function OnePageLayout({
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">
             Sélectionnez un contact pour démarrer une conversation
+          </div>
+        );
+        
+      case 'group-editor':
+        return (
+          <EditorPanel
+            type="group"
+            onCancel={navigateToFeed}
+          />
+        );
+        
+      case 'event-editor':
+        return (
+          <EditorPanel
+            type="event"
+            onCancel={navigateToFeed}
+          />
+        );
+        
+      case 'group-presentation':
+        return selectedGroup ? (
+          <PresentationPanel 
+            type="group"
+            selectedItem={selectedGroup}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            Groupe non trouvé
+          </div>
+        );
+        
+      case 'event-presentation':
+        return selectedEvent ? (
+          <PresentationPanel 
+            type="event"
+            selectedItem={selectedEvent}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            Événement non trouvé
           </div>
         );
       

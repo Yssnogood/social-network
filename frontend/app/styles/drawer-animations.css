@@ -1,0 +1,197 @@
+/* Animations personnalisées pour les drawers */
+
+/* Animation de redimensionnement fluide des drawers */
+.drawer-transition {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.3s ease,
+                transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animation d'apparition pour les drawers qui s'ouvrent */
+.drawer-opening {
+    animation: drawer-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animation de disparition pour les drawers qui se ferment */
+.drawer-closing {
+    animation: drawer-slide-out 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes drawer-slide-in {
+    from {
+        width: 0;
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes drawer-slide-out {
+    from {
+        opacity: 1;
+    }
+    to {
+        width: 0;
+        opacity: 0;
+    }
+}
+
+/* Animation pour le texte vertical des tabs fermés */
+.drawer-tab-vertical {
+    transition: all 0.2s ease;
+    transform: rotate(-90deg);
+    transform-origin: center;
+}
+
+.drawer-tab-vertical:hover {
+    transform: rotate(-90deg) scale(1.05);
+    filter: brightness(1.2);
+}
+
+/* Animation pour les boutons de proportion */
+.proportion-control {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(1);
+}
+
+.proportion-control:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.proportion-control:active {
+    transform: scale(0.98);
+}
+
+/* Animation de pulsation pour les indicateurs */
+.pulse-indicator {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Animation pour l'apparition des contrôles de proportion */
+.proportion-controls-enter {
+    animation: slide-down 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slide-down {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Animation de glow pour les actions importantes */
+.glow-on-change {
+    animation: glow-pulse 0.8s ease-out;
+}
+
+@keyframes glow-pulse {
+    0% {
+        box-shadow: 0 0 0 rgba(59, 130, 246, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+    }
+    100% {
+        box-shadow: 0 0 0 rgba(59, 130, 246, 0);
+    }
+}
+
+/* Micro-animations pour l'interaction utilisateur */
+.drawer-header {
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.drawer-header:hover {
+    background-color: rgb(55, 65, 81); /* gray-700 mais légèrement plus clair */
+}
+
+/* Animation pour le contenu qui apparaît dans les drawers */
+.drawer-content-fade-in {
+    animation: fade-in-up 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animation d'elastic pour les changements de proportion majeurs */
+.elastic-resize {
+    transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Animation pour les tooltips */
+.tooltip-fade {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform: translateY(0);
+}
+
+.tooltip-fade:hover {
+    transform: translateY(-2px);
+}
+
+/* Styles responsive pour les animations */
+@media (max-width: 768px) {
+    .drawer-transition {
+        /* Animations plus rapides sur mobile pour une meilleure UX */
+        transition-duration: 0.2s;
+    }
+    
+    .drawer-opening, .drawer-closing {
+        animation-duration: 0.2s;
+    }
+    
+    /* Réduire les effets de glow sur mobile pour les performances */
+    .glow-on-change {
+        animation: none;
+    }
+}
+
+/* Préférences utilisateur - respect du prefer-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+    .drawer-transition,
+    .drawer-opening,
+    .drawer-closing,
+    .drawer-tab-vertical,
+    .proportion-control,
+    .pulse-indicator,
+    .proportion-controls-enter,
+    .glow-on-change,
+    .drawer-header,
+    .drawer-content-fade-in,
+    .elastic-resize,
+    .tooltip-fade {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Classes utilitaires pour déclencher les animations */
+.trigger-glow {
+    animation: glow-pulse 0.8s ease-out;
+}
+
+.trigger-elastic {
+    transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}

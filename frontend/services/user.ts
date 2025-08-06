@@ -109,3 +109,26 @@ export async function getUserIdFromToken(token: string | undefined): Promise<str
     return null;
   }
 }
+
+// Client-side version of user data fetching
+export async function getCurrentUserClient(): Promise<UserProfile> {
+    try {
+        const response = await fetch("http://localhost:8090/api/user", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include" // This will send cookies automatically
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch user data: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching current user (client):', error);
+        // Return a default user object or throw
+        throw error;
+    }
+}
