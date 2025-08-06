@@ -70,7 +70,7 @@ export default function OnePageLayout({
       
       default: // 'feed'
         return (
-          <div className="h-full overflow-y-auto">
+          <div>
             {/* Bouton de création de post intégré dans le feed */}
             {onOpenPostModal && (
               <div className="mb-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
@@ -123,8 +123,8 @@ export default function OnePageLayout({
         </div>
 
         {/* Colonne centrale - Contenu dynamique */}
-        <div className="flex-1 bg-gray-900 overflow-hidden">
-          <div className="h-full p-2 sm:p-4">
+        <div className="flex-1 bg-gray-900 overflow-y-auto">
+          <div className="p-2 sm:p-4">
             {renderCentralView()}
           </div>
         </div>

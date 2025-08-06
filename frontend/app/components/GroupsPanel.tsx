@@ -38,7 +38,12 @@ export default function GroupsPanel() {
                 setDisplayedGroups(initialGroups);
                 setHasMore((data || []).length > ITEMS_PER_PAGE);
                 
-                console.log(`[GroupsPanel] Total groups: ${(data || []).length}, Displayed: ${initialGroups.length}, HasMore: ${(data || []).length > ITEMS_PER_PAGE}`);
+                console.log(`[GroupsPanel] INITIAL LOAD:`);
+                console.log(`  - Total groups fetched: ${(data || []).length}`);
+                console.log(`  - ITEMS_PER_PAGE: ${ITEMS_PER_PAGE}`);
+                console.log(`  - Initial groups to display: ${initialGroups.length}`);
+                console.log(`  - HasMore: ${(data || []).length > ITEMS_PER_PAGE}`);
+                console.log(`  - DisplayedGroups will be:`, initialGroups.map(g => g.title));
             } catch (error) {
                 console.error("Erreur de chargement des groupes:", error);
                 setAllGroups([]);
@@ -184,6 +189,10 @@ export default function GroupsPanel() {
                     </div>
                 ) : (
                     <>
+                        {(() => {
+                            console.log(`[GroupsPanel] RENDERING ${displayedGroups.length} groups out of ${allGroups.length} total`);
+                            return null;
+                        })()}
                         {displayedGroups.map((group) => (
                         <div
                             key={group.id}

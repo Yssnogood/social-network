@@ -33,7 +33,11 @@ export default function ChatPanel() {
             setDisplayedConversations(initialConversations);
             setHasMore(conversations.length > ITEMS_PER_PAGE);
             
-            console.log(`[ChatPanel] Total conversations: ${conversations.length}, Displayed: ${initialConversations.length}, HasMore: ${conversations.length > ITEMS_PER_PAGE}`);
+            console.log(`[ChatPanel] INITIAL LOAD:`);
+            console.log(`  - Total conversations fetched: ${conversations.length}`);
+            console.log(`  - ITEMS_PER_PAGE: ${ITEMS_PER_PAGE}`);
+            console.log(`  - Initial conversations to display: ${initialConversations.length}`);
+            console.log(`  - HasMore: ${conversations.length > ITEMS_PER_PAGE}`);
         } catch (error) {
             console.error("Error fetching conversations:", error);
             setAllConversations([]);
@@ -227,7 +231,9 @@ export default function ChatPanel() {
                         {searchTerm ? 'Aucun contact trouvé' : 'Aucune conversation'}
                     </div>
                 ) : (
-                    filteredConversations.map((conversationResponse) => {
+                    (() => {
+                        console.log(`[ChatPanel] RENDERING ${filteredConversations.length} conversations (displayed: ${displayedConversations.length}, total: ${allConversations.length})`);
+                        return filteredConversations.map((conversationResponse) => {
                         const { conversation, contact, messages } = conversationResponse;
                         const lastMessage = messages && messages.length > 0 ? messages[messages.length - 1] : null;
                         
@@ -272,7 +278,8 @@ export default function ChatPanel() {
                                 </div>
                             </div>
                         );
-                    })
+                    });
+                    })()
                 )}
                 
                 {/* Element pour déclencher le chargement de plus de conversations avec hauteur fixe */}

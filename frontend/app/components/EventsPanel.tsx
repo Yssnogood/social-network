@@ -71,7 +71,12 @@ export default function EventsPanel() {
                 setDisplayedEvents(initialEvents);
                 setHasMore(allEvents.length > ITEMS_PER_PAGE);
                 
-                console.log(`[EventsPanel] Total events: ${allEvents.length}, Displayed: ${initialEvents.length}, HasMore: ${allEvents.length > ITEMS_PER_PAGE}`);
+                console.log(`[EventsPanel] INITIAL LOAD:`);
+                console.log(`  - Total events fetched: ${allEvents.length}`);
+                console.log(`  - ITEMS_PER_PAGE: ${ITEMS_PER_PAGE}`);
+                console.log(`  - Initial events to display: ${initialEvents.length}`);
+                console.log(`  - HasMore: ${allEvents.length > ITEMS_PER_PAGE}`);
+                console.log(`  - DisplayedEvents will be:`, initialEvents.map(e => e.title));
                 
             } catch (error) {
                 console.error("Erreur de chargement des événements:", error);
@@ -239,6 +244,10 @@ export default function EventsPanel() {
                     </div>
                 ) : (
                     <>
+                        {(() => {
+                            console.log(`[EventsPanel] RENDERING ${displayedEvents.length} events out of ${allEvents.length} total`);
+                            return null;
+                        })()}
                         {displayedEvents.map((event) => {
                         const passed = isEventPassed(event.event_date);
                         const group = availableGroups.find(g => g.id === event.group_id);

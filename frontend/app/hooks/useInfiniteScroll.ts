@@ -23,22 +23,34 @@ export function useInfiniteScroll(
   const observerRef = useRef<IntersectionObserver | null>(null);
   const targetRef = useRef<HTMLDivElement | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [isDebouncing, setIsDebouncing] = useState(false);
+  const isExecutingRef = useRef(false);
 
   const debouncedCallback = useCallback(() => {
-    if (isDebouncing || isLoading || !hasMore) return;
+    if (isLoading || !hasMore || isExecutingRef.current) {
+      console.log(`[InfiniteScroll] Callback blocked - isLoading: ${isLoading}, hasMore: ${hasMore}, isExecuting: ${isExecutingRef.current}`);
+      return;
+    }
 
-    setIsDebouncing(true);
+    console.log('[InfiniteScroll] Starting debounced callback');
     
+    // Annuler le timeout précédent s'il existe
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
     timeoutRef.current = setTimeout(() => {
-      callback();
-      setIsDebouncing(false);
+      if (isExecutingRef.current) return; // Double vérification
+      
+      console.log('[InfiniteScroll] Executing callback after debounce');
+      isExecutingRef.current = true;
+      
+      try {
+        callback();
+      } finally {
+        isExecutingRef.current = false;
+      }
     }, debounceMs);
-  }, [callback, hasMore, isLoading, isDebouncing, debounceMs]);
+  }, [callback, hasMore, isLoading, debounceMs]);
 
   useEffect(() => {
     if (!targetRef.current) return;
@@ -51,7 +63,9 @@ export function useInfiniteScroll(
 
     observerRef.current = new IntersectionObserver((entries) => {
       const [entry] = entries;
+      console.log(`[IntersectionObserver] Entry intersecting: ${entry.isIntersecting}, hasMore: ${hasMore}, isLoading: ${isLoading}`);
       if (entry.isIntersecting && hasMore && !isLoading) {
+        console.log('[IntersectionObserver] Triggering callback');
         debouncedCallback();
       }
     }, observerOptions);
