@@ -84,13 +84,13 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
   const navigateToGroup = useCallback((group: SelectedGroup) => {
     setSelectedGroup(group);
     setSelectedEvent(null);
-    setCentralView('group');
+    setCentralView('group-presentation');  // Utiliser la nouvelle vue unifiée
   }, []);
 
   const navigateToEvent = useCallback((event: SelectedEvent) => {
     setSelectedEvent(event);
     setSelectedGroup(null);
-    setCentralView('event');
+    setCentralView('event-presentation');  // Utiliser la nouvelle vue unifiée
   }, []);
 
   const navigateToFeed = useCallback(() => {

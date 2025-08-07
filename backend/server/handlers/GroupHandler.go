@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 
 	"social-network/backend/database/models"
 	repository "social-network/backend/database/repositories"
@@ -310,8 +309,6 @@ func (h *GroupHandler) CreateGroupMessage(w http.ResponseWriter, r *http.Request
 	}
 	message.ID = id
 
-	go BroadcastToGroupClients(message.GroupID, message)
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(message)
 }
@@ -334,11 +331,6 @@ func (h *GroupHandler) GetGroupMessages(w http.ResponseWriter, r *http.Request) 
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(messages)
-}
-
-var groupClients = make(map[int64]map[*websocket.Conn]bool)
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
 func (h *GroupHandler) CreateGroupPost(w http.ResponseWriter, r *http.Request) {
@@ -488,63 +480,6 @@ func (h *GroupHandler) GetCommentsByGroupPostID(w http.ResponseWriter, r *http.R
 	json.NewEncoder(w).Encode(comments)
 }
 
-func HandleGroupWebSocket(w http.ResponseWriter, r *http.Request) {
-	groupIDStr := r.URL.Query().Get("groupId")
-	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
-	if err != nil {
-		http.Error(w, "Invalid group ID", http.StatusBadRequest)
-		return
-	}
-
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		fmt.Println("Error upgrade WebSocket :", err)
-		return
-	}
-
-	if groupClients[groupID] == nil {
-		groupClients[groupID] = make(map[*websocket.Conn]bool)
-	}
-	groupClients[groupID][conn] = true
-
-	go func() {
-		defer func() {
-			conn.Close()
-			delete(groupClients[groupID], conn)
-		}()
-
-		for {
-			var msg map[string]interface{}
-			err := conn.ReadJSON(&msg)
-			if err != nil {
-				fmt.Println("Error read WS:", err)
-				break
-			}
-
-			for c := range groupClients[groupID] {
-				if c != conn {
-					c.WriteJSON(msg)
-				}
-			}
-		}
-	}()
-}
-
-func BroadcastToGroupClients(groupID int64, message interface{}) {
-	clients, ok := groupClients[groupID]
-	if !ok {
-		return
-	}
-
-	for c := range clients {
-		err := c.WriteJSON(message)
-		if err != nil {
-			fmt.Println("Error broadcast WebSocket:", err)
-			c.Close()
-			delete(clients, c)
-		}
-	}
-}
 
 func (h *GroupHandler) AcceptGroupInvitation(w http.ResponseWriter, r *http.Request) {
 	var payload struct {

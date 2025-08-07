@@ -16,6 +16,8 @@ type WebSocketHandler struct {
 	messageRepo             repository.MessageRepositoryInterface
 	conversationRepo        repository.ConversationRepositoryInterface
 	conversationMembersRepo repository.ConversationMemberRepositoryInterface
+	groupRepo              repository.GroupRepositoryInterface
+	userRepo               repository.UserRepositoryInterface
 }
 
 // NewWebSocketHandler creates a new WebSocket handler
@@ -23,8 +25,10 @@ func NewWebSocketHandler(
 	messageRepo repository.MessageRepositoryInterface,
 	conversationRepo repository.ConversationRepositoryInterface,
 	conversationMembersRepo repository.ConversationMemberRepositoryInterface,
+	groupRepo repository.GroupRepositoryInterface,
+	userRepo repository.UserRepositoryInterface,
 ) *WebSocketHandler {
-	hub := NewHub(messageRepo, conversationRepo, conversationMembersRepo)
+	hub := NewHub(messageRepo, conversationRepo, conversationMembersRepo, groupRepo, userRepo)
 	go hub.Run()
 
 	return &WebSocketHandler{
@@ -32,6 +36,8 @@ func NewWebSocketHandler(
 		messageRepo:             messageRepo,
 		conversationRepo:        conversationRepo,
 		conversationMembersRepo: conversationMembersRepo,
+		groupRepo:              groupRepo,
+		userRepo:               userRepo,
 	}
 }
 
@@ -44,6 +50,26 @@ func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 	}
 
 	ServeWS(h.hub, w, r, userID)
+}
+
+// HandleGroupWebSocket handles WebSocket connection requests for groups
+func (h *WebSocketHandler) HandleGroupWebSocket(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middlewares.GetUserID(r)
+	if !ok {
+		http.Error(w, "Non autorisé", http.StatusUnauthorized)
+		return
+	}
+
+	// Get groupID from query parameter
+	groupIDStr := r.URL.Query().Get("groupId")
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	// Create WebSocket connection
+	ServeGroupWS(h.hub, w, r, userID, groupID)
 }
 
 // HandleGetConversation handles HTTP requests to get or create conversation between two users

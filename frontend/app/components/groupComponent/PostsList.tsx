@@ -49,7 +49,7 @@ export default function PostsList({
 					</div>
 				)}
 
-				{posts.map((post) => (
+				{posts && Array.isArray(posts) && posts.map((post) => (
 					<PostItem
 						key={post.id}
 						post={post}
@@ -61,7 +61,7 @@ export default function PostsList({
 						onCommentChange={(value) => onCommentChange(post.id, value)}
 						onCreateComment={() => onCreateComment(post.id, post.user_id, post.username)}
 					/>
-				))}
+				)) || null}
 			</div>
 		</div>
 	);

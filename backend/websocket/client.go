@@ -169,3 +169,37 @@ func ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request, userID int64) {
 	go client.readPump()
 }
 
+// ServeGroupWS handles WebSocket requests from clients for group connections
+func ServeGroupWS(hub *Hub, w http.ResponseWriter, r *http.Request, userID int64, groupID int64) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("Erreur WebSocket upgrade (group) :", err)
+		return
+	}
+
+	client := &Client{
+		hub:    hub,
+		conn:   conn,
+		send:   make(chan []byte, 256),
+		UserID: userID,
+	}
+
+	hub.register <- client
+
+	// Automatically join the group
+	groupJoinMsg := WSMessage{
+		Type:      "group_join",
+		GroupID:   groupID,
+		SenderID:  userID,
+		Timestamp: time.Now(),
+	}
+
+	// Send the group join message to the hub
+	if msgBytes, err := json.Marshal(groupJoinMsg); err == nil {
+		hub.broadcast <- msgBytes
+	}
+
+	go client.writePump()
+	go client.readPump()
+}
+

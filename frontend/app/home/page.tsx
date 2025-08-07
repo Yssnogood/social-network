@@ -207,19 +207,7 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
                         onOpenPostModal={handleOpenPostModal}
                     />
 
-                    {/* Modal pour créer un post */}
-                    <CreatePostModal
-                        isOpen={isCreatePostModalOpen}
-                        onClose={handleClosePostModal}
-                        onSubmit={handleSubmitPost}
-                    />
-
-                    {/* Modal pour créer un groupe */}
-                    <CreateGroupModal
-                        isOpen={isCreateGroupModalOpen}
-                        onClose={handleCloseGroupModal}
-                        onSubmit={handleSubmitGroup}
-                    />
+                    {/* NOTE: Modales supprimées en mode OnePageLayout - remplacées par les panneaux */}
 
                     {/* Bouton pour basculer vers le mode traditionnel */}
                     <button

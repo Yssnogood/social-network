@@ -130,7 +130,7 @@ export default function ContentPanel({
                                         </svg>
                                     </button>
                                 )}
-                                <div className="text-xs text-gray-500">{posts.length}</div>
+                                <div className="text-xs text-gray-500">{posts?.length || 0}</div>
                             </div>
                         </div>
                         
@@ -183,7 +183,7 @@ export default function ContentPanel({
                                         </svg>
                                     </button>
                                 )}
-                                <div className="text-xs text-gray-500">{messages.length}</div>
+                                <div className="text-xs text-gray-500">{messages?.length || 0}</div>
                             </div>
                         </div>
                         
@@ -234,7 +234,7 @@ export default function ContentPanel({
                                         </svg>
                                     </button>
                                 )}
-                                <div className="text-xs text-gray-500">{events.length}</div>
+                                <div className="text-xs text-gray-500">{events?.length || 0}</div>
                             </div>
                         </div>
                         

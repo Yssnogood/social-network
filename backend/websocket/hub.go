@@ -17,6 +17,9 @@ type Hub struct {
 	// Clients by user ID for direct messaging
 	userClients map[int64]*Client
 
+	// Clients by group ID for group messaging
+	groupClients map[int64]map[*Client]bool
+
 	// Inbound messages from the clients
 	broadcast chan []byte
 
@@ -30,6 +33,8 @@ type Hub struct {
 	messageRepo             repository.MessageRepositoryInterface
 	conversationRepo        repository.ConversationRepositoryInterface
 	conversationMembersRepo repository.ConversationMemberRepositoryInterface
+	groupRepo              repository.GroupRepositoryInterface
+	userRepo               repository.UserRepositoryInterface
 
 	// Mutex for thread-safe operations
 	mutex sync.RWMutex
@@ -39,10 +44,12 @@ type Hub struct {
 type WSMessage struct {
 	Type           string    `json:"type"`
 	ConversationID int64     `json:"conversation_id,omitempty"`
+	GroupID        int64     `json:"group_id,omitempty"`
 	Content        string    `json:"content,omitempty"`
 	SenderID       int64     `json:"sender_id,omitempty"`
 	ReceiverID     int64     `json:"receiver_id,omitempty"`
 	MessageID      int64     `json:"message_id,omitempty"`
+	Username       string    `json:"username,omitempty"`
 	Timestamp      time.Time `json:"timestamp,omitempty"`
 	Error          string    `json:"error,omitempty"`
 }
@@ -52,16 +59,21 @@ func NewHub(
 	messageRepo repository.MessageRepositoryInterface,
 	conversationRepo repository.ConversationRepositoryInterface,
 	conversationMembersRepo repository.ConversationMemberRepositoryInterface,
+	groupRepo repository.GroupRepositoryInterface,
+	userRepo repository.UserRepositoryInterface,
 ) *Hub {
 	return &Hub{
 		clients:                 make(map[*Client]bool),
 		userClients:             make(map[int64]*Client),
+		groupClients:            make(map[int64]map[*Client]bool),
 		broadcast:               make(chan []byte),
 		register:                make(chan *Client),
 		unregister:              make(chan *Client),
 		messageRepo:             messageRepo,
 		conversationRepo:        conversationRepo,
 		conversationMembersRepo: conversationMembersRepo,
+		groupRepo:              groupRepo,
+		userRepo:               userRepo,
 	}
 }
 
@@ -107,6 +119,18 @@ func (h *Hub) unregisterClient(client *Client) {
 	if _, ok := h.clients[client]; ok {
 		delete(h.clients, client)
 		delete(h.userClients, client.UserID)
+		
+		// Remove client from all groups
+		for groupID, groupClients := range h.groupClients {
+			if _, exists := groupClients[client]; exists {
+				delete(groupClients, client)
+				// If no more clients in the group, remove the group
+				if len(groupClients) == 0 {
+					delete(h.groupClients, groupID)
+				}
+			}
+		}
+		
 		close(client.send)
 
 		log.Printf("Client unregistered: UserID %d", client.UserID)
@@ -126,6 +150,12 @@ func (h *Hub) handleBroadcast(message []byte) {
 		h.handleMessageSend(wsMsg)
 	case "presence":
 		h.handlePresence(wsMsg)
+	case "group_message":
+		h.handleGroupMessage(wsMsg)
+	case "group_join":
+		h.handleGroupJoin(wsMsg)
+	case "group_leave":
+		h.handleGroupLeave(wsMsg)
 	default:
 		log.Printf("Unknown message type: %s", wsMsg.Type)
 	}
@@ -231,5 +261,132 @@ func (h *Hub) IsUserOnline(userID int64) bool {
 	
 	_, exists := h.userClients[userID]
 	return exists
+}
+
+// handleGroupMessage processes group message sending
+func (h *Hub) handleGroupMessage(wsMsg WSMessage) {
+	// Get username from the database
+	username, err := h.getUsernameByID(wsMsg.SenderID)
+	if err != nil {
+		log.Printf("Error getting username: %v", err)
+		return
+	}
+
+	// Create group message in database
+	groupMessage := &models.GroupMessage{
+		GroupID:   wsMsg.GroupID,
+		UserID:    wsMsg.SenderID,
+		Username:  username,
+		Content:   wsMsg.Content,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	messageID, err := h.groupRepo.CreateGroupMessage(groupMessage)
+	if err != nil {
+		log.Printf("Error creating group message: %v", err)
+		return
+	}
+
+	// Prepare response message
+	response := WSMessage{
+		Type:      "group_message_received",
+		GroupID:   wsMsg.GroupID,
+		Content:   wsMsg.Content,
+		SenderID:  wsMsg.SenderID,
+		Username:  username,
+		MessageID: messageID,
+		Timestamp: groupMessage.CreatedAt,
+	}
+
+	// Broadcast to all clients in the group
+	h.broadcastToGroup(wsMsg.GroupID, response)
+}
+
+// handleGroupJoin processes a client joining a group
+func (h *Hub) handleGroupJoin(wsMsg WSMessage) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
+	client, exists := h.userClients[wsMsg.SenderID]
+	if !exists {
+		log.Printf("User %d not connected", wsMsg.SenderID)
+		return
+	}
+
+	// Initialize group if it doesn't exist
+	if h.groupClients[wsMsg.GroupID] == nil {
+		h.groupClients[wsMsg.GroupID] = make(map[*Client]bool)
+	}
+
+	// Add client to group
+	h.groupClients[wsMsg.GroupID][client] = true
+
+	log.Printf("User %d joined group %d", wsMsg.SenderID, wsMsg.GroupID)
+
+	// Send confirmation
+	response := WSMessage{
+		Type:      "group_join_success",
+		GroupID:   wsMsg.GroupID,
+		Timestamp: time.Now(),
+	}
+	h.sendToClient(client, response)
+}
+
+// handleGroupLeave processes a client leaving a group
+func (h *Hub) handleGroupLeave(wsMsg WSMessage) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
+	client, exists := h.userClients[wsMsg.SenderID]
+	if !exists {
+		log.Printf("User %d not connected", wsMsg.SenderID)
+		return
+	}
+
+	// Remove client from group
+	if groupClients, groupExists := h.groupClients[wsMsg.GroupID]; groupExists {
+		delete(groupClients, client)
+		
+		// If no more clients in the group, remove the group
+		if len(groupClients) == 0 {
+			delete(h.groupClients, wsMsg.GroupID)
+		}
+	}
+
+	log.Printf("User %d left group %d", wsMsg.SenderID, wsMsg.GroupID)
+
+	// Send confirmation
+	response := WSMessage{
+		Type:      "group_leave_success",
+		GroupID:   wsMsg.GroupID,
+		Timestamp: time.Now(),
+	}
+	h.sendToClient(client, response)
+}
+
+// broadcastToGroup sends a message to all clients in a group
+func (h *Hub) broadcastToGroup(groupID int64, message WSMessage) {
+	h.mutex.RLock()
+	groupClients, exists := h.groupClients[groupID]
+	h.mutex.RUnlock()
+
+	if !exists {
+		log.Printf("No clients in group %d", groupID)
+		return
+	}
+
+	for client := range groupClients {
+		h.sendToClient(client, message)
+	}
+}
+
+// getUsernameByID retrieves username from user ID using repositories
+func (h *Hub) getUsernameByID(userID int64) (string, error) {
+	user, err := h.userRepo.GetByID(userID)
+	if err != nil {
+		return "", err
+	}
+	return user.Username, nil
 }
 

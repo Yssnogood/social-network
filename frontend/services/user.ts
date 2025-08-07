@@ -113,8 +113,8 @@ export async function getUserIdFromToken(token: string | undefined): Promise<str
 // Client-side version of user data fetching
 export async function getCurrentUserClient(): Promise<UserProfile> {
     try {
-        const response = await fetch("http://localhost:8090/api/user", {
-            method: "POST",
+        const response = await fetch("http://localhost:8090/api/users/me", {
+            method: "GET",
             headers: {
                 "Content-Type": "application/json"
             },

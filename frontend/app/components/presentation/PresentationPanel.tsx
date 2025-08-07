@@ -4,9 +4,20 @@ import { useState, useEffect } from 'react';
 import { useOnePage } from '../../contexts/OnePageContext';
 import ShowcasePanel from './ShowcasePanel';
 import ContentPanel from './ContentPanel';
-import { Group, Event, GroupPost, GroupComment, GroupMessage, User } from '../../types/group';
+import { Group, Event, GroupPost, GroupComment, GroupMessage, User, GroupMember } from '../../types/group';
 import { getCurrentUserClient } from '@/services/user';
-import { getGroupPosts, getGroupMessages, getGroupEvents } from '@/services/group';
+import { 
+    getGroupPosts, 
+    getGroupMessages, 
+    getGroupEvents, 
+    getGroupMembers,
+    createGroupPost,
+    sendGroupMessage,
+    respondToEvent,
+    deleteGroupEvent,
+    getGroupPostComments,
+    createGroupPostComment
+} from '@/services/group';
 
 interface PresentationPanelProps {
     type: 'group' | 'event';
@@ -21,6 +32,7 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
     const [posts, setPosts] = useState<GroupPost[]>([]);
     const [messages, setMessages] = useState<GroupMessage[]>([]);
     const [events, setEvents] = useState<Event[]>([]);
+    const [members, setMembers] = useState<GroupMember[]>([]);
     
     // Loading states
     const [isLoadingPosts, setIsLoadingPosts] = useState(true);
@@ -60,7 +72,8 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
             await Promise.all([
                 loadPosts(),
                 loadMessages(),
-                loadEvents()
+                loadEvents(),
+                loadMembers()
             ]);
             
         } catch (error) {
@@ -111,14 +124,23 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
         }
     };
 
-    // Handler placeholders - these would connect to real API calls
+    const loadMembers = async () => {
+        try {
+            const groupMembers = await getGroupMembers(groupId);
+            setMembers(groupMembers);
+        } catch (error) {
+            console.error('Error loading members:', error);
+        }
+    };
+
+    // Real API handlers connected to services
     const handleCreatePost = async (content: string) => {
         try {
-            // TODO: Implement post creation API call
-            console.log('Creating post:', content);
-            await loadPosts(); // Refresh posts
+            await createGroupPost(groupId, content);
+            await loadPosts(); // Refresh posts after creation
         } catch (error) {
             console.error('Error creating post:', error);
+            setError('Erreur lors de la création du post');
         }
     };
 
@@ -132,10 +154,15 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
             // Load comments if not already loaded
             if (!commentsByPost[postId]) {
                 setLoadingComments(prev => ({ ...prev, [postId]: true }));
-                // TODO: Load actual comments from API
-                // const comments = await getPostComments(postId);
-                // setCommentsByPost(prev => ({ ...prev, [postId]: comments }));
-                setLoadingComments(prev => ({ ...prev, [postId]: false }));
+                try {
+                    const comments = await getGroupPostComments(groupId, postId);
+                    setCommentsByPost(prev => ({ ...prev, [postId]: comments }));
+                } catch (error) {
+                    console.error('Error loading comments:', error);
+                    setError('Erreur lors du chargement des commentaires');
+                } finally {
+                    setLoadingComments(prev => ({ ...prev, [postId]: false }));
+                }
             }
         } catch (error) {
             console.error('Error toggling comments:', error);
@@ -154,8 +181,7 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
             const content = newCommentByPost[postId];
             if (!content?.trim()) return;
 
-            // TODO: Implement comment creation API call
-            console.log('Creating comment:', { postId, userId, username, content });
+            await createGroupPostComment(groupId, postId, content);
             
             // Clear the comment input
             setNewCommentByPost(prev => ({
@@ -163,39 +189,54 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
                 [postId]: ''
             }));
             
-            // TODO: Refresh comments or add optimistically
+            // Refresh comments to show the new one
+            const updatedComments = await getGroupPostComments(groupId, postId);
+            setCommentsByPost(prev => ({ ...prev, [postId]: updatedComments }));
+            
+            // Update the posts array to increment comment count
+            setPosts(prev => prev.map(post => 
+                post.id === postId 
+                    ? { ...post, comments_count: post.comments_count + 1 }
+                    : post
+            ));
         } catch (error) {
             console.error('Error creating comment:', error);
+            setError('Erreur lors de la création du commentaire');
         }
     };
 
     const handleSendMessage = async (content: string) => {
         try {
-            // TODO: Implement message sending API call
-            console.log('Sending message:', content);
-            await loadMessages(); // Refresh messages
+            await sendGroupMessage(groupId, content);
+            await loadMessages(); // Refresh messages after sending
         } catch (error) {
             console.error('Error sending message:', error);
+            setError('Erreur lors de l\'envoi du message');
         }
     };
 
     const handleEventResponse = async (eventId: number, status: string) => {
         try {
-            // TODO: Implement event response API call
-            console.log('Event response:', { eventId, status });
-            await loadEvents(); // Refresh events
+            // Ensure status is valid for API
+            if (status !== 'going' && status !== 'not_going') {
+                console.warn('Invalid status, defaulting to not_going:', status);
+                status = 'not_going';
+            }
+            await respondToEvent(eventId, status as 'going' | 'not_going');
+            await loadEvents(); // Refresh events after response
         } catch (error) {
             console.error('Error responding to event:', error);
+            setError('Erreur lors de la réponse à l\'événement');
         }
     };
 
     const handleDeleteEvent = async (eventId: number) => {
         try {
-            // TODO: Implement event deletion API call
-            console.log('Deleting event:', eventId);
-            await loadEvents(); // Refresh events
+            await deleteGroupEvent(eventId);
+            await loadEvents(); // Refresh events after deletion
         } catch (error) {
             console.error('Error deleting event:', error);
+            setError('Erreur lors de la suppression de l\'événement');
         }
     };
 
@@ -223,7 +264,10 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
             <div className="w-1/3 border-r border-gray-700">
                 <ShowcasePanel 
                     type={type}
-                    selectedItem={selectedItem}
+                    data={selectedItem}
+                    members={members}
+                    backgroundImage={undefined}
+                    photoGallery={[]}
                 />
             </div>
             

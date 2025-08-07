@@ -3,37 +3,7 @@
 import { useState } from 'react';
 import GroupHeader from '../groupComponent/GroupHeader';
 import MembersList from '../groupComponent/MembersList';
-
-interface Group {
-    id: number;
-    creatorId: number;
-    creatorName: string;
-    title: string;
-    description: string;
-    createdAt: string;
-    updatedAt: string;
-}
-
-interface Event {
-    id: number;
-    title: string;
-    description: string;
-    event_date: string;
-    group_id: number;
-    creator_id: number;
-    location?: string;
-    created_at: string;
-    updated_at: string;
-}
-
-interface GroupMember {
-    id: number;
-    groupId: number;
-    userId: number;
-    username: string;
-    accepted: boolean;
-    createdAt: string;
-}
+import { Group, Event, GroupMember } from '../../types/group';
 
 interface ShowcasePanelProps {
     type: 'group' | 'event';

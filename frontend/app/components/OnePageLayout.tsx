@@ -176,7 +176,14 @@ export default function OnePageLayout({
 
         {/* Colonne centrale - Contenu dynamique */}
         <div className="flex-1 bg-gray-900 overflow-y-auto">
-          <div className="p-2 sm:p-4">
+          <div className={
+            centralView === 'group-editor' || 
+            centralView === 'event-editor' || 
+            centralView === 'group-presentation' || 
+            centralView === 'event-presentation'
+              ? "h-full" // Pas de padding pour les panneaux - hauteur complète
+              : "p-2 sm:p-4" // Padding normal pour les autres vues
+          }>
             {renderCentralView()}
           </div>
         </div>

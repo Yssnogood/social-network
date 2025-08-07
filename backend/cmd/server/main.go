@@ -14,8 +14,6 @@ import (
 	repository "social-network/backend/database/repositories"
 	"social-network/backend/database/sqlite"
 	appHandlers "social-network/backend/server/handlers"
-
-	"social-network/backend/server/middlewares"
 	"social-network/backend/server/routes"
 	"social-network/backend/websocket"
 )
@@ -92,7 +90,6 @@ func main() {
 	commentHandler := appHandlers.NewCommentHandler(commentRepo, sessionRepo)
 	followerHandler := appHandlers.NewFollowerHandler(followerRepo, notificationRepo)
 	messageHandler := appHandlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
-	websocketHandler := websocket.NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo)
 	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo, followerRepo, groupRepo)
 	eventHandler := appHandlers.NewEventHandler(eventRepo)
 
@@ -110,14 +107,8 @@ func main() {
 	routes.NotificationsRoutes(r, notificationHandler)
 	routes.EventsRoutes(r, eventHandler)
 
-	// WebSocket
-	wsHandler := middlewares.JWTMiddleware(http.HandlerFunc(websocketHandler.HandleWebSocket))
-	r.Handle("/ws", wsHandler).Methods("GET", "OPTIONS")
-
-	r.Handle("/ws/groups", middlewares.JWTMiddleware(http.HandlerFunc(appHandlers.HandleGroupWebSocket)))
-
-	r.Handle("/api/messages/conversation", http.HandlerFunc(websocketHandler.HandleGetConversation)).Methods("POST", "OPTIONS")
-	r.HandleFunc("/api/users/online", websocketHandler.GetOnlineUsers).Methods("GET", "OPTIONS")
+	// WebSocket routes - unified system
+	websocket.SetupWebSocketRoutes(r, messageRepo, conversationRepo, conversationMembersRepo, groupRepo, userRepo)
 
 	// Lancement du serveur HTTP
 	port := os.Getenv("PORT")

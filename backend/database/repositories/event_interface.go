@@ -3,9 +3,15 @@ package repository
 import "social-network/backend/database/models"
 
 type EventRepositoryInterface interface {
-	Create(event *models.Event) (int64, error)
-	GetByID(id int64) (*models.Event, error)
-	GetAllByGroupID(groupID int64) ([]*models.Event, error)
-	Update(event *models.Event) error
-	Delete(id int64) error
+	// Create a new event
+	CreateEvent(event *models.Event) (int64, error)
+	
+	// Set user response to an event (going/not_going)
+	SetEventResponse(eventID, userID int64, status string) error
+	
+	// Get all events for a specific group
+	GetEventsByGroupID(groupID int64) ([]*models.Event, error)
+	
+	// Delete an event by ID
+	DeleteEvent(eventID int64) error
 }

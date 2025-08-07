@@ -28,7 +28,9 @@ export default function EventsList({
 	return (
 		<div className="space-y-4 mb-6">
 			<h3 className="text-lg font-semibold">Événements à venir</h3>
-			{events.length === 0 ? (
+			{!events || !Array.isArray(events) ? (
+				<p className="text-gray-500">Chargement des événements...</p>
+			) : events.length === 0 ? (
 				<p className="text-gray-500">Aucun événement pour le moment.</p>
 			) : (
 				events.map((event) => (

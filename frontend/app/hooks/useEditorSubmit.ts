@@ -61,8 +61,12 @@ export function useEditorSubmit({ type, onSuccess }: UseEditorSubmitProps) {
                 createdItem = await createGroup(groupData);
                 
                 // Naviguer vers la présentation du groupe
+                console.log('🚀 Groupe créé:', createdItem);
                 if (navigateToGroupPresentation) {
+                    console.log('🎯 Navigation vers présentation du groupe...');
                     navigateToGroupPresentation(createdItem);
+                } else {
+                    console.error('❌ Fonction navigateToGroupPresentation non disponible');
                 }
             } else if (type === 'event') {
                 if (!selectedGroupId) {

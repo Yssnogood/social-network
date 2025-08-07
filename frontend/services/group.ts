@@ -1,32 +1,8 @@
 // Group service - API calls for group-related operations
 
+import { GroupPost, GroupMessage, GroupComment, Event, GroupMember } from '../app/types/group';
+
 const API_BASE_URL = "http://localhost:8090/api";
-
-export interface GroupPost {
-    id: number;
-    content: string;
-    created_at: string;
-    author_name: string;
-    // Add other fields as needed
-}
-
-export interface GroupMessage {
-    id: number;
-    content: string;
-    created_at: string;
-    author_name: string;
-    // Add other fields as needed
-}
-
-export interface GroupEvent {
-    id: number;
-    title: string;
-    description: string;
-    event_date: string;
-    location?: string;
-    group_id: number;
-    // Add other fields as needed
-}
 
 export async function getGroupPosts(groupId: number): Promise<GroupPost[]> {
     try {
@@ -74,7 +50,7 @@ export async function getGroupMessages(groupId: number): Promise<GroupMessage[]>
     }
 }
 
-export async function getGroupEvents(groupId: number): Promise<GroupEvent[]> {
+export async function getGroupEvents(groupId: number): Promise<Event[]> {
     try {
         const response = await fetch(`${API_BASE_URL}/groups/${groupId}/events`, {
             method: "GET",
@@ -97,23 +73,155 @@ export async function getGroupEvents(groupId: number): Promise<GroupEvent[]> {
     }
 }
 
-// Placeholder functions for future implementation
+// Implemented functions for group interactions
 export async function createGroupPost(groupId: number, content: string): Promise<GroupPost> {
-    // TODO: Implement API call
-    throw new Error('createGroupPost not implemented yet');
+    try {
+        const response = await fetch(`${API_BASE_URL}/groups/${groupId}/posts`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({ content })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to create group post: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error creating group post:', error);
+        throw error;
+    }
 }
 
 export async function sendGroupMessage(groupId: number, content: string): Promise<GroupMessage> {
-    // TODO: Implement API call
-    throw new Error('sendGroupMessage not implemented yet');
+    try {
+        const response = await fetch(`${API_BASE_URL}/groups/${groupId}/messages`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({ content })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to send group message: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error sending group message:', error);
+        throw error;
+    }
 }
 
-export async function respondToEvent(eventId: number, status: 'going' | 'maybe' | 'not_going'): Promise<void> {
-    // TODO: Implement API call
-    throw new Error('respondToEvent not implemented yet');
+export async function respondToEvent(eventId: number, status: 'going' | 'not_going'): Promise<void> {
+    try {
+        // Note: API only supports 'going' and 'not_going', not 'maybe'
+        const response = await fetch(`${API_BASE_URL}/events/${eventId}/response`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({ status })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to respond to event: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Error responding to event:', error);
+        throw error;
+    }
 }
 
 export async function deleteGroupEvent(eventId: number): Promise<void> {
-    // TODO: Implement API call
-    throw new Error('deleteGroupEvent not implemented yet');
+    try {
+        const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
+            method: "DELETE",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to delete event: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Error deleting event:', error);
+        throw error;
+    }
+}
+
+export async function getGroupPostComments(groupId: number, postId: number): Promise<GroupComment[]> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/groups/${groupId}/posts/${postId}/comments`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch post comments: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching post comments:', error);
+        // Return empty array as fallback
+        return [];
+    }
+}
+
+export async function createGroupPostComment(groupId: number, postId: number, content: string): Promise<GroupComment> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/groups/${groupId}/posts/${postId}/comments`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({ content })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to create post comment: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error creating post comment:', error);
+        throw error;
+    }
+}
+
+export async function getGroupMembers(groupId: number): Promise<GroupMember[]> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/groups/${groupId}/members`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch group members: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching group members:', error);
+        // Return empty array as fallback
+        return [];
+    }
 }

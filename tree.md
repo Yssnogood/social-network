@@ -9,6 +9,10 @@ tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|ATransmettre'
 │   │   │   └── UserService.go
 │   │   ├── utils
 │   │   └── validation
+│   ├── backend
+│   │   └── database
+│   │       └── sqlite
+│   │           └── data.db
 │   ├── cmd
 │   │   ├── seed
 │   │   │   └── main.go
@@ -16,6 +20,7 @@ tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|ATransmettre'
 │   │   │   └── main.go
 │   │   └── tools
 │   │       └── migrate.go
+│   ├── cookies.txt
 │   ├── database
 │   │   ├── migrations
 │   │   │   └── sqlite
@@ -131,6 +136,7 @@ tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|ATransmettre'
 │       ├── router.go
 │       └── websocket_type.go
 ├── build-local.sh
+├── CLAUDE.md
 ├── commandes_git_et_serveur.md
 ├── copy-ATransmettre.sh
 ├── dev.sh
@@ -148,6 +154,7 @@ tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|ATransmettre'
 │   │   │   ├── ChatDrawer.tsx
 │   │   │   ├── ChatModal.tsx
 │   │   │   ├── ChatPanel.tsx
+│   │   │   ├── ChatView.tsx
 │   │   │   ├── ClientOnly.tsx
 │   │   │   ├── CommentForm.tsx
 │   │   │   ├── CommentItem.tsx
@@ -155,6 +162,10 @@ tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|ATransmettre'
 │   │   │   ├── CreateGroupButton.tsx
 │   │   │   ├── CreatePostButton.tsx
 │   │   │   ├── CreatePostModal.tsx
+│   │   │   ├── editor
+│   │   │   │   ├── BackgroundImageUpload.tsx
+│   │   │   │   ├── EditorPanel.tsx
+│   │   │   │   └── InvitationManager.tsx
 │   │   │   ├── EventsPanel.tsx
 │   │   │   ├── EventView.tsx
 │   │   │   ├── FollowersSection.tsx
@@ -187,6 +198,11 @@ tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|ATransmettre'
 │   │   │   ├── PostDetail.tsx
 │   │   │   ├── PostItem.tsx
 │   │   │   ├── PostsList.tsx
+│   │   │   ├── presentation
+│   │   │   │   ├── ContentPanel.tsx
+│   │   │   │   ├── PresentationPanel.tsx
+│   │   │   │   ├── ProportionControls.tsx
+│   │   │   │   └── ShowcasePanel.tsx
 │   │   │   ├── ProfileHoverCard.tsx
 │   │   │   ├── SearchBar.tsx
 │   │   │   ├── SearchBarDebug.tsx
@@ -205,8 +221,12 @@ tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|ATransmettre'
 │   │   │   ├── page.tsx
 │   │   │   └── page1.tsx
 │   │   ├── hooks
+│   │   │   ├── useDrawerProportions.ts
+│   │   │   ├── useEditorSubmit.ts
 │   │   │   ├── useGroupData.ts
-│   │   │   └── useGroupWebSocket.ts
+│   │   │   ├── useGroupWebSocket.ts
+│   │   │   ├── useInfiniteScroll.ts
+│   │   │   └── usePresence.ts
 │   │   ├── layout.tsx
 │   │   ├── login
 │   │   │   └── page.tsx
@@ -223,6 +243,8 @@ tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|ATransmettre'
 │   │   │       └── ProfileTabs.tsx
 │   │   ├── register
 │   │   │   └── page.tsx
+│   │   ├── styles
+│   │   │   └── drawer-animations.css
 │   │   └── types
 │   │       └── group.ts
 │   ├── components
@@ -231,6 +253,8 @@ tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|ATransmettre'
 │   │       ├── command.tsx
 │   │       └── dialog.tsx
 │   ├── components.json
+│   ├── config
+│   │   └── api.ts
 │   ├── eslint.config.mjs
 │   ├── lib
 │   │   └── utils.ts
@@ -250,9 +274,13 @@ tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|ATransmettre'
 │   │   └── window.svg
 │   ├── README.md
 │   ├── services
+│   │   ├── auth.ts
 │   │   ├── comment.ts
 │   │   ├── contact.ts
+│   │   ├── editor.ts
 │   │   ├── follow.ts
+│   │   ├── group.ts
+│   │   ├── message.ts
 │   │   ├── notifications.ts
 │   │   ├── post.ts
 │   │   ├── search.ts
@@ -260,7 +288,6 @@ tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|ATransmettre'
 │   │   └── utils.ts
 │   ├── tsconfig.json
 │   └── tsconfig.tsbuildinfo
-├── .env
 ├── go.mod
 ├── go.sum
 ├── one_page.png
@@ -273,6 +300,7 @@ tree -I 'node_modules|.next|.vscode|.git|*.log|Documentation|ATransmettre'
 ├── tampon.go
 ├── tampon.md
 ├── tampon.tsx
-└── tree.md
+├── tree.md
+└── wireframe_fenetre_message.png
 
-51 directories, 223 files
+58 directories, 245 files

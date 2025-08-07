@@ -19,10 +19,11 @@ export default function MessagesList({ messages }: MessagesListProps) {
 		<div className="mt-6 border-t border-gray-700 pt-4">
 			<h2 className="text-xl font-semibold mb-2 text-white">Messages</h2>
 			<div className="max-h-96 overflow-y-auto bg-gray-900 p-3 rounded">
-				{Array.isArray(messages) && messages.length === 0 ? (
+				{!messages || !Array.isArray(messages) ? (
+					<p className="text-gray-400 text-center">Chargement des messages...</p>
+				) : messages.length === 0 ? (
 					<p className="text-gray-400 text-center">Aucun message pour le moment</p>
 				) : (
-					Array.isArray(messages) &&
 					messages.map(msg => (
 						<MessageItem key={msg.id} message={msg} />
 					))

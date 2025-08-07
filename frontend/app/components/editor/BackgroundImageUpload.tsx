@@ -19,11 +19,6 @@ export default function BackgroundImageUpload({
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
 
-    const handleUploadStart = () => {
-        setIsUploading(true);
-        setUploadError(null);
-    };
-
     const handleUploadSuccess = (result: any) => {
         setIsUploading(false);
         if (result.info && typeof result.info !== "string") {
@@ -69,7 +64,6 @@ export default function BackgroundImageUpload({
                             ]
                         }}
                         uploadPreset={cloudPresetName}
-                        onUploadStart={handleUploadStart}
                         onSuccess={handleUploadSuccess}
                         onError={handleUploadError}
                         className="w-full p-8 text-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
@@ -129,7 +123,6 @@ export default function BackgroundImageUpload({
                                 ]
                             }}
                             uploadPreset={cloudPresetName}
-                            onUploadStart={handleUploadStart}
                             onSuccess={handleUploadSuccess}
                             onError={handleUploadError}
                             className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
