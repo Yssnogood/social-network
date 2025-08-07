@@ -259,9 +259,9 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
     }
 
     return (
-        <div className="h-full flex bg-gray-900">
-            {/* Panneau gauche - Showcase */}
-            <div className="w-1/3 border-r border-gray-700">
+        <div className="h-full flex flex-col bg-gray-900">
+            {/* Panneau du HAUT - Présentation (40% hauteur) */}
+            <div className="h-2/5 border-b border-gray-700">
                 <ShowcasePanel 
                     type={type}
                     data={selectedItem}
@@ -271,9 +271,10 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
                 />
             </div>
             
-            {/* Panneau droit - Content avec 3 drawers */}
-            <div className="w-2/3">
+            {/* Panneau du BAS - Communication avec tiroirs latéraux (60% hauteur) */}
+            <div className="h-3/5">
                 <ContentPanel
+                    key={`${type}-${selectedItem.id}`} // Force remount pour reset config tiroirs
                     type={type}
                     groupId={groupId}
                     currentUser={currentUser}
