@@ -225,3 +225,66 @@ export async function getGroupMembers(groupId: number): Promise<GroupMember[]> {
         return [];
     }
 }
+
+export async function getGroupsByUser(): Promise<any[]> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/user/groups`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch user groups: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching user groups:', error);
+        // Return empty array as fallback
+        return [];
+    }
+}
+
+export async function inviteUsersToGroup(groupId: number, userIds: number[]): Promise<void> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/groups/${groupId}/invite/users`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({ user_ids: userIds })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to invite users: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Error inviting users to group:', error);
+        throw error;
+    }
+}
+
+export async function inviteGroupsToGroup(groupId: number, groupIds: number[]): Promise<void> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/groups/${groupId}/invite/groups`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({ group_ids: groupIds })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to invite groups: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Error inviting groups to group:', error);
+        throw error;
+    }
+}

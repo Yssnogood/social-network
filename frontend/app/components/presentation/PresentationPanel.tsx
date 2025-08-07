@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useOnePage } from '../../contexts/OnePageContext';
-import ShowcasePanel from './ShowcasePanel';
+import PresentationContentPanel from './PresentationContentPanel';
 import ContentPanel from './ContentPanel';
 import { Group, Event, GroupPost, GroupComment, GroupMessage, User, GroupMember } from '../../types/group';
 import { getCurrentUserClient } from '@/services/user';
@@ -16,7 +16,9 @@ import {
     respondToEvent,
     deleteGroupEvent,
     getGroupPostComments,
-    createGroupPostComment
+    createGroupPostComment,
+    inviteUsersToGroup,
+    inviteGroupsToGroup
 } from '@/services/group';
 
 interface PresentationPanelProps {
@@ -258,14 +260,51 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
         );
     }
 
+    // Handler pour les invitations d'utilisateurs
+    const handleInviteUsers = async (userIds: number[]) => {
+        try {
+            await inviteUsersToGroup(groupId, userIds);
+            // TODO: Rafraîchir la liste des membres après invitation
+            console.log('Users invited successfully:', userIds);
+        } catch (error) {
+            console.error('Error inviting users:', error);
+            setError('Erreur lors de l\'invitation des utilisateurs');
+        }
+    };
+
+    // Handler pour les invitations de groupes  
+    const handleInviteGroups = async (groupIds: number[]) => {
+        try {
+            await inviteGroupsToGroup(groupId, groupIds);
+            // TODO: Rafraîchir la liste des groupes membres après invitation
+            console.log('Groups invited successfully:', groupIds);
+        } catch (error) {
+            console.error('Error inviting groups:', error);
+            setError('Erreur lors de l\'invitation des groupes');
+        }
+    };
+
+    // Déterminer les permissions d'invitation
+    const canInvite = currentUser && (
+        type === 'group' 
+            ? (selectedItem as Group).creator_id === currentUser.id
+            : (selectedItem as Event).created_by === currentUser.id
+    );
+
     return (
         <div className="h-full flex flex-col bg-gray-900">
-            {/* Panneau du HAUT - Présentation (40% hauteur) */}
+            {/* Panneau du HAUT - Présentation avec 3 tiroirs (40% hauteur) */}
             <div className="h-2/5 border-b border-gray-700">
-                <ShowcasePanel 
+                <PresentationContentPanel
+                    key={`presentation-${type}-${selectedItem.id}`} // Force remount pour reset config tiroirs
                     type={type}
-                    data={selectedItem}
+                    selectedItem={selectedItem}
+                    currentUser={currentUser}
                     members={members}
+                    memberGroups={[]} // TODO: Charger les groupes membres
+                    canInvite={canInvite}
+                    onInviteUsers={handleInviteUsers}
+                    onInviteGroups={handleInviteGroups}
                     backgroundImage={undefined}
                     photoGallery={[]}
                 />
@@ -274,7 +313,7 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
             {/* Panneau du BAS - Communication avec tiroirs latéraux (60% hauteur) */}
             <div className="h-3/5">
                 <ContentPanel
-                    key={`${type}-${selectedItem.id}`} // Force remount pour reset config tiroirs
+                    key={`content-${type}-${selectedItem.id}`} // Force remount pour reset config tiroirs
                     type={type}
                     groupId={groupId}
                     currentUser={currentUser}

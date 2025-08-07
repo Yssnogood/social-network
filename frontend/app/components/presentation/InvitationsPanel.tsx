@@ -1,0 +1,416 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { useOnePage } from '../../contexts/OnePageContext';
+import { fetchFriends, fetchFollowing, fetchAllUsersWithStatus } from '@/services/contact';
+import { Group } from '../../types/group';
+import { getGroupsByUser } from '@/services/group';
+import { getCurrentUserId } from '@/services/auth';
+
+// Types pour les onglets
+type MainTabType = 'users' | 'groups';
+type UserSubTabType = 'contacts' | 'following' | 'all';
+type GroupSubTabType = 'mygroups' | 'followed' | 'all';
+
+interface User {
+    id: number;
+    username: string;
+    avatar_path?: string;
+    is_following?: boolean;
+    is_friend?: boolean;
+}
+
+interface InvitationsPanelProps {
+    groupId: number;
+    currentUserId?: number;
+    canInvite: boolean;
+    onInviteUsers?: (userIds: number[]) => Promise<void>;
+    onInviteGroups?: (groupIds: number[]) => Promise<void>;
+}
+
+export default function InvitationsPanel({
+    groupId,
+    currentUserId,
+    canInvite,
+    onInviteUsers,
+    onInviteGroups
+}: InvitationsPanelProps) {
+    const { navigateToChat } = useOnePage();
+    
+    // State pour les onglets
+    const [mainTab, setMainTab] = useState<MainTabType>('users');
+    const [userSubTab, setUserSubTab] = useState<UserSubTabType>('contacts');
+    const [groupSubTab, setGroupSubTab] = useState<GroupSubTabType>('mygroups');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedItems, setSelectedItems] = useState<number[]>([]);
+    
+    // State pour les données
+    const [contacts, setContacts] = useState<User[]>([]);
+    const [following, setFollowing] = useState<User[]>([]);
+    const [allUsers, setAllUsers] = useState<User[]>([]);
+    const [myGroups, setMyGroups] = useState<Group[]>([]);
+    const [followedGroups, setFollowedGroups] = useState<Group[]>([]);
+    const [allGroups, setAllGroups] = useState<Group[]>([]);
+    
+    // State pour le chargement
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    
+    // Charger les données selon l'onglet actif
+    useEffect(() => {
+        if (mainTab === 'users') {
+            loadUserData();
+        } else {
+            loadGroupData();
+        }
+    }, [mainTab, userSubTab, groupSubTab, currentUserId]);
+    
+    const loadUserData = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            switch (userSubTab) {
+                case 'contacts':
+                    if (contacts.length === 0) {
+                        const data = await fetchFriends();
+                        setContacts(data || []);
+                    }
+                    break;
+                case 'following':
+                    if (following.length === 0) {
+                        const data = await fetchFollowing();
+                        setFollowing(data || []);
+                    }
+                    break;
+                case 'all':
+                    if (allUsers.length === 0) {
+                        const data = await fetchAllUsersWithStatus();
+                        setAllUsers(data || []);
+                    }
+                    break;
+            }
+        } catch (err) {
+            console.error('Error loading user data:', err);
+            setError('Erreur lors du chargement des utilisateurs');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    const loadGroupData = async () => {
+        if (!currentUserId) return;
+        
+        setIsLoading(true);
+        setError(null);
+        try {
+            switch (groupSubTab) {
+                case 'mygroups':
+                    if (myGroups.length === 0) {
+                        const data = await getGroupsByUser();
+                        setMyGroups(data || []);
+                    }
+                    break;
+                case 'followed':
+                    // TODO: Implémenter l'API pour les groupes suivis
+                    setFollowedGroups([]);
+                    break;
+                case 'all':
+                    // TODO: Implémenter l'API pour tous les groupes
+                    setAllGroups([]);
+                    break;
+            }
+        } catch (err) {
+            console.error('Error loading group data:', err);
+            setError('Erreur lors du chargement des groupes');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    // Obtenir les éléments à afficher selon l'onglet actif
+    const getDisplayItems = () => {
+        if (mainTab === 'users') {
+            let users: User[] = [];
+            switch (userSubTab) {
+                case 'contacts': users = contacts; break;
+                case 'following': users = following; break;
+                case 'all': users = allUsers; break;
+            }
+            
+            if (!searchTerm.trim()) return users;
+            return users.filter(u => u.username?.toLowerCase().includes(searchTerm.toLowerCase()));
+        } else {
+            let groups: Group[] = [];
+            switch (groupSubTab) {
+                case 'mygroups': groups = myGroups; break;
+                case 'followed': groups = followedGroups; break;
+                case 'all': groups = allGroups; break;
+            }
+            
+            // Exclure le groupe actuel de la liste
+            groups = groups.filter(g => g.id !== groupId);
+            
+            if (!searchTerm.trim()) return groups;
+            return groups.filter(g => g.title?.toLowerCase().includes(searchTerm.toLowerCase()));
+        }
+    };
+    
+    const displayItems = getDisplayItems();
+    
+    // Gérer la sélection
+    const toggleSelection = (id: number) => {
+        setSelectedItems(prev => 
+            prev.includes(id) 
+                ? prev.filter(i => i !== id)
+                : [...prev, id]
+        );
+    };
+    
+    // Envoyer les invitations
+    const handleSendInvitations = async () => {
+        if (selectedItems.length === 0) return;
+        
+        try {
+            if (mainTab === 'users' && onInviteUsers) {
+                await onInviteUsers(selectedItems);
+            } else if (mainTab === 'groups' && onInviteGroups) {
+                await onInviteGroups(selectedItems);
+            }
+            setSelectedItems([]);
+        } catch (err) {
+            console.error('Error sending invitations:', err);
+            setError('Erreur lors de l\'envoi des invitations');
+        }
+    };
+    
+    // Rendu d'un élément (user ou group)
+    const renderItem = (item: User | Group) => {
+        const isUser = 'username' in item;
+        const isSelected = selectedItems.includes(item.id);
+        
+        return (
+            <div
+                key={item.id}
+                className={`flex items-center p-3 border-b border-gray-700 transition-colors ${
+                    canInvite ? 'hover:bg-gray-700 cursor-pointer' : ''
+                } ${isSelected ? 'bg-blue-900 bg-opacity-30' : ''}`}
+                onClick={() => canInvite && toggleSelection(item.id)}
+            >
+                <div className="relative">
+                    {isUser ? (
+                        <Image 
+                            src={(item as User).avatar_path || '/defaultPP.webp'}
+                            alt={(item as User).username} 
+                            width={36} 
+                            height={36} 
+                            className="rounded-full object-cover" 
+                        />
+                    ) : (
+                        <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                        </div>
+                    )}
+                </div>
+                
+                <div className="ml-3 flex-1 min-w-0">
+                    <h3 className="font-medium text-white text-sm truncate">
+                        {isUser ? (item as User).username : (item as Group).title}
+                    </h3>
+                    <p className="text-xs text-gray-400">
+                        {isUser 
+                            ? (item as User).is_friend ? 'Ami' : (item as User).is_following ? 'Abonné' : 'Utilisateur'
+                            : (item as Group).description || 'Groupe'
+                        }
+                    </p>
+                </div>
+                
+                {canInvite && (
+                    <div className="flex items-center">
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {}}
+                            className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                        />
+                    </div>
+                )}
+            </div>
+        );
+    };
+    
+    return (
+        <div className="h-full flex flex-col bg-gray-800">
+            {/* Header */}
+            <div className="p-4 border-b border-gray-700">
+                <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-semibold text-white">
+                        {canInvite ? 'Invitations' : 'Explorateur'}
+                    </h2>
+                    {canInvite && selectedItems.length > 0 && (
+                        <button
+                            onClick={handleSendInvitations}
+                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
+                        >
+                            Inviter ({selectedItems.length})
+                        </button>
+                    )}
+                </div>
+                
+                {/* Onglets principaux */}
+                <div className="flex border-b border-gray-600 mb-3">
+                    <button
+                        onClick={() => setMainTab('users')}
+                        className={`flex-1 py-2 px-3 text-sm font-medium border-b-2 transition-colors ${
+                            mainTab === 'users'
+                                ? 'border-blue-500 text-blue-400'
+                                : 'border-transparent text-gray-400 hover:text-white'
+                        }`}
+                    >
+                        Utilisateurs
+                    </button>
+                    <button
+                        onClick={() => setMainTab('groups')}
+                        className={`flex-1 py-2 px-3 text-sm font-medium border-b-2 transition-colors ${
+                            mainTab === 'groups'
+                                ? 'border-blue-500 text-blue-400'
+                                : 'border-transparent text-gray-400 hover:text-white'
+                        }`}
+                    >
+                        Groupes
+                    </button>
+                </div>
+                
+                {/* Sous-onglets */}
+                <div className="flex space-x-1 mb-3">
+                    {mainTab === 'users' ? (
+                        <>
+                            <button
+                                onClick={() => setUserSubTab('contacts')}
+                                className={`flex-1 py-1 px-2 text-xs rounded transition-colors ${
+                                    userSubTab === 'contacts'
+                                        ? 'bg-gray-700 text-white'
+                                        : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                                }`}
+                            >
+                                Contacts
+                            </button>
+                            <button
+                                onClick={() => setUserSubTab('following')}
+                                className={`flex-1 py-1 px-2 text-xs rounded transition-colors ${
+                                    userSubTab === 'following'
+                                        ? 'bg-gray-700 text-white'
+                                        : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                                }`}
+                            >
+                                Following
+                            </button>
+                            <button
+                                onClick={() => setUserSubTab('all')}
+                                className={`flex-1 py-1 px-2 text-xs rounded transition-colors ${
+                                    userSubTab === 'all'
+                                        ? 'bg-gray-700 text-white'
+                                        : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                                }`}
+                            >
+                                Tous
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button
+                                onClick={() => setGroupSubTab('mygroups')}
+                                className={`flex-1 py-1 px-2 text-xs rounded transition-colors ${
+                                    groupSubTab === 'mygroups'
+                                        ? 'bg-gray-700 text-white'
+                                        : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                                }`}
+                            >
+                                Mes groupes
+                            </button>
+                            <button
+                                onClick={() => setGroupSubTab('followed')}
+                                className={`flex-1 py-1 px-2 text-xs rounded transition-colors ${
+                                    groupSubTab === 'followed'
+                                        ? 'bg-gray-700 text-white'
+                                        : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                                }`}
+                            >
+                                Suivis
+                            </button>
+                            <button
+                                onClick={() => setGroupSubTab('all')}
+                                className={`flex-1 py-1 px-2 text-xs rounded transition-colors ${
+                                    groupSubTab === 'all'
+                                        ? 'bg-gray-700 text-white'
+                                        : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                                }`}
+                            >
+                                Tous
+                            </button>
+                        </>
+                    )}
+                </div>
+                
+                {/* Barre de recherche */}
+                <div className="relative">
+                    <input
+                        type="text"
+                        placeholder={`Rechercher ${mainTab === 'users' ? 'utilisateurs' : 'groupes'}...`}
+                        className="w-full p-2 pl-8 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className="h-4 w-4 absolute left-2 top-2.5 text-gray-400" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+            </div>
+            
+            {/* Affichage des erreurs */}
+            {error && (
+                <div className="mx-4 mt-2 p-3 bg-red-900 border border-red-700 rounded-lg text-red-100 text-sm">
+                    {error}
+                </div>
+            )}
+            
+            {/* Liste des éléments */}
+            <div className="flex-1 overflow-y-auto">
+                {isLoading ? (
+                    <div className="p-4 text-center text-gray-400 text-sm">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
+                        <p className="mt-2">Chargement...</p>
+                    </div>
+                ) : displayItems.length === 0 ? (
+                    <div className="p-4 text-center text-gray-400 text-sm">
+                        <p>
+                            {searchTerm ? 'Aucun résultat trouvé' : 
+                             mainTab === 'groups' && groupSubTab === 'followed' ? 'Fonctionnalité à venir' :
+                             mainTab === 'groups' && groupSubTab === 'all' ? 'Fonctionnalité à venir' :
+                             'Aucun élément disponible'}
+                        </p>
+                    </div>
+                ) : (
+                    displayItems.map(item => renderItem(item))
+                )}
+            </div>
+            
+            {/* Message si pas de droits */}
+            {!canInvite && (
+                <div className="p-3 border-t border-gray-700 bg-gray-900">
+                    <p className="text-xs text-gray-400 text-center">
+                        Vous n'avez pas les droits pour inviter des membres
+                    </p>
+                </div>
+            )}
+        </div>
+    );
+}
