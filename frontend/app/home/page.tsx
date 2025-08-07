@@ -11,7 +11,7 @@ import { createNotification, fetchNotifications } from "../../services/notificat
 import { OnePageProvider } from "../contexts/OnePageContext";
 import OnePageLayout from "../components/OnePageLayout";
 import CreatePostModal from "../components/CreatePostModal";
-import CreateGroupModal from "../components/GroupModal";
+import GroupCreationModal from "../components/creation/modals/GroupCreationModal";
 import ClientOnly from "../components/ClientOnly";
 
 // Composants traditionnels du merge
@@ -84,20 +84,6 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
 
     // Charger les groupes
     useEffect(() => {
-        async function fetchGroups() {
-            try {
-                const response = await fetch("http://localhost:8090/api/groups", {
-                    method: "GET",
-                    credentials: "include",
-                });
-                if (!response.ok) throw new Error("Erreur lors de la récupération des groupes");
-                const allGroups = await response.json();
-                setGroups(allGroups);
-            } catch (error) {
-                console.error("Erreur de chargement des groupes:", error);
-            }
-        }
-
         fetchGroups();
     }, [cookies]);
 
@@ -141,44 +127,18 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
         }
     };
 
-    const handleSubmitGroup = async (groupData: { title: string; description: string }) => {
+    // Fonction pour recharger les groupes
+    const fetchGroups = async () => {
         try {
-            const response = await fetch('http://localhost:8090/api/groups', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    title: groupData.title,
-                    description: groupData.description
-                })
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to create group: ${errorText}`);
-            }
-
-            const data = await response.json();
-            console.log('Group created successfully:', data);
-
-            // Recharger la liste des groupes
-            const updatedGroupsResponse = await fetch("http://localhost:8090/api/groups", {
+            const response = await fetch("http://localhost:8090/api/groups", {
                 method: "GET",
                 credentials: "include",
             });
-            
-            if (updatedGroupsResponse.ok) {
-                const updatedGroups = await updatedGroupsResponse.json();
-                setGroups(updatedGroups);
-            }
-
-            alert('Groupe créé avec succès !');
-            handleCloseGroupModal();
+            if (!response.ok) throw new Error("Erreur lors de la récupération des groupes");
+            const allGroups = await response.json();
+            setGroups(allGroups);
         } catch (error) {
-            console.error('Error creating group:', error);
-            alert('Erreur lors de la création du groupe');
+            console.error("Erreur de chargement des groupes:", error);
         }
     };
 
@@ -265,10 +225,14 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
                 onSubmit={handleSubmitPost}
             />
 
-            <CreateGroupModal
+            <GroupCreationModal
                 isOpen={isCreateGroupModalOpen}
                 onClose={handleCloseGroupModal}
-                onSubmit={handleSubmitGroup}
+                onSuccess={(groupId) => {
+                    console.log('Group created with ID:', groupId);
+                    // Recharger la liste des groupes
+                    fetchGroups();
+                }}
             />
 
             {/* Bouton pour basculer vers le mode one page */}

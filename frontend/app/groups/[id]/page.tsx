@@ -7,7 +7,7 @@ import MembersList from "../../components/groupComponent/MembersList";
 import UserInvitation from "../../components/groupComponent/UserInvitation";
 import MessageInput from "../../components/groupComponent/MessageInput";
 import MessagesList from "../../components/groupComponent/MessagesList";
-import EventCreator from "../../components/groupComponent/EventCreator";
+import EventCreationModal from "../../components/creation/modals/EventCreationModal";
 import EventsList from "../../components/groupComponent/EventsList";
 import PostsList from "../../components/groupComponent/PostsList";
 import TabNavigation from "../../components/groupComponent/TabNavigation";
@@ -52,6 +52,7 @@ export default function GroupPage() {
 
 	// États pour les événements
 	const [events, setEvents] = useState<Event[]>([]);
+	const [isEventModalOpen, setIsEventModalOpen] = useState(false);
 
 	// Custom hooks pour les données et WebSocket
 	const {
@@ -267,38 +268,10 @@ export default function GroupPage() {
 	};
 
 	// Actions pour les événements
-	const createEvent = async (eventData: { title: string; description: string; event_date: string }) => {
-		try {
-			const formattedEvent = {
-				...eventData,
-				event_date: new Date(eventData.event_date).toISOString()
-			};
-
-			const res = await fetch(`http://localhost:8090/api/groups/${id}/events`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				credentials: "include",
-				body: JSON.stringify(formattedEvent),
-			});
-
-			if (!res.ok) throw new Error(await res.text());
-			if (!currentUser) return;
-			try {
-				createNotification({
-					userId: currentUser?.id,
-					type: "group_event",
-					content: `Nouveau événement dans le groupe "${group?.title}".`,
-					referenceId: group?.id,
-					referenceType: "group",
-				});
-			} catch (err: any) {
-				alert(`Erreur lors de la création de la notification : ${err.message}`);
-			}
-			await fetchEvents();
-		} catch (err: any) {
-			console.error("Erreur création événement:", err.message);
-			alert(`Erreur lors de la création de l'événement : ${err.message}`);
-		}
+	const handleEventSuccess = async (eventId: number) => {
+		console.log('Event created with ID:', eventId);
+		await fetchEvents(); // Recharger la liste des événements
+		setIsEventModalOpen(false); // Fermer la modal
 	};
 
 	const handleEventResponse = async (eventId: number, status: string) => {
@@ -347,12 +320,29 @@ export default function GroupPage() {
 			<MembersList members={members} />
 			<UserInvitation followers={followers} onInvite={inviteUser} />
 
-			<EventCreator onCreateEvent={createEvent} />
+			{/* Bouton pour créer un événement */}
+			<div className="mb-4">
+				<button
+					onClick={() => setIsEventModalOpen(true)}
+					className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+				>
+					Créer un Événement
+				</button>
+			</div>
+
 			<EventsList
 				events={events}
 				currentUser={currentUser}
 				onEventResponse={handleEventResponse}
 				onDeleteEvent={deleteEvent}
+			/>
+
+			{/* Modal de création d'événement */}
+			<EventCreationModal
+				isOpen={isEventModalOpen}
+				onClose={() => setIsEventModalOpen(false)}
+				onSuccess={handleEventSuccess}
+				parentGroup={group}
 			/>
 
 			<TabNavigation showPosts={showPosts} onTogglePosts={togglePosts} />

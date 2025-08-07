@@ -288,3 +288,73 @@ export async function inviteGroupsToGroup(groupId: number, groupIds: number[]): 
         throw error;
     }
 }
+
+// Fonction pour créer un groupe
+export async function createGroup(groupData: { 
+    title: string; 
+    description: string; 
+    imageUrl?: string; 
+    invitedUsers: number[]; 
+}): Promise<{ id: number; title: string; description: string }> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/groups`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({
+                title: groupData.title,
+                description: groupData.description
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to create group: ${errorText}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error creating group:', error);
+        throw error;
+    }
+}
+
+// Fonction pour créer un événement dans un groupe
+export async function createEvent(eventData: {
+    title: string;
+    description: string;
+    eventDate: string;
+    location?: string;
+    groupId: number;
+    imageUrl?: string;
+    invitedUsers: number[];
+}): Promise<{ id: number; title: string; description: string }> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/groups/${eventData.groupId}/events`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({
+                title: eventData.title,
+                description: eventData.description,
+                event_date: new Date(eventData.eventDate).toISOString()
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to create event: ${errorText}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error creating event:', error);
+        throw error;
+    }
+}
