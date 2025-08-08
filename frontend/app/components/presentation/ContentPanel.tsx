@@ -9,6 +9,7 @@ import { GroupPost, GroupComment, GroupMessage, Event, User } from '../../types/
 import { useDrawerProportions } from '../../hooks/useDrawerProportions';
 import type { DrawerType } from '../../hooks/useDrawerProportions';
 import '../../styles/drawer-animations.css';
+import '../../styles/drawer-colors.css';
 
 interface ContentPanelProps {
     type: 'group' | 'event';
@@ -125,15 +126,26 @@ export default function ContentPanel({
         const canClose = openCount > 1; // Ne peut fermer que s'il y a plus d'1 tiroir ouvert
         const title = getDrawerTitle(drawer);
         
+        const getHeaderClassName = () => {
+            const baseClasses = "w-full flex items-center justify-between p-4 transition-colors duration-200 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset";
+            const disabledClasses = !canClose && !isClosed ? "cursor-not-allowed opacity-75" : "";
+            
+            let drawerClass = "";
+            switch (drawer) {
+                case 'posts': drawerClass = "drawer-header-posts"; break;
+                case 'messages': drawerClass = "drawer-header-messages"; break;
+                case 'events': drawerClass = "drawer-header-events"; break;
+                default: drawerClass = "bg-gray-800 hover:bg-gray-700 focus:bg-gray-700"; break;
+            }
+            
+            return `${baseClasses} ${disabledClasses} ${drawerClass}`;
+        };
+        
         return (
             <button
                 onClick={() => toggleDrawer(drawer)}
                 disabled={!canClose && !isClosed} // Empêche de fermer le dernier tiroir
-                className={`w-full flex items-center justify-between p-4 transition-colors duration-200 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${
-                    !canClose && !isClosed 
-                        ? 'bg-gray-700 cursor-not-allowed opacity-75' 
-                        : 'bg-gray-800 hover:bg-gray-700 focus:bg-gray-700'
-                }`}
+                className={getHeaderClassName()}
                 aria-expanded={!isClosed}
                 aria-controls={`drawer-content-${drawer}`}
                 title={
@@ -190,7 +202,12 @@ export default function ContentPanel({
             <div className="flex-1 flex">
                 {/* Posts Drawer - TOUJOURS RENDU */}
                 <div 
-                    className="drawer-transition border-r border-gray-700 relative flex flex-col"
+                    className={`drawer-transition drawer-posts border-r border-gray-700 relative flex flex-col ${
+                        isDrawerClosed('posts') ? 'drawer-closed' :
+                        drawerConfig.posts <= 30 ? 'drawer-compact' :
+                        drawerConfig.posts >= 60 ? 'drawer-expanded' :
+                        'drawer-normal'
+                    }`}
                     style={getDrawerStyle('posts')}
                 >
                     {isDrawerClosed('posts') ? (
@@ -223,7 +240,12 @@ export default function ContentPanel({
 
                 {/* Messages Drawer - TOUJOURS RENDU */}
                 <div 
-                    className="drawer-transition border-r border-gray-700 relative flex flex-col"
+                    className={`drawer-transition drawer-messages border-r border-gray-700 relative flex flex-col ${
+                        isDrawerClosed('messages') ? 'drawer-closed' :
+                        drawerConfig.messages <= 30 ? 'drawer-compact' :
+                        drawerConfig.messages >= 60 ? 'drawer-expanded' :
+                        'drawer-normal'
+                    }`}
                     style={getDrawerStyle('messages')}
                 >
                     {isDrawerClosed('messages') ? (
@@ -254,7 +276,12 @@ export default function ContentPanel({
 
                 {/* Events Drawer - TOUJOURS RENDU */}
                 <div 
-                    className="drawer-transition relative flex flex-col"
+                    className={`drawer-transition drawer-events relative flex flex-col ${
+                        isDrawerClosed('events') ? 'drawer-closed' :
+                        drawerConfig.events <= 30 ? 'drawer-compact' :
+                        drawerConfig.events >= 60 ? 'drawer-expanded' :
+                        'drawer-normal'
+                    }`}
                     style={getDrawerStyle('events')}
                 >
                     {isDrawerClosed('events') ? (

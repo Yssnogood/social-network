@@ -1,0 +1,295 @@
+/* ===== SYSTÈME DE COULEURS HIÉRARCHIQUE ===== */
+/* Architecture à 3 niveaux : Panneaux → Tiroirs → Vignettes */
+
+:root {
+  /* ===== NIVEAU 1 : PANNEAUX VERTICAUX PRINCIPAUX ===== */
+  
+  /* PANNEAU PRÉSENTATION - Famille bleue (Information, statique) */
+  --presentation-panel-bg: #0a0f1a;        /* Très sombre avec teinte bleu */
+  --presentation-panel-border: #1e3a8a;    /* border-blue-800 */
+  --presentation-panel-gradient: linear-gradient(135deg, #1e293b 0%, #1e40af 100%);
+  
+  /* PANNEAU COMMUNICATION - Famille verte (Interaction, dynamique) */
+  --communication-panel-bg: #0a1a0f;       /* Très sombre avec teinte verte */
+  --communication-panel-border: #166534;   /* border-green-800 */
+  --communication-panel-gradient: linear-gradient(135deg, #1f2937 0%, #059669 100%);
+
+  /* ===== NIVEAU 2 : TIROIRS HORIZONTAUX (6 tiroirs) ===== */
+  
+  /* PRÉSENTATION - Déclinaisons de la famille bleue */
+  --showcase-bg: #0f1824;          /* Bleu + plus clair que parent */
+  --showcase-border: #2563eb;      /* blue-600 */
+  --showcase-border-hover: #3b82f6; /* blue-500 */
+  --showcase-gradient: linear-gradient(135deg, #1e293b 0%, #1e40af 100%);
+  --showcase-gradient-hover: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+  
+  --members-bg: #111620;           /* Indigo + plus clair que parent */
+  --members-border: #4f46e5;      /* indigo-600 */
+  --members-border-hover: #6366f1; /* indigo-500 */
+  --members-gradient: linear-gradient(135deg, #1e293b 0%, #4338ca 100%);
+  --members-gradient-hover: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+  
+  --invitations-bg: #0f1a21;      /* Cyan + plus clair que parent */
+  --invitations-border: #0891b2;  /* cyan-600 */
+  --invitations-border-hover: #0db2d4; /* cyan-500 */
+  --invitations-gradient: linear-gradient(135deg, #1e293b 0%, #0e7490 100%);
+  --invitations-gradient-hover: linear-gradient(135deg, #0e7490 0%, #0891b2 100%);
+  
+  /* COMMUNICATION - Déclinaisons de la famille verte */
+  --posts-bg: #1a1f1a;            /* Vert + plus clair que parent */
+  --posts-border: #10b981;        /* emerald-600 */
+  --posts-border-hover: #34d399;  /* emerald-500 */
+  --posts-gradient: linear-gradient(135deg, #374151 0%, #059669 100%);
+  --posts-gradient-hover: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  
+  --messages-bg: #1f1d1a;         /* Ambre + plus clair que parent */
+  --messages-border: #d97706;     /* amber-600 */
+  --messages-border-hover: #f59e0b; /* amber-500 */
+  --messages-gradient: linear-gradient(135deg, #374151 0%, #b45309 100%);
+  --messages-gradient-hover: linear-gradient(135deg, #b45309 0%, #d97706 100%);
+  
+  --events-bg: #1f1a1d;           /* Rose + plus clair que parent */
+  --events-border: #e11d48;       /* rose-600 */
+  --events-border-hover: #f43f5e; /* rose-500 */
+  --events-gradient: linear-gradient(135deg, #374151 0%, #be185d 100%);
+  --events-gradient-hover: linear-gradient(135deg, #be185d 0%, #e11d48 100%);
+
+  /* ===== ÉTATS VISUELS (opacité, luminosité) ===== */
+  --opacity-closed: 0.6;
+  --opacity-compact: 0.8;
+  --opacity-normal: 1.0;
+  --opacity-expanded: 1.0;
+  --brightness-expanded: 1.1;
+  --brightness-drawer-expanded: 1.05;
+}
+
+/* ===== CLASSES POUR LES PANNEAUX VERTICAUX ===== */
+
+.vertical-panel-presentation {
+  background: var(--presentation-panel-bg);
+  border: 1px solid var(--presentation-panel-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vertical-panel-communication {
+  background: var(--communication-panel-bg);
+  border: 1px solid var(--communication-panel-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Poignées des panneaux verticaux */
+.vertical-panel-handle-presentation {
+  background: var(--presentation-panel-gradient);
+  border-bottom: 2px solid var(--showcase-border-hover);
+  transition: all 0.3s ease;
+}
+
+.vertical-panel-handle-presentation:hover {
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+  border-bottom-color: var(--showcase-border);
+}
+
+.vertical-panel-handle-communication {
+  background: var(--communication-panel-gradient);
+  border-bottom: 2px solid var(--posts-border-hover);
+  transition: all 0.3s ease;
+}
+
+.vertical-panel-handle-communication:hover {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  border-bottom-color: var(--posts-border);
+}
+
+/* ===== CLASSES POUR LES TIROIRS HORIZONTAUX ===== */
+
+/* Tiroirs de présentation */
+.drawer-showcase {
+  background: var(--showcase-bg);
+  border-left: 3px solid var(--showcase-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drawer-members {
+  background: var(--members-bg);
+  border-left: 3px solid var(--members-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drawer-invitations {
+  background: var(--invitations-bg);
+  border-left: 3px solid var(--invitations-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Tiroirs de communication */
+.drawer-posts {
+  background: var(--posts-bg);
+  border-left: 3px solid var(--posts-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drawer-messages {
+  background: var(--messages-bg);
+  border-left: 3px solid var(--messages-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drawer-events {
+  background: var(--events-bg);
+  border-left: 3px solid var(--events-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== HEADERS DES TIROIRS AVEC GRADIENTS ===== */
+
+.drawer-header-showcase {
+  background: var(--showcase-gradient);
+  transition: all 0.3s ease;
+}
+
+.drawer-header-showcase:hover {
+  background: var(--showcase-gradient-hover);
+}
+
+.drawer-header-members {
+  background: var(--members-gradient);
+  transition: all 0.3s ease;
+}
+
+.drawer-header-members:hover {
+  background: var(--members-gradient-hover);
+}
+
+.drawer-header-invitations {
+  background: var(--invitations-gradient);
+  transition: all 0.3s ease;
+}
+
+.drawer-header-invitations:hover {
+  background: var(--invitations-gradient-hover);
+}
+
+.drawer-header-posts {
+  background: var(--posts-gradient);
+  transition: all 0.3s ease;
+}
+
+.drawer-header-posts:hover {
+  background: var(--posts-gradient-hover);
+}
+
+.drawer-header-messages {
+  background: var(--messages-gradient);
+  transition: all 0.3s ease;
+}
+
+.drawer-header-messages:hover {
+  background: var(--messages-gradient-hover);
+}
+
+.drawer-header-events {
+  background: var(--events-gradient);
+  transition: all 0.3s ease;
+}
+
+.drawer-header-events:hover {
+  background: var(--events-gradient-hover);
+}
+
+/* ===== ÉTATS SELON LES PROPORTIONS ===== */
+
+/* États des panneaux verticaux */
+.vertical-panel-closed {
+  opacity: var(--opacity-closed);
+}
+
+.vertical-panel-compact {
+  opacity: var(--opacity-compact);
+}
+
+.vertical-panel-normal {
+  opacity: var(--opacity-normal);
+}
+
+.vertical-panel-expanded {
+  opacity: var(--opacity-expanded);
+  filter: brightness(var(--brightness-expanded));
+}
+
+/* États des tiroirs horizontaux */
+.drawer-closed {
+  opacity: var(--opacity-closed);
+  width: 40px;
+  border-left-width: 2px;
+}
+
+.drawer-compact {
+  opacity: var(--opacity-compact);
+  border-left-width: 3px;
+  box-shadow: inset 2px 0 4px rgba(0,0,0,0.1);
+}
+
+.drawer-normal {
+  opacity: var(--opacity-normal);
+  border-left-width: 3px;
+  box-shadow: inset 3px 0 6px rgba(0,0,0,0.1);
+}
+
+.drawer-expanded {
+  opacity: var(--opacity-expanded);
+  border-left-width: 4px;
+  box-shadow: inset 4px 0 8px rgba(0,0,0,0.15);
+  filter: brightness(var(--brightness-drawer-expanded));
+}
+
+/* ===== RESPONSIVE - Adaptations mobiles ===== */
+@media (max-width: 768px) {
+  /* Bordures plus visibles sur mobile */
+  .drawer-showcase,
+  .drawer-members,
+  .drawer-invitations,
+  .drawer-posts,
+  .drawer-messages,
+  .drawer-events {
+    border-left-width: 4px;
+  }
+  
+  .drawer-closed {
+    border-left-width: 3px;
+  }
+  
+  .drawer-expanded {
+    border-left-width: 5px;
+  }
+}
+
+/* ===== ACCESSIBILITÉ ===== */
+@media (prefers-contrast: high) {
+  :root {
+    --showcase-border: #3b82f6;        /* Plus contrasté */
+    --members-border: #6366f1;
+    --invitations-border: #06b6d4;
+    --posts-border: #34d399;
+    --messages-border: #fbbf24;
+    --events-border: #f87171;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vertical-panel-presentation,
+  .vertical-panel-communication,
+  .drawer-showcase,
+  .drawer-members,
+  .drawer-invitations,
+  .drawer-posts,
+  .drawer-messages,
+  .drawer-events,
+  .drawer-header-showcase,
+  .drawer-header-members,
+  .drawer-header-invitations,
+  .drawer-header-posts,
+  .drawer-header-messages,
+  .drawer-header-events {
+    transition: none !important;
+  }
+}

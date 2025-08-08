@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useVerticalDrawers, type VerticalPanelType } from '../../hooks/useVerticalDrawers';
 import { useVerticalPanelResponsive } from '../../hooks/useResponsive';
 import '../../styles/drawer-animations.css';
+import '../../styles/drawer-colors.css';
 
 interface VerticalPanelSystemProps {
     // Contenu du panneau Présentation
@@ -195,9 +196,10 @@ export default function VerticalPanelSystem({
                     focus:ring-offset-2 focus:ring-offset-gray-900
                     ${animationClasses} ${responsiveConfig.responsiveClasses.handle}
                     ${responsiveConfig.handlePadding}
+                    ${panelType === 'presentation' ? 'vertical-panel-handle-presentation' : 'vertical-panel-handle-communication'}
                     ${panelInfo.isClosed 
-                        ? `${responsiveConfig.screenInfo.isMobile ? 'h-14' : 'h-12'} bg-gray-800 hover:bg-gray-700 border-b border-gray-600` 
-                        : `${responsiveConfig.screenInfo.isMobile ? 'h-20' : 'h-16'} bg-gray-900 hover:bg-gray-800 border-b-2 border-gray-600`
+                        ? `${responsiveConfig.screenInfo.isMobile ? 'h-14' : 'h-12'} border-b border-gray-600` 
+                        : `${responsiveConfig.screenInfo.isMobile ? 'h-20' : 'h-16'} border-b-2 border-gray-600`
                     }
                     ${panelInfo.isFullScreen ? 'shadow-lg border-blue-600' : ''}
                     ${isLastChanged && animatingPanels.has(panelType) ? 'trigger-vertical-proportion' : ''}
@@ -349,7 +351,12 @@ export default function VerticalPanelSystem({
 
             {/* ===== PANNEAU PRÉSENTATION ===== */}
             <section 
-                className={`flex flex-col border-b border-gray-700 ${getPanelAnimationClasses('presentation')}`}
+                className={`flex flex-col border-b border-gray-700 vertical-panel-presentation ${getPanelAnimationClasses('presentation')} ${
+                    presentationInfo.isClosed ? 'vertical-panel-closed' : 
+                    presentationInfo.size === '1/3' ? 'vertical-panel-compact' :
+                    presentationInfo.size === '2/3' ? 'vertical-panel-normal' :
+                    'vertical-panel-expanded'
+                }`}
                 style={presentationInfo.style}
                 aria-label={`Panneau ${presentationTitle}`}
                 aria-expanded={!presentationInfo.isClosed}
@@ -377,7 +384,12 @@ export default function VerticalPanelSystem({
 
             {/* ===== PANNEAU COMMUNICATION ===== */}
             <section 
-                className={`flex flex-col ${getPanelAnimationClasses('communication')}`}
+                className={`flex flex-col vertical-panel-communication ${getPanelAnimationClasses('communication')} ${
+                    communicationInfo.isClosed ? 'vertical-panel-closed' : 
+                    communicationInfo.size === '1/3' ? 'vertical-panel-compact' :
+                    communicationInfo.size === '2/3' ? 'vertical-panel-normal' :
+                    'vertical-panel-expanded'
+                }`}
                 style={communicationInfo.style}
                 aria-label="Panneau Communication"
                 aria-expanded={!communicationInfo.isClosed}

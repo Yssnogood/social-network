@@ -8,6 +8,7 @@ import { Group, Event, GroupMember, User } from '../../types/group';
 import { usePresentationDrawerProportions } from '../../hooks/usePresentationDrawerProportions';
 import type { PresentationDrawerType } from '../../hooks/usePresentationDrawerProportions';
 import '../../styles/drawer-animations.css';
+import '../../styles/drawer-colors.css';
 
 interface PresentationContentPanelProps {
     type: 'group' | 'event';
@@ -105,8 +106,18 @@ export default function PresentationContentPanel({
         const title = getDrawerTitle(drawer);
         const count = getDrawerCount(drawer);
         
+        const getHeaderClassName = () => {
+            const baseClasses = "w-full flex items-center transition-colors duration-200";
+            switch (drawer) {
+                case 'presentation': return `${baseClasses} drawer-header-showcase`;
+                case 'members': return `${baseClasses} drawer-header-members`;
+                case 'invitations': return `${baseClasses} drawer-header-invitations`;
+                default: return `${baseClasses} bg-gray-800 hover:bg-gray-700`;
+            }
+        };
+        
         return (
-            <div className="w-full flex items-center bg-gray-800 hover:bg-gray-700 transition-colors duration-200">
+            <div className={getHeaderClassName()}>
                 {/* Bouton principal pour toggle */}
                 <button
                     onClick={() => toggleDrawer(drawer)}
@@ -177,7 +188,12 @@ export default function PresentationContentPanel({
             <div className="flex-1 flex">
                 {/* Presentation Drawer - TOUJOURS RENDU */}
                 <div 
-                    className="drawer-transition border-r border-gray-700 relative flex flex-col"
+                    className={`drawer-transition drawer-showcase border-r border-gray-700 relative flex flex-col ${
+                        isDrawerClosed('presentation') ? 'drawer-closed' :
+                        drawerConfig.presentation <= 30 ? 'drawer-compact' :
+                        drawerConfig.presentation >= 60 ? 'drawer-expanded' :
+                        'drawer-normal'
+                    }`}
                     style={getDrawerStyle('presentation')}
                 >
                     {isDrawerClosed('presentation') ? (
@@ -205,7 +221,12 @@ export default function PresentationContentPanel({
 
                 {/* Members Drawer - TOUJOURS RENDU */}
                 <div 
-                    className="drawer-transition border-r border-gray-700 relative flex flex-col"
+                    className={`drawer-transition drawer-members border-r border-gray-700 relative flex flex-col ${
+                        isDrawerClosed('members') ? 'drawer-closed' :
+                        drawerConfig.members <= 30 ? 'drawer-compact' :
+                        drawerConfig.members >= 60 ? 'drawer-expanded' :
+                        'drawer-normal'
+                    }`}
                     style={getDrawerStyle('members')}
                 >
                     {isDrawerClosed('members') ? (
@@ -233,7 +254,12 @@ export default function PresentationContentPanel({
 
                 {/* Invitations Drawer - TOUJOURS RENDU */}
                 <div 
-                    className="drawer-transition relative flex flex-col"
+                    className={`drawer-transition drawer-invitations relative flex flex-col ${
+                        isDrawerClosed('invitations') ? 'drawer-closed' :
+                        drawerConfig.invitations <= 30 ? 'drawer-compact' :
+                        drawerConfig.invitations >= 60 ? 'drawer-expanded' :
+                        'drawer-normal'
+                    }`}
                     style={getDrawerStyle('invitations')}
                 >
                     {isDrawerClosed('invitations') ? (
