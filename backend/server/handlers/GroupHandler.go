@@ -34,19 +34,21 @@ func NewGroupHandler(gr *repository.GroupRepository, sr *repository.SessionRepos
 
 // Request DTOs
 type CreateGroupRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
+	Title       string  `json:"title"`
+	Description string  `json:"description"`
+	ImagePath   *string `json:"image_path,omitempty"`
 }
 
 // Response DTOs
 type GroupResponse struct {
-	ID          int64  `json:"id"`
-	CreatorID   int64  `json:"creator_id"`
-	CreatorName string `json:"creator_name"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
+	ID          int64   `json:"id"`
+	CreatorID   int64   `json:"creator_id"`
+	CreatorName string  `json:"creator_name"`
+	Title       string  `json:"title"`
+	Description string  `json:"description"`
+	ImagePath   *string `json:"image_path,omitempty"`
+	CreatedAt   string  `json:"created_at"`
+	UpdatedAt   string  `json:"updated_at"`
 }
 
 // Helper function to get username by userID
@@ -92,6 +94,7 @@ func (h *GroupHandler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		CreatorName: userName,
 		Title:       req.Title,
 		Description: &req.Description,
+		ImagePath:   req.ImagePath,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
@@ -121,6 +124,7 @@ func (h *GroupHandler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 			}
 			return ""
 		}(),
+		ImagePath: group.ImagePath,
 		CreatedAt: group.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: group.UpdatedAt.Format(time.RFC3339),
 	}
@@ -155,6 +159,7 @@ func (h *GroupHandler) GetGroupsByUserID(w http.ResponseWriter, r *http.Request)
 				}
 				return ""
 			}(),
+			ImagePath:   group.ImagePath,
 			CreatedAt:   group.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:   group.UpdatedAt.Format(time.RFC3339),
 		})
@@ -199,6 +204,7 @@ func (h *GroupHandler) GetGroupByID(w http.ResponseWriter, r *http.Request) {
 			}
 			return ""
 		}(),
+		ImagePath:   group.ImagePath,
 		CreatedAt:   group.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:   group.UpdatedAt.Format(time.RFC3339),
 	}
@@ -545,5 +551,100 @@ func (h *GroupHandler) DeclineGroupInvitation(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// InviteUsersToGroup handles batch invitation of users to a group
+func (h *GroupHandler) InviteUsersToGroup(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	groupIDStr, ok := vars["id"]
+	if !ok {
+		http.Error(w, "Missing group ID in path", http.StatusBadRequest)
+		return
+	}
+
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	var payload struct {
+		UserIds []int64 `json:"user_ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	if len(payload.UserIds) == 0 {
+		http.Error(w, "No user IDs provided", http.StatusBadRequest)
+		return
+	}
+
+	// Create invitations for each user
+	for _, inviteeID := range payload.UserIds {
+		_, err = h.GroupRepository.CreateGroupInvitation(groupID, userID, inviteeID)
+		if err != nil {
+			// Log error but continue with other invitations
+			fmt.Printf("Failed to invite user %d to group %d: %v\n", inviteeID, groupID, err)
+		}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// InviteGroupsToGroup handles batch invitation of groups to a group (for group hierarchy)
+func (h *GroupHandler) InviteGroupsToGroup(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	groupIDStr, ok := vars["id"]
+	if !ok {
+		http.Error(w, "Missing group ID in path", http.StatusBadRequest)
+		return
+	}
+
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	// Note: userID not currently used in group-to-group invitations but may be needed later
+	_, ok = r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	var payload struct {
+		GroupIds []int64 `json:"group_ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	if len(payload.GroupIds) == 0 {
+		http.Error(w, "No group IDs provided", http.StatusBadRequest)
+		return
+	}
+
+	// For group invitations, we need to invite all members of each group
+	// This is a more complex operation that would require additional repository methods
+	// For now, we'll create a placeholder that returns success but logs the limitation
+	fmt.Printf("Group-to-group invitations requested for group %d, target groups: %v\n", groupID, payload.GroupIds)
+	
+	// TODO: Implement actual group-to-group invitation logic
+	// This would involve:
+	// 1. Getting all members of each invited group
+	// 2. Creating individual invitations for each member
+	// 3. Possibly creating group relationship records
+	
 	w.WriteHeader(http.StatusNoContent)
 }

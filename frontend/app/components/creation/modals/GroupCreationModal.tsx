@@ -19,6 +19,8 @@ export default function GroupCreationModal({
     onSuccess
 }: GroupCreationModalProps) {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
+    
+    // Mémoire tampon persistante pour les groupes (même entre fermetures)
     const [creationData, setCreationData] = useState<GroupCreationData>({
         title: '',
         description: '',
@@ -68,7 +70,7 @@ export default function GroupCreationModal({
         onClose();
     };
 
-    const handleCreateWithInvitations = async () => {
+    const handleCreateWithInvitations = async (selectedGroupId?: number) => {
         if (!creationData.title.trim()) {
             setError('Le nom du groupe est requis');
             return;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Group, Event, User } from '../../types/group';
 import { useCreationDrawerProportions } from '../../hooks/useCreationDrawerProportions';
 import type { CreationDrawerType } from '../../hooks/useCreationDrawerProportions';
@@ -8,6 +8,7 @@ import GroupConfigPanel from './panels/GroupConfigPanel';
 import EventConfigPanel from './panels/EventConfigPanel';
 import PreviewMembersPanel from './panels/PreviewMembersPanel';
 import CreationInvitationsPanel from './panels/CreationInvitationsPanel';
+import { getUserGroups } from '@/services/editor';
 import '../../styles/drawer-animations.css';
 
 // Types pour les données de création
@@ -44,7 +45,7 @@ interface CreationContentPanelProps {
     onSelectedGroupsChange: (groupIds: number[]) => void;
     
     // Actions
-    onCreateWithInvitations: () => Promise<void>;
+    onCreateWithInvitations: (selectedGroupId?: number) => Promise<void>;
     onCancel: () => void;
     
     // État
@@ -67,6 +68,14 @@ export default function CreationContentPanel({
     isCreating = false,
     error = null
 }: CreationContentPanelProps) {
+    const [availableParentGroups, setAvailableParentGroups] = useState<Array<{ id: number; title: string; }>>([]);
+    const [isLoadingParentGroups, setIsLoadingParentGroups] = useState(false);
+    
+    // État pour la sélection de groupe pour les événements  
+    const [availableEventGroups, setAvailableEventGroups] = useState<Array<{ id: number; title: string; }>>([]);
+    const [selectedEventGroupId, setSelectedEventGroupId] = useState<number | null>(null);
+    const [isLoadingEventGroups, setIsLoadingEventGroups] = useState(false);
+
     const {
         drawerConfig,
         toggleDrawer,
@@ -76,6 +85,67 @@ export default function CreationContentPanel({
         getConfigStats,
         getOpenDrawersCount
     } = useCreationDrawerProportions();
+
+    // Charger les groupes disponibles pour sélection parent (seulement pour création de groupe)
+    useEffect(() => {
+        if (type === 'group' && currentUser) {
+            loadAvailableParentGroups();
+        }
+    }, [type, currentUser]);
+
+    // Charger les groupes disponibles pour événements (seulement pour création d'événement)
+    useEffect(() => {
+        if (type === 'event' && currentUser) {
+            loadAvailableEventGroups();
+        }
+    }, [type, currentUser]);
+
+    const loadAvailableParentGroups = async () => {
+        try {
+            setIsLoadingParentGroups(true);
+            const groups = await getUserGroups();
+            // Formater les groupes pour correspondre au format attendu
+            const formattedGroups = groups.map(group => ({
+                id: group.id,
+                title: group.title
+            }));
+            setAvailableParentGroups(formattedGroups);
+        } catch (error) {
+            console.error('Error loading available parent groups:', error);
+            // En cas d'erreur, on laisse un tableau vide (pas de sélection parent)
+            setAvailableParentGroups([]);
+        } finally {
+            setIsLoadingParentGroups(false);
+        }
+    };
+
+    const loadAvailableEventGroups = async () => {
+        try {
+            setIsLoadingEventGroups(true);
+            const groups = await getUserGroups();
+            // Formater les groupes pour correspondre au format attendu
+            const formattedGroups = groups.map(group => ({
+                id: group.id,
+                title: group.title
+            }));
+            setAvailableEventGroups(formattedGroups);
+            
+            // Pré-sélectionner le groupe parent s'il existe (cas EventCreationModal)
+            if (parentGroupId && formattedGroups.some(g => g.id === parentGroupId)) {
+                setSelectedEventGroupId(parentGroupId);
+            }
+            // Sinon, sélectionner automatiquement le premier groupe s'il n'y en a qu'un
+            else if (formattedGroups.length === 1 && !selectedEventGroupId) {
+                setSelectedEventGroupId(formattedGroups[0].id);
+            }
+        } catch (error) {
+            console.error('Error loading available event groups:', error);
+            // En cas d'erreur, on laisse un tableau vide
+            setAvailableEventGroups([]);
+        } finally {
+            setIsLoadingEventGroups(false);
+        }
+    };
     
     const getDrawerTitle = (drawer: CreationDrawerType) => {
         switch (drawer) {
@@ -139,25 +209,28 @@ export default function CreationContentPanel({
         const count = getDrawerCount(drawer);
         
         return (
-            <button
-                onClick={() => toggleDrawer(drawer)}
-                disabled={!canClose && !isClosed} // Empêche de fermer le dernier tiroir
-                className={`w-full flex items-center justify-between p-4 transition-colors duration-200 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${
-                    !canClose && !isClosed 
-                        ? 'bg-gray-700 cursor-not-allowed opacity-75' 
-                        : 'bg-gray-800 hover:bg-gray-700 focus:bg-gray-700'
-                }`}
-                aria-expanded={!isClosed}
-                aria-controls={`drawer-content-${drawer}`}
-                title={
-                    !canClose && !isClosed 
-                        ? `${title} (impossible de fermer le dernier tiroir)` 
-                        : isClosed 
-                        ? `Ouvrir ${title}` 
-                        : `Fermer ${title}`
-                }
-            >
-                <div className="flex items-center gap-3">
+            <div className={`w-full flex items-center justify-between p-4 transition-colors duration-200 ${
+                !canClose && !isClosed 
+                    ? 'bg-gray-700 opacity-75' 
+                    : 'bg-gray-800 hover:bg-gray-700'
+            }`}>
+                {/* Zone cliquable principal pour ouvrir/fermer */}
+                <button
+                    onClick={() => toggleDrawer(drawer)}
+                    disabled={!canClose && !isClosed}
+                    className={`flex items-center gap-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded ${
+                        !canClose && !isClosed ? 'cursor-not-allowed' : 'cursor-pointer'
+                    }`}
+                    aria-expanded={!isClosed}
+                    aria-controls={`drawer-content-${drawer}`}
+                    title={
+                        !canClose && !isClosed 
+                            ? `${title} (impossible de fermer le dernier tiroir)` 
+                            : isClosed 
+                            ? `Ouvrir ${title}` 
+                            : `Fermer ${title}`
+                    }
+                >
                     {/* Icône état (▶/▼) */}
                     <span className="text-gray-400 text-sm transition-transform duration-200">
                         {isClosed ? '▶' : '▼'}
@@ -168,24 +241,30 @@ export default function CreationContentPanel({
                         {title}
                         <span className="text-xs text-gray-500 ml-2">({percentage}%)</span>
                     </h3>
-                </div>
+                </button>
                 
+                {/* Zone des contrôles séparés */}
                 <div className="flex items-center gap-2">
-                    {/* Bouton swap (visible si pas le plus grand et pas fermé et plusieurs ouverts) */}
+                    {/* Bouton swap séparé (visible si pas le plus grand et pas fermé et plusieurs ouverts) */}
                     {!isClosed && !isLargest && openCount > 1 && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                swapWithLarge(drawer);
-                            }}
-                            className="p-1 text-gray-400 hover:text-blue-400 transition-colors"
+                        <div
+                            onClick={() => swapWithLarge(drawer)}
+                            className="p-1 text-gray-400 hover:text-blue-400 transition-colors cursor-pointer"
                             title={`Donner le focus à ${title}`}
+                            role="button"
+                            tabIndex={0}
                             aria-label={`Agrandir le panneau ${title}`}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    swapWithLarge(drawer);
+                                }
+                            }}
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                             </svg>
-                        </button>
+                        </div>
                     )}
                     
                     {/* Compteur (seulement pour preview) */}
@@ -195,7 +274,7 @@ export default function CreationContentPanel({
                         </div>
                     )}
                 </div>
-            </button>
+            </div>
         );
     };
 
@@ -230,15 +309,18 @@ export default function CreationContentPanel({
                                     <GroupConfigPanel
                                         data={creationData as GroupCreationData}
                                         onChange={onCreationDataChange}
-                                        disabled={isCreating}
-                                        availableParentGroups={[]} // TODO: Charger les groupes disponibles
+                                        disabled={isCreating || isLoadingParentGroups}
+                                        availableParentGroups={availableParentGroups}
                                     />
                                 ) : (
                                     <EventConfigPanel
                                         data={creationData as EventCreationData}
                                         onChange={onCreationDataChange}
-                                        disabled={isCreating}
-                                        groupName={undefined} // TODO: Récupérer le nom du groupe
+                                        disabled={isCreating || isLoadingEventGroups}
+                                        availableGroups={availableEventGroups}
+                                        selectedGroupId={selectedEventGroupId}
+                                        onGroupChange={setSelectedEventGroupId}
+                                        isLoadingGroups={isLoadingEventGroups}
                                     />
                                 )}
                             </div>
@@ -317,8 +399,12 @@ export default function CreationContentPanel({
                         Annuler
                     </button>
                     <button
-                        onClick={onCreateWithInvitations}
-                        disabled={isCreating || !creationData.title.trim()}
+                        onClick={() => onCreateWithInvitations(selectedEventGroupId || undefined)}
+                        disabled={
+                            isCreating || 
+                            !creationData.title.trim() || 
+                            (type === 'event' && !selectedEventGroupId)
+                        }
                         className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         {isCreating && (

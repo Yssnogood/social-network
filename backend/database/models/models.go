@@ -124,6 +124,7 @@ type Group struct {
 	CreatorName string    `json:"creator_name"`
 	Title       string    `json:"title"`
 	Description *string   `json:"description"`
+	ImagePath   *string   `json:"image_path,omitempty"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -201,6 +202,8 @@ type Event struct {
 	Title       string    `json:"title"`
 	Description *string   `json:"description"`
 	EventDate   time.Time `json:"event_date"`
+	Location    *string   `json:"location,omitempty"`
+	ImagePath   *string   `json:"image_path,omitempty"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }

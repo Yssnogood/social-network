@@ -21,6 +21,8 @@ export default function EventCreationModal({
     parentGroup
 }: EventCreationModalProps) {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
+    
+    // Mémoire tampon persistante pour les événements (même entre fermetures)
     const [creationData, setCreationData] = useState<EventCreationData>({
         title: '',
         description: '',
@@ -80,7 +82,7 @@ export default function EventCreationModal({
         onClose();
     };
 
-    const handleCreateWithInvitations = async () => {
+    const handleCreateWithInvitations = async (selectedGroupId?: number) => {
         if (!creationData.title.trim()) {
             setError('Le nom de l\'événement est requis');
             return;
@@ -103,12 +105,13 @@ export default function EventCreationModal({
 
         try {
             // 1. Créer l'événement
+            const finalGroupId = selectedGroupId || parentGroup.id;
             const newEvent = await createEvent({
                 title: creationData.title,
                 description: creationData.description,
                 eventDate: creationData.eventDate,
                 location: creationData.location,
-                groupId: parentGroup.id,
+                groupId: finalGroupId,
                 imageUrl: creationData.imageUrl,
                 invitedUsers: [] // On gère les invitations séparément
             });
@@ -212,7 +215,7 @@ export default function EventCreationModal({
                             selectedGroupIds={selectedGroupIds}
                             onSelectedUsersChange={setSelectedUserIds}
                             onSelectedGroupsChange={setSelectedGroupIds}
-                            onCreateWithInvitations={handleCreateWithInvitations}
+                            onCreateWithInvitations={() => handleCreateWithInvitations()}
                             onCancel={handleClose}
                             isCreating={isCreating}
                             error={error}

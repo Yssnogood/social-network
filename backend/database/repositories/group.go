@@ -22,8 +22,8 @@ func NewGroupRepository(db *sql.DB) *GroupRepository {
 func (r *GroupRepository) Create(group *models.Group) (int64, error) {
 	stmt, err := r.db.Prepare(`
 		INSERT INTO groups(
-			creator_id, creator_name, title, description, created_at, updated_at
-		) VALUES(?, ?, ?, ?, ?, ?)
+			creator_id, creator_name, title, description, image_path, created_at, updated_at
+		) VALUES(?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return 0, err
@@ -35,6 +35,7 @@ func (r *GroupRepository) Create(group *models.Group) (int64, error) {
 		group.CreatorName,
 		group.Title,
 		group.Description,
+		group.ImagePath,
 		group.CreatedAt,
 		group.UpdatedAt,
 	)
@@ -110,7 +111,7 @@ func (r *GroupRepository) DeleteInvitation(userID, groupID int64) error {
 
 func (r *GroupRepository) GetGroupsByUserID(userID int64) ([]models.Group, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT g.id, g.creator_id, g.creator_name, g.title, g.description, g.created_at, g.updated_at
+		SELECT g.id, g.creator_id, g.creator_name, g.title, g.description, g.image_path, g.created_at, g.updated_at
 		FROM groups g
 		JOIN group_members gm ON g.id = gm.group_id
 		WHERE gm.user_id = ?
@@ -129,7 +130,7 @@ func (r *GroupRepository) GetGroupsByUserID(userID int64) ([]models.Group, error
 	var groups []models.Group
 	for rows.Next() {
 		var group models.Group
-		if err := rows.Scan(&group.ID, &group.CreatorID, &group.CreatorName ,&group.Title, &group.Description, &group.CreatedAt, &group.UpdatedAt); err != nil {
+		if err := rows.Scan(&group.ID, &group.CreatorID, &group.CreatorName ,&group.Title, &group.Description, &group.ImagePath, &group.CreatedAt, &group.UpdatedAt); err != nil {
 			return nil, err
 		}
 		groups = append(groups, group)
@@ -140,7 +141,7 @@ func (r *GroupRepository) GetGroupsByUserID(userID int64) ([]models.Group, error
 
 func (r* GroupRepository) GetGroupByID(groupID int64) (*models.Group, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT id, creator_id, creator_name, title, description, created_at, updated_at
+		SELECT id, creator_id, creator_name, title, description, image_path, created_at, updated_at
 		FROM groups
 		WHERE id = ?
 	`)
@@ -150,7 +151,7 @@ func (r* GroupRepository) GetGroupByID(groupID int64) (*models.Group, error) {
 	defer stmt.Close()
 
 	var group models.Group
-	err = stmt.QueryRow(groupID).Scan(&group.ID, &group.CreatorID, &group.CreatorName, &group.Title, &group.Description, &group.CreatedAt, &group.UpdatedAt)
+	err = stmt.QueryRow(groupID).Scan(&group.ID, &group.CreatorID, &group.CreatorName, &group.Title, &group.Description, &group.ImagePath, &group.CreatedAt, &group.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil

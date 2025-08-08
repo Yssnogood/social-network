@@ -33,6 +33,8 @@ type createEventRequest struct {
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	EventDate   time.Time `json:"event_date"`
+	Location    *string   `json:"location,omitempty"`
+	ImagePath   *string   `json:"image_path,omitempty"`
 }
 type setEventResponseRequest struct {
 	EventID int64  `json:"event_id"`
@@ -62,6 +64,8 @@ func (h *EventHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 
 	event.GroupID = groupID
 	event.CreatorID = userID
+	event.Location = event.Location    // This will be set from JSON decoding
+	event.ImagePath = event.ImagePath  // This will be set from JSON decoding
 	event.CreatedAt = time.Now()
 	event.UpdatedAt = time.Now()
 

@@ -17,24 +17,28 @@ interface EditorPanelProps {
 
 export default function EditorPanel({ type, onCancel, onSuccess }: EditorPanelProps) {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [creationData, setCreationData] = useState<GroupCreationData | EventCreationData>(
-        type === 'group' 
-            ? {
-                title: '',
-                description: '',
-                imageUrl: undefined,
-                isPrivate: false,
-                parentGroupId: undefined
-            } as GroupCreationData
-            : {
-                title: '',
-                description: '',
-                eventDate: '',
-                location: '',
-                imageUrl: undefined,
-                isPrivate: false
-            } as EventCreationData
-    );
+    
+    // Mémoire tampon séparée pour chaque type
+    const [groupBuffer, setGroupBuffer] = useState<GroupCreationData>({
+        title: '',
+        description: '',
+        imageUrl: undefined,
+        isPrivate: false,
+        parentGroupId: undefined
+    });
+    
+    const [eventBuffer, setEventBuffer] = useState<EventCreationData>({
+        title: '',
+        description: '',
+        eventDate: '',
+        location: '',
+        imageUrl: undefined,
+        isPrivate: false
+    });
+    
+    // Données de création actives basées sur le type
+    const creationData = type === 'group' ? groupBuffer : eventBuffer;
+    
     const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
     const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>([]);
     const [isCreating, setIsCreating] = useState(false);
@@ -67,24 +71,36 @@ export default function EditorPanel({ type, onCancel, onSuccess }: EditorPanelPr
         loadCurrentUser();
     }, []);
 
-    // Pré-remplir la date pour les événements
+    // Pré-remplir la date pour les événements (une seule fois)
     useEffect(() => {
-        if (type === 'event') {
+        if (type === 'event' && eventBuffer.eventDate === '') {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             tomorrow.setHours(18, 0, 0, 0);
-            setCreationData(prev => ({
+            setEventBuffer(prev => ({
                 ...prev,
                 eventDate: tomorrow.toISOString()
-            } as EventCreationData));
+            }));
         }
-    }, [type]);
+    }, [type, eventBuffer.eventDate]);
+    
+    // Fonction pour mettre à jour les données selon le type
+    const handleCreationDataChange = (data: GroupCreationData | EventCreationData) => {
+        if (type === 'group') {
+            setGroupBuffer(data as GroupCreationData);
+        } else {
+            setEventBuffer(data as EventCreationData);
+        }
+    };
 
-    const handleCreateWithInvitations = async () => {
+    const handleCreateWithInvitations = async (creationSelectedGroupId?: number) => {
         if (!creationData.title.trim()) {
             setError('Le nom est requis');
             return;
         }
+
+        // Variable pour stocker l'ID du groupe (définie en dehors du bloc if)
+        let finalGroupId: number | undefined;
 
         if (type === 'event') {
             if (!(creationData as EventCreationData).eventDate) {
@@ -98,7 +114,9 @@ export default function EditorPanel({ type, onCancel, onSuccess }: EditorPanelPr
                 return;
             }
 
-            if (!selectedGroupId) {
+            // Utiliser le groupe sélectionné depuis CreationContentPanel ou du hook comme fallback
+            finalGroupId = creationSelectedGroupId || selectedGroupId;
+            if (!finalGroupId) {
                 setError('Veuillez sélectionner un groupe pour l\'événement');
                 return;
             }
@@ -126,7 +144,7 @@ export default function EditorPanel({ type, onCancel, onSuccess }: EditorPanelPr
                     description: eventData.description,
                     eventDate: eventData.eventDate,
                     location: eventData.location,
-                    groupId: selectedGroupId!,
+                    groupId: finalGroupId!, // finalGroupId est garanti d'être défini ici
                     imageUrl: eventData.imageUrl,
                     invitedUsers: []
                 });
@@ -173,7 +191,7 @@ export default function EditorPanel({ type, onCancel, onSuccess }: EditorPanelPr
                 currentUser={currentUser}
                 parentGroupId={type === 'event' ? selectedGroupId || undefined : undefined}
                 creationData={creationData}
-                onCreationDataChange={setCreationData}
+                onCreationDataChange={handleCreationDataChange}
                 selectedUserIds={selectedUserIds}
                 selectedGroupIds={selectedGroupIds}
                 onSelectedUsersChange={setSelectedUserIds}

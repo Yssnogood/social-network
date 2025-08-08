@@ -92,6 +92,7 @@ func main() {
 	messageHandler := appHandlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
 	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo, followerRepo, groupRepo)
 	eventHandler := appHandlers.NewEventHandler(eventRepo)
+	uploadHandler := appHandlers.NewUploadHandler("./uploads")
 
 	groupHandler := appHandlers.NewGroupHandler(groupRepo, sessionRepo, userRepo, notificationRepo)
 
@@ -106,6 +107,7 @@ func main() {
 	routes.MessageRoutes(r, messageHandler)
 	routes.NotificationsRoutes(r, notificationHandler)
 	routes.EventsRoutes(r, eventHandler)
+	routes.UploadRoutes(r, uploadHandler)
 
 	// WebSocket routes - unified system
 	websocket.SetupWebSocketRoutes(r, messageRepo, conversationRepo, conversationMembersRepo, groupRepo, userRepo)

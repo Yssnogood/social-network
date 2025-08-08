@@ -20,8 +20,8 @@ func NewEventRepository(db *sql.DB) *EventRepository {
 // Create a new event in the database
 func (r *EventRepository) CreateEvent(event *models.Event) (int64, error) {
 	stmt, err := r.db.Prepare(`
-		INSERT INTO events (group_id, creator_id, title, description, event_date, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO events (group_id, creator_id, title, description, event_date, location, image_path, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return 0, err
@@ -34,6 +34,8 @@ func (r *EventRepository) CreateEvent(event *models.Event) (int64, error) {
 		event.Title,
 		event.Description,
 		event.EventDate,
+		event.Location,
+		event.ImagePath,
 		event.CreatedAt,
 		event.UpdatedAt,
 	)
@@ -55,7 +57,7 @@ func (r *EventRepository) SetEventResponse(eventID, userID int64, status string)
 
 func (r *EventRepository) GetEventsByGroupID(groupID int64) ([]*models.Event, error) {
 	rows, err := r.db.Query(`
-		SELECT id, group_id, creator_id, title, description, event_date, created_at, updated_at
+		SELECT id, group_id, creator_id, title, description, event_date, location, image_path, created_at, updated_at
 		FROM events
 		WHERE group_id = ?
 		ORDER BY event_date ASC
@@ -75,6 +77,8 @@ func (r *EventRepository) GetEventsByGroupID(groupID int64) ([]*models.Event, er
 			&event.Title,
 			&event.Description,
 			&event.EventDate,
+			&event.Location,
+			&event.ImagePath,
 			&event.CreatedAt,
 			&event.UpdatedAt,
 		)

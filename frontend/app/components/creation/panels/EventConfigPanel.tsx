@@ -3,18 +3,29 @@
 import { useState } from 'react';
 import { EventCreationData } from '../CreationContentPanel';
 
+interface Group {
+    id: number;
+    title: string;
+}
+
 interface EventConfigPanelProps {
     data: EventCreationData;
     onChange: (data: EventCreationData) => void;
     disabled?: boolean;
-    groupName?: string; // Nom du groupe parent
+    availableGroups: Group[];
+    selectedGroupId: number | null;
+    onGroupChange: (groupId: number | null) => void;
+    isLoadingGroups?: boolean;
 }
 
 export default function EventConfigPanel({ 
     data, 
     onChange, 
     disabled = false,
-    groupName
+    availableGroups,
+    selectedGroupId,
+    onGroupChange,
+    isLoadingGroups = false
 }: EventConfigPanelProps) {
     const [isDragging, setIsDragging] = useState(false);
 
@@ -90,7 +101,10 @@ export default function EventConfigPanel({
             <div className="border-b border-gray-700 pb-4">
                 <h2 className="text-xl font-bold text-white">Nouvel Événement</h2>
                 <p className="text-gray-400 text-sm mt-1">
-                    {groupName ? `Créer un événement pour ${groupName}` : 'Configurez votre événement et invitez des participants'}
+                    {selectedGroupId && availableGroups.length > 0 
+                        ? `Créer un événement pour ${availableGroups.find(g => g.id === selectedGroupId)?.title || 'ce groupe'}` 
+                        : 'Configurez votre événement et sélectionnez un groupe'
+                    }
                 </p>
             </div>
 
@@ -148,6 +162,48 @@ export default function EventConfigPanel({
                             />
                         </label>
                     </div>
+                )}
+            </div>
+
+            {/* Sélection du groupe */}
+            <div className="space-y-2">
+                <label htmlFor="eventGroup" className="block text-sm font-medium text-gray-300">
+                    Groupe de l'événement *
+                </label>
+                {isLoadingGroups ? (
+                    <div className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-400 flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        Chargement des groupes...
+                    </div>
+                ) : availableGroups.length === 0 ? (
+                    <div className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-400">
+                        Aucun groupe disponible - vous devez d'abord rejoindre ou créer un groupe
+                    </div>
+                ) : (
+                    <select
+                        id="eventGroup"
+                        value={selectedGroupId || ''}
+                        onChange={(e) => onGroupChange(e.target.value ? parseInt(e.target.value) : null)}
+                        disabled={disabled}
+                        className={`w-full px-3 py-2 bg-gray-700 border rounded-lg text-white focus:outline-none focus:ring-2 focus:border-transparent disabled:opacity-50 ${
+                            !selectedGroupId 
+                                ? 'border-red-500 focus:ring-red-500' 
+                                : 'border-gray-600 focus:ring-blue-500'
+                        }`}
+                        required
+                    >
+                        <option value="">Sélectionner un groupe</option>
+                        {availableGroups.map(group => (
+                            <option key={group.id} value={group.id}>
+                                {group.title}
+                            </option>
+                        ))}
+                    </select>
+                )}
+                {!selectedGroupId && availableGroups.length > 0 && (
+                    <p className="text-red-400 text-xs">
+                        Vous devez sélectionner un groupe pour créer un événement
+                    </p>
                 )}
             </div>
 
@@ -287,6 +343,15 @@ export default function EventConfigPanel({
 
             {/* Validation */}
             <div className="pt-4 border-t border-gray-700 space-y-2">
+                <div className="flex items-center space-x-2 text-sm">
+                    <div className={`w-3 h-3 rounded-full ${
+                        selectedGroupId ? 'bg-green-500' : 'bg-gray-500'
+                    }`}></div>
+                    <span className={selectedGroupId ? 'text-green-400' : 'text-gray-400'}>
+                        Groupe sélectionné
+                    </span>
+                </div>
+                
                 <div className="flex items-center space-x-2 text-sm">
                     <div className={`w-3 h-3 rounded-full ${
                         data.title.trim().length > 0 ? 'bg-green-500' : 'bg-gray-500'
