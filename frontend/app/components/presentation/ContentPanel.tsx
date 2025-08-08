@@ -1,15 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import PostsList from '../groupComponent/PostsList';
-import MessagesList from '../groupComponent/MessagesList';
-import EventsList from '../groupComponent/EventsList';
+import AdaptivePostsList from '../adaptive/AdaptivePostsList';
+import { AdaptiveMessageList } from '../adaptive/AdaptiveMessageCard';
+import AdaptiveEventsList from '../adaptive/AdaptiveEventsList';
 import MessageInput from '../groupComponent/MessageInput';
 import { GroupPost, GroupComment, GroupMessage, Event, User } from '../../types/group';
 import { useDrawerProportions } from '../../hooks/useDrawerProportions';
 import type { DrawerType } from '../../hooks/useDrawerProportions';
 import '../../styles/drawer-animations.css';
 import '../../styles/drawer-colors.css';
+import '../../styles/adaptive-vignettes.css';
 
 interface ContentPanelProps {
     type: 'group' | 'event';
@@ -142,42 +143,47 @@ export default function ContentPanel({
         };
         
         return (
-            <button
-                onClick={() => toggleDrawer(drawer)}
-                disabled={!canClose && !isClosed} // Empêche de fermer le dernier tiroir
-                className={getHeaderClassName()}
-                aria-expanded={!isClosed}
-                aria-controls={`drawer-content-${drawer}`}
-                title={
-                    !canClose && !isClosed 
-                        ? `${title} (impossible de fermer le dernier tiroir)` 
-                        : isClosed 
-                        ? `Ouvrir ${title}` 
-                        : `Fermer ${title}`
-                }
-            >
-                <div className="flex items-center gap-3">
-                    {/* Icône état (▶/▼) */}
-                    <span className="text-gray-400 text-sm transition-transform duration-200">
-                        {isClosed ? '▶' : '▼'}
-                    </span>
+            <div className={getHeaderClassName()}>
+                {/* Bouton principal pour toggle */}
+                <button
+                    onClick={() => toggleDrawer(drawer)}
+                    disabled={!canClose && !isClosed} // Empêche de fermer le dernier tiroir
+                    className="flex-1 flex items-center justify-between p-4 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                    aria-expanded={!isClosed}
+                    aria-controls={`drawer-content-${drawer}`}
+                    title={
+                        !canClose && !isClosed 
+                            ? `${title} (impossible de fermer le dernier tiroir)` 
+                            : isClosed 
+                            ? `Ouvrir ${title}` 
+                            : `Fermer ${title}`
+                    }
+                >
+                    <div className="flex items-center gap-3">
+                        {/* Icône état (▶/▼) */}
+                        <span className="text-gray-400 text-sm transition-transform duration-200">
+                            {isClosed ? '▶' : '▼'}
+                        </span>
+                        
+                        {/* Titre avec indication de pourcentage pour debug */}
+                        <h3 className="font-semibold text-white text-sm">
+                            {title}
+                            <span className="text-xs text-gray-500 ml-2">({percentage}%)</span>
+                        </h3>
+                    </div>
                     
-                    {/* Titre avec indication de pourcentage pour debug */}
-                    <h3 className="font-semibold text-white text-sm">
-                        {title}
-                        <span className="text-xs text-gray-500 ml-2">({percentage}%)</span>
-                    </h3>
-                </div>
+                    {/* Compteur */}
+                    <div className="text-xs text-gray-500 min-w-[2rem] text-right">
+                        {count}
+                    </div>
+                </button>
                 
-                <div className="flex items-center gap-2">
-                    {/* Bouton swap (visible si pas le plus grand et pas fermé et plusieurs ouverts) */}
-                    {!isClosed && !isLargest && openCount > 1 && (
+                {/* Bouton swap séparé (visible si pas le plus grand et pas fermé et plusieurs ouverts) */}
+                {!isClosed && !isLargest && openCount > 1 && (
+                    <div className="flex-shrink-0 border-l border-gray-600">
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                swapWithLarge(drawer);
-                            }}
-                            className="p-1 text-gray-400 hover:text-blue-400 transition-colors"
+                            onClick={() => swapWithLarge(drawer)}
+                            className="p-3 text-gray-400 hover:text-blue-400 hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
                             title={`Donner le focus à ${title}`}
                             aria-label={`Agrandir le panneau ${title}`}
                         >
@@ -185,14 +191,9 @@ export default function ContentPanel({
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                             </svg>
                         </button>
-                    )}
-                    
-                    {/* Compteur */}
-                    <div className="text-xs text-gray-500 min-w-[2rem] text-right">
-                        {count}
                     </div>
-                </div>
-            </button>
+                )}
+            </div>
         );
     };
 
@@ -220,10 +221,11 @@ export default function ContentPanel({
                             </div>
                             
                             {/* Contenu scrollable */}
-                            <div className="flex-1 overflow-y-auto p-4">
-                                <PostsList
+                            <div className="flex-1 overflow-hidden p-4">
+                                <AdaptivePostsList
                                     posts={posts}
                                     isLoading={isLoadingPosts}
+                                    drawerPercentage={drawerConfig.posts}
                                     commentsByPost={commentsByPost}
                                     showCommentsForPost={showCommentsForPost}
                                     newCommentByPost={newCommentByPost}
@@ -259,7 +261,11 @@ export default function ContentPanel({
                             
                             {/* Messages scrollables */}
                             <div className="flex-1 overflow-y-auto p-4">
-                                <MessagesList messages={messages} />
+                                <AdaptiveMessageList 
+                                    messages={messages}
+                                    drawerPercentage={drawerConfig.messages}
+                                    currentUserId={currentUser?.id}
+                                />
                             </div>
 
                             {/* Input de message fixe en bas */}
@@ -294,9 +300,10 @@ export default function ContentPanel({
                             </div>
                             
                             {/* Contenu scrollable */}
-                            <div className="flex-1 overflow-y-auto p-4">
-                                <EventsList
+                            <div className="flex-1 overflow-hidden p-4">
+                                <AdaptiveEventsList
                                     events={events}
+                                    drawerPercentage={drawerConfig.events}
                                     currentUser={currentUser}
                                     onEventResponse={onEventResponse || (async () => {})}
                                     onDeleteEvent={onDeleteEvent || (async () => {})}

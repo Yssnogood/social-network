@@ -1,0 +1,362 @@
+/* ===== SYSTÈME DE VIGNETTES ADAPTATIVES ===== */
+/* Optimisation automatique du contenu selon l'espace disponible dans chaque tiroir */
+
+/* ===== VARIABLES D'ADAPTATION ===== */
+:root {
+  /* Tailles de police adaptatives */
+  --font-compact: 0.75rem;     /* 12px pour état compact */
+  --font-normal: 0.875rem;     /* 14px pour état normal */
+  --font-extended: 1rem;       /* 16px pour état étendu */
+  
+  /* Espacements adaptatifs */
+  --padding-compact: 0.5rem;   /* 8px pour état compact */
+  --padding-normal: 1rem;      /* 16px pour état normal */
+  --padding-extended: 1.5rem;  /* 24px pour état étendu */
+  
+  /* Hauteurs de ligne adaptatives */
+  --line-height-compact: 1.2;
+  --line-height-normal: 1.4;
+  --line-height-extended: 1.6;
+  
+  /* Espacements entre éléments */
+  --gap-compact: 0.25rem;      /* 4px */
+  --gap-normal: 0.5rem;        /* 8px */
+  --gap-extended: 1rem;        /* 16px */
+}
+
+/* ===== CLASSES D'ÉTAT POUR VIGNETTES ===== */
+
+/* État COMPACT - Minimum d'informations, maximum de densité */
+.vignette-compact {
+  padding: var(--padding-compact);
+  font-size: var(--font-compact);
+  line-height: var(--line-height-compact);
+  gap: var(--gap-compact);
+}
+
+.vignette-compact .vignette-title {
+  font-size: var(--font-compact);
+  font-weight: 600;
+  margin-bottom: 0.125rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vignette-compact .vignette-content,
+.vignette-compact .vignette-description {
+  display: none; /* Caché en mode compact */
+}
+
+.vignette-compact .vignette-meta {
+  font-size: 0.625rem; /* 10px - très petit */
+  opacity: 0.8;
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.vignette-compact .vignette-actions {
+  display: flex;
+  gap: 0.125rem;
+}
+
+.vignette-compact .vignette-actions button {
+  padding: 0.125rem 0.25rem;
+  font-size: 0.625rem;
+  border-radius: 0.25rem;
+}
+
+.vignette-compact .vignette-actions .secondary-action {
+  display: none; /* Actions secondaires cachées */
+}
+
+/* État NORMAL - Équilibre entre information et espace */
+.vignette-normal {
+  padding: var(--padding-normal);
+  font-size: var(--font-normal);
+  line-height: var(--line-height-normal);
+  gap: var(--gap-normal);
+}
+
+.vignette-normal .vignette-title {
+  font-size: var(--font-normal);
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.vignette-normal .vignette-content,
+.vignette-normal .vignette-description {
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Limite à 2 lignes */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.vignette-normal .vignette-meta {
+  font-size: var(--font-compact);
+  opacity: 0.8;
+  margin-bottom: 0.25rem;
+}
+
+.vignette-normal .vignette-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.vignette-normal .vignette-actions button {
+  padding: 0.25rem 0.5rem;
+  font-size: var(--font-compact);
+  border-radius: 0.375rem;
+}
+
+.vignette-normal .vignette-actions .secondary-action {
+  opacity: 0.8;
+}
+
+/* État EXTENDED - Information complète, interface généreuse */
+.vignette-extended {
+  padding: var(--padding-extended);
+  font-size: var(--font-extended);
+  line-height: var(--line-height-extended);
+  gap: var(--gap-extended);
+}
+
+.vignette-extended .vignette-title {
+  font-size: 1.125rem; /* 18px - plus grand */
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.vignette-extended .vignette-content,
+.vignette-extended .vignette-description {
+  display: block; /* Contenu complet visible */
+  margin-bottom: 1rem;
+  line-height: var(--line-height-extended);
+}
+
+.vignette-extended .vignette-meta {
+  font-size: var(--font-normal);
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.vignette-extended .vignette-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.vignette-extended .vignette-actions button {
+  padding: 0.5rem 1rem;
+  font-size: var(--font-normal);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.vignette-extended .vignette-actions .secondary-action {
+  opacity: 1; /* Toutes les actions visibles */
+}
+
+/* ===== TYPES DE VIGNETTES SPÉCIFIQUES ===== */
+
+/* Vignette Post */
+.vignette-post {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: var(--gap-normal);
+  transition: all 0.3s ease;
+}
+
+.vignette-post:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.vignette-post.vignette-compact {
+  margin-bottom: var(--gap-compact);
+  border-radius: 0.25rem;
+}
+
+.vignette-post.vignette-extended {
+  margin-bottom: var(--gap-extended);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Vignette Event */
+.vignette-event {
+  background: rgba(16, 185, 129, 0.05); /* Teinte verte pour événements */
+  border-radius: 0.5rem;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  margin-bottom: var(--gap-normal);
+  transition: all 0.3s ease;
+}
+
+.vignette-event:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.vignette-event.vignette-compact {
+  margin-bottom: var(--gap-compact);
+  border-radius: 0.25rem;
+}
+
+.vignette-event.vignette-extended {
+  margin-bottom: var(--gap-extended);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+}
+
+/* Vignette Message */
+.vignette-message {
+  background: rgba(217, 119, 6, 0.05); /* Teinte ambre pour messages */
+  border-radius: 0.5rem;
+  border: 1px solid rgba(217, 119, 6, 0.2);
+  margin-bottom: var(--gap-normal);
+  transition: all 0.3s ease;
+}
+
+.vignette-message:hover {
+  background: rgba(217, 119, 6, 0.1);
+  border-color: rgba(217, 119, 6, 0.3);
+}
+
+.vignette-message.vignette-compact {
+  margin-bottom: var(--gap-compact);
+  border-radius: 0.25rem;
+}
+
+.vignette-message.vignette-extended {
+  margin-bottom: var(--gap-extended);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.1);
+}
+
+/* ===== ÉLÉMENTS SPÉCIALISÉS ===== */
+
+/* Badges de statut adaptatifs */
+.vignette-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+
+.vignette-compact .vignette-badge {
+  padding: 0.125rem 0.25rem;
+  font-size: 0.625rem;
+}
+
+.vignette-normal .vignette-badge {
+  padding: 0.25rem 0.5rem;
+  font-size: var(--font-compact);
+}
+
+.vignette-extended .vignette-badge {
+  padding: 0.375rem 0.75rem;
+  font-size: var(--font-normal);
+}
+
+/* Avatars adaptatifs */
+.vignette-avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.vignette-compact .vignette-avatar {
+  width: 1rem;
+  height: 1rem;
+}
+
+.vignette-normal .vignette-avatar {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.vignette-extended .vignette-avatar {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* Indicateurs de contenu */
+.vignette-indicator {
+  position: relative;
+}
+
+.vignette-indicator::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: currentColor;
+  border-radius: 50%;
+  opacity: 0.6;
+}
+
+.vignette-compact .vignette-indicator::after {
+  width: 0.25rem;
+  height: 0.25rem;
+}
+
+.vignette-extended .vignette-indicator::after {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+/* ===== ANIMATIONS D'ADAPTATION ===== */
+.vignette-adapting {
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.vignette-adapting * {
+  transition: all 0.3s ease;
+}
+
+/* ===== RESPONSIVE MOBILE ===== */
+@media (max-width: 768px) {
+  :root {
+    --padding-compact: 0.375rem;
+    --padding-normal: 0.75rem;
+    --padding-extended: 1rem;
+    
+    --font-compact: 0.7rem;
+    --font-normal: 0.8rem;
+    --font-extended: 0.9rem;
+  }
+  
+  .vignette-normal .vignette-content,
+  .vignette-normal .vignette-description {
+    -webkit-line-clamp: 1; /* Une seule ligne sur mobile */
+  }
+}
+
+/* ===== ACCESSIBILITÉ ===== */
+@media (prefers-reduced-motion: reduce) {
+  .vignette-adapting,
+  .vignette-adapting * {
+    transition: none !important;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .vignette-post,
+  .vignette-event,
+  .vignette-message {
+    border-width: 2px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
