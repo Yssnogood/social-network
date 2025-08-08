@@ -43,6 +43,7 @@ interface AdaptiveVerticalPanelSystemProps {
     onSendMessage?: (content: string) => Promise<void>;
     onEventResponse?: (eventId: number, status: string) => Promise<void>;
     onDeleteEvent?: (eventId: number) => Promise<void>;
+    onCreateEvent?: (title: string, description: string, eventDate: string) => Promise<void>;
     
     // Callbacks optionnels
     onConfigChange?: (config: any) => void;
@@ -83,6 +84,7 @@ export default function AdaptiveVerticalPanelSystem({
     onSendMessage,
     onEventResponse,
     onDeleteEvent,
+    onCreateEvent,
     onConfigChange
 }: AdaptiveVerticalPanelSystemProps) {
     
@@ -197,6 +199,7 @@ export default function AdaptiveVerticalPanelSystem({
                     onSendMessage={onSendMessage}
                     onEventResponse={onEventResponse}
                     onDeleteEvent={onDeleteEvent}
+                    onCreateEvent={onCreateEvent}
                 />
                 
                 {/* Overlay d'adaptation avec animation fade-in si nécessaire */}

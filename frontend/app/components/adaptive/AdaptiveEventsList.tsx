@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Event, User } from '../../types/group';
 import AdaptiveEventCard from './AdaptiveEventCard';
+import EventCreator from '../groupComponent/EventCreator';
 
 interface AdaptiveEventsListProps {
   events: Event[];
@@ -11,6 +12,7 @@ interface AdaptiveEventsListProps {
   currentUser?: User | null;
   onEventResponse?: (eventId: number, status: string) => Promise<void>;
   onDeleteEvent?: (eventId: number) => Promise<void>;
+  onCreateEvent?: (title: string, description: string, eventDate: string) => Promise<void>;
 }
 
 export default function AdaptiveEventsList({
@@ -20,7 +22,11 @@ export default function AdaptiveEventsList({
   currentUser,
   onEventResponse,
   onDeleteEvent,
+  onCreateEvent,
 }: AdaptiveEventsListProps) {
+  
+  // État pour forcer l'affichage du créateur en mode compact
+  const [showCompactCreator, setShowCompactCreator] = useState(false);
   
   // Déterminer l'espacement selon la taille du tiroir
   const getSpacing = () => {
@@ -37,6 +43,33 @@ export default function AdaptiveEventsList({
 
   return (
     <div className={`${getSpacing()} h-full flex flex-col`}>
+      {/* Créateur d'événement - toujours présent, adaptatif selon l'espace */}
+      {onCreateEvent && (
+        <div className="flex-shrink-0 mb-2">
+          {drawerPercentage >= 40 || showCompactCreator ? (
+            <EventCreator 
+              onCreateEvent={async (title, description, eventDate) => {
+                await onCreateEvent(title, description, eventDate);
+                setShowCompactCreator(false); // Fermer après création
+              }}
+              compact={drawerPercentage <= 55}
+            />
+          ) : (
+            // Bouton + compact pour créer un événement
+            <div className="flex justify-center">
+              <button 
+                onClick={() => setShowCompactCreator(true)}
+                className="w-8 h-8 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full flex items-center justify-center text-lg font-bold transition-colors"
+                title="Créer un événement"
+                aria-label="Créer un nouvel événement"
+              >
+                +
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Section titre adaptatif */}
       {drawerPercentage >= 25 && (
         <div className="flex-shrink-0">

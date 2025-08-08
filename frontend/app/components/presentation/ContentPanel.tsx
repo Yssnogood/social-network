@@ -37,6 +37,7 @@ interface ContentPanelProps {
     onSendMessage?: (content: string) => Promise<void>;
     onEventResponse?: (eventId: number, status: string) => Promise<void>;
     onDeleteEvent?: (eventId: number) => Promise<void>;
+    onCreateEvent?: (title: string, description: string, eventDate: string) => Promise<void>;
 }
 
 export default function ContentPanel({
@@ -57,7 +58,8 @@ export default function ContentPanel({
     onCreateComment,
     onSendMessage,
     onEventResponse,
-    onDeleteEvent
+    onDeleteEvent,
+    onCreateEvent
 }: ContentPanelProps) {
     const {
         drawerConfig,
@@ -221,7 +223,7 @@ export default function ContentPanel({
                             </div>
                             
                             {/* Contenu scrollable */}
-                            <div className="flex-1 overflow-hidden p-4">
+                            <div className="flex-1 overflow-y-auto p-4">
                                 <AdaptivePostsList
                                     posts={posts}
                                     isLoading={isLoadingPosts}
@@ -300,13 +302,14 @@ export default function ContentPanel({
                             </div>
                             
                             {/* Contenu scrollable */}
-                            <div className="flex-1 overflow-hidden p-4">
+                            <div className="flex-1 overflow-y-auto p-4">
                                 <AdaptiveEventsList
                                     events={events}
                                     drawerPercentage={drawerConfig.events}
                                     currentUser={currentUser}
                                     onEventResponse={onEventResponse || (async () => {})}
                                     onDeleteEvent={onDeleteEvent || (async () => {})}
+                                    onCreateEvent={onCreateEvent || (async () => {})}
                                 />
                             </div>
                         </>

@@ -17,7 +17,8 @@ import {
     getGroupPostComments,
     createGroupPostComment,
     inviteUsersToGroup,
-    inviteGroupsToGroup
+    inviteGroupsToGroup,
+    createEvent
 } from '@/services/group';
 
 interface PresentationPanelProps {
@@ -241,6 +242,21 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
         }
     };
 
+    const handleCreateEvent = async (title: string, description: string, eventDate: string) => {
+        try {
+            await createEvent({
+                group_id: groupId,
+                title,
+                description,
+                event_date: eventDate
+            });
+            await loadEvents(); // Refresh events after creation
+        } catch (error) {
+            console.error('Error creating event:', error);
+            setError('Erreur lors de la création de l\'événement');
+        }
+    };
+
     if (error) {
         return (
             <div className="h-full flex items-center justify-center bg-gray-900">
@@ -327,6 +343,7 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
                 onSendMessage={handleSendMessage}
                 onEventResponse={handleEventResponse}
                 onDeleteEvent={handleDeleteEvent}
+                onCreateEvent={handleCreateEvent}
                 
                 // Callback de changement de configuration
                 onConfigChange={(config) => {

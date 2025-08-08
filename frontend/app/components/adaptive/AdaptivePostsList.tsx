@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { GroupPost, GroupComment } from '../../types/group';
 import AdaptivePostCard from './AdaptivePostCard';
 import PostCreator from '../groupComponent/PostCreator';
@@ -33,6 +33,9 @@ export default function AdaptivePostsList({
   onCreateComment,
 }: AdaptivePostsListProps) {
   
+  // État pour forcer l'affichage du créateur en mode compact
+  const [showCompactCreator, setShowCompactCreator] = useState(false);
+  
   // Déterminer l'espacement selon la taille du tiroir
   const getSpacing = () => {
     if (drawerPercentage <= 30) return 'space-y-1'; // Compact
@@ -42,15 +45,30 @@ export default function AdaptivePostsList({
 
   return (
     <div className={`${getSpacing()} h-full flex flex-col`}>
-      {/* Créateur de post - adaptatif selon l'espace */}
-      {drawerPercentage >= 35 && (
-        <div className="flex-shrink-0 mb-2">
+      {/* Créateur de post - toujours présent, adaptatif selon l'espace */}
+      <div className="flex-shrink-0 mb-2">
+        {drawerPercentage >= 35 || showCompactCreator ? (
           <PostCreator 
-            onCreatePost={onCreatePost}
+            onCreatePost={async (content) => {
+              await onCreatePost(content);
+              setShowCompactCreator(false); // Fermer après création
+            }}
             compact={drawerPercentage <= 50}
           />
-        </div>
-      )}
+        ) : (
+          // Bouton + compact pour créer un post
+          <div className="flex justify-center">
+            <button 
+              onClick={() => setShowCompactCreator(true)}
+              className="w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center text-lg font-bold transition-colors"
+              title="Créer un post"
+              aria-label="Créer un nouveau post"
+            >
+              +
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Section titre - adaptatif */}
       {drawerPercentage >= 25 && (
