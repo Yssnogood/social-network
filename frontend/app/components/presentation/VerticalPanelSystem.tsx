@@ -311,8 +311,8 @@ export default function VerticalPanelSystem({
                 className={`flex-1 bg-gray-900 overflow-hidden flex flex-col ${contentClasses}`}
                 id={`vertical-panel-${panelType}`}
             >
-                {/* Contenu scrollable avec fade-in */}
-                <div className={`flex-1 overflow-y-auto ${
+                {/* Contenu avec hauteur fixe pour déléguer le scroll aux sous-composants */}
+                <div className={`flex-1 h-full overflow-hidden ${
                     lastChangedPanel === panelType && !panelInfo.isClosed ? 'drawer-content-fade-in' : ''
                 }`}>
                     {children}

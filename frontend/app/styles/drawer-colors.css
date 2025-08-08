@@ -1,58 +1,70 @@
-/* ===== SYSTÈME DE COULEURS HIÉRARCHIQUE ===== */
+/* ===== SYSTÈME DE COULEURS HIÉRARCHIQUE SOBRE ===== */
 /* Architecture à 3 niveaux : Panneaux → Tiroirs → Vignettes */
+/* Palette moderne 2025 : couleurs désaturées, sans dégradés, contrastes accessibles */
 
 :root {
+  /* ===== COULEURS DE BASE ===== */
+  --base-dark: #0f1419;           /* Base sombre avec légère teinte bleue (Material Design) */
+  --base-surface: #1a1f25;        /* Surfaces élevées */
+  --base-border: #2a2f35;         /* Bordures subtiles */
+  --base-text: #e2e8f0;           /* Texte principal (ratio 4.5:1+) */
+  --base-text-muted: #94a3b8;     /* Texte secondaire */
+
   /* ===== NIVEAU 1 : PANNEAUX VERTICAUX PRINCIPAUX ===== */
   
-  /* PANNEAU PRÉSENTATION - Famille bleue (Information, statique) */
-  --presentation-panel-bg: #0a0f1a;        /* Très sombre avec teinte bleu */
-  --presentation-panel-border: #1e3a8a;    /* border-blue-800 */
-  --presentation-panel-gradient: linear-gradient(135deg, #1e293b 0%, #1e40af 100%);
+  /* PANNEAU PRÉSENTATION - Famille bleue désaturée (Information, statique) */
+  --presentation-panel-bg: var(--base-dark);
+  --presentation-panel-surface: #151b23;   /* Bleu très sombre désaturé */
+  --presentation-panel-border: #2d4a7a;    /* Bleu moyen désaturé */
+  --presentation-panel-accent: #4a6fa5;    /* Accent bleu accessible */
   
-  /* PANNEAU COMMUNICATION - Famille verte (Interaction, dynamique) */
-  --communication-panel-bg: #0a1a0f;       /* Très sombre avec teinte verte */
-  --communication-panel-border: #166534;   /* border-green-800 */
-  --communication-panel-gradient: linear-gradient(135deg, #1f2937 0%, #059669 100%);
+  /* PANNEAU COMMUNICATION - Famille verte désaturée (Interaction, dynamique) */
+  --communication-panel-bg: var(--base-dark);
+  --communication-panel-surface: #161b17;  /* Vert très sombre désaturé */
+  --communication-panel-border: #2d5a3d;   /* Vert moyen désaturé */
+  --communication-panel-accent: #4a8a6a;   /* Accent vert accessible */
 
   /* ===== NIVEAU 2 : TIROIRS HORIZONTAUX (6 tiroirs) ===== */
   
-  /* PRÉSENTATION - Déclinaisons de la famille bleue */
-  --showcase-bg: #0f1824;          /* Bleu + plus clair que parent */
-  --showcase-border: #2563eb;      /* blue-600 */
-  --showcase-border-hover: #3b82f6; /* blue-500 */
-  --showcase-gradient: linear-gradient(135deg, #1e293b 0%, #1e40af 100%);
-  --showcase-gradient-hover: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+  /* PRÉSENTATION - Déclinaisons de la famille bleue désaturée */
+  --showcase-bg: var(--presentation-panel-surface);
+  --showcase-border: var(--presentation-panel-border);
+  --showcase-accent: #5b7db5;         /* Bleu légèrement plus vif pour différenciation */
+  --showcase-hover: #3d5a8a;          /* État hover sobre */
   
-  --members-bg: #111620;           /* Indigo + plus clair que parent */
-  --members-border: #4f46e5;      /* indigo-600 */
-  --members-border-hover: #6366f1; /* indigo-500 */
-  --members-gradient: linear-gradient(135deg, #1e293b 0%, #4338ca 100%);
-  --members-gradient-hover: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+  --members-bg: #171a23;              /* Indigo très sombre désaturé */
+  --members-border: #3d4a7a;          /* Indigo moyen désaturé */
+  --members-accent: #6a7db5;          /* Accent indigo accessible */
+  --members-hover: #4a5a8a;           /* État hover sobre */
   
-  --invitations-bg: #0f1a21;      /* Cyan + plus clair que parent */
-  --invitations-border: #0891b2;  /* cyan-600 */
-  --invitations-border-hover: #0db2d4; /* cyan-500 */
-  --invitations-gradient: linear-gradient(135deg, #1e293b 0%, #0e7490 100%);
-  --invitations-gradient-hover: linear-gradient(135deg, #0e7490 0%, #0891b2 100%);
+  --invitations-bg: #151b20;          /* Cyan très sombre désaturé */
+  --invitations-border: #2d4a5a;      /* Cyan sombre désaturé */
+  --invitations-accent: #4a7d8a;      /* Accent cyan accessible */
+  --invitations-hover: #3d5a6a;       /* État hover sobre */
   
-  /* COMMUNICATION - Déclinaisons de la famille verte */
-  --posts-bg: #1a1f1a;            /* Vert + plus clair que parent */
-  --posts-border: #10b981;        /* emerald-600 */
-  --posts-border-hover: #34d399;  /* emerald-500 */
-  --posts-gradient: linear-gradient(135deg, #374151 0%, #059669 100%);
-  --posts-gradient-hover: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  /* COMMUNICATION - Déclinaisons de la famille verte désaturée */
+  --posts-bg: var(--communication-panel-surface);
+  --posts-border: var(--communication-panel-border);
+  --posts-accent: #5b8a7a;           /* Vert légèrement plus vif pour différenciation */
+  --posts-hover: #3d6a5a;            /* État hover sobre */
   
-  --messages-bg: #1f1d1a;         /* Ambre + plus clair que parent */
-  --messages-border: #d97706;     /* amber-600 */
-  --messages-border-hover: #f59e0b; /* amber-500 */
-  --messages-gradient: linear-gradient(135deg, #374151 0%, #b45309 100%);
-  --messages-gradient-hover: linear-gradient(135deg, #b45309 0%, #d97706 100%);
+  --messages-bg: #1b1917;            /* Ambre très sombre désaturé */
+  --messages-border: #5a3d2d;        /* Ambre sombre désaturé */
+  --messages-accent: #8a6a4a;        /* Accent ambre accessible */
+  --messages-hover: #6a5a3d;         /* État hover sobre */
   
-  --events-bg: #1f1a1d;           /* Rose + plus clair que parent */
-  --events-border: #e11d48;       /* rose-600 */
-  --events-border-hover: #f43f5e; /* rose-500 */
-  --events-gradient: linear-gradient(135deg, #374151 0%, #be185d 100%);
-  --events-gradient-hover: linear-gradient(135deg, #be185d 0%, #e11d48 100%);
+  --events-bg: #1b1719;             /* Rose très sombre désaturé */
+  --events-border: #5a2d3d;          /* Rose sombre désaturé */
+  --events-accent: #8a4a6a;          /* Accent rose accessible */
+  --events-hover: #6a3d5a;           /* État hover sobre */
+
+  /* ===== NIVEAU 3 : VIGNETTES (déjà définies dans adaptive-vignettes.css) ===== */
+  --vignette-post-bg: rgba(30, 41, 59, 0.15);      /* Gris bleuté transparent */
+  --vignette-post-border: rgba(77, 124, 191, 0.3);  /* Bordure bleue subtile */
+  --vignette-event-bg: rgba(107, 114, 128, 0.15);   /* Gris avec nuance verte */
+  --vignette-event-border: rgba(74, 138, 106, 0.3); /* Bordure verte subtile */
+  --vignette-message-bg: rgba(156, 163, 175, 0.15); /* Gris avec nuance ambre */
+  --vignette-message-border: rgba(138, 106, 74, 0.3); /* Bordure ambre subtile */
 
   /* ===== ÉTATS VISUELS (opacité, luminosité) ===== */
   --opacity-closed: 0.6;
@@ -63,7 +75,7 @@
   --brightness-drawer-expanded: 1.05;
 }
 
-/* ===== CLASSES POUR LES PANNEAUX VERTICAUX ===== */
+/* ===== CLASSES POUR LES PANNEAUX VERTICAUX (SOBRES) ===== */
 
 .vertical-panel-presentation {
   background: var(--presentation-panel-bg);
@@ -77,27 +89,29 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Poignées des panneaux verticaux */
+/* Poignées des panneaux verticaux - COULEURS UNIES SOBRES */
 .vertical-panel-handle-presentation {
-  background: var(--presentation-panel-gradient);
-  border-bottom: 2px solid var(--showcase-border-hover);
+  background: var(--presentation-panel-surface);
+  border-bottom: 2px solid var(--presentation-panel-border);
   transition: all 0.3s ease;
+  color: var(--base-text);
 }
 
 .vertical-panel-handle-presentation:hover {
-  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
-  border-bottom-color: var(--showcase-border);
+  background: var(--presentation-panel-border);
+  border-bottom-color: var(--presentation-panel-accent);
 }
 
 .vertical-panel-handle-communication {
-  background: var(--communication-panel-gradient);
-  border-bottom: 2px solid var(--posts-border-hover);
+  background: var(--communication-panel-surface);
+  border-bottom: 2px solid var(--communication-panel-border);
   transition: all 0.3s ease;
+  color: var(--base-text);
 }
 
 .vertical-panel-handle-communication:hover {
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-  border-bottom-color: var(--posts-border);
+  background: var(--communication-panel-border);
+  border-bottom-color: var(--communication-panel-accent);
 }
 
 /* ===== CLASSES POUR LES TIROIRS HORIZONTAUX ===== */
@@ -140,60 +154,80 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ===== HEADERS DES TIROIRS AVEC GRADIENTS ===== */
+/* ===== HEADERS DES TIROIRS - COULEURS UNIES SOBRES ===== */
 
+/* Headers présentation - Famille bleue désaturée */
 .drawer-header-showcase {
-  background: var(--showcase-gradient);
+  background: var(--showcase-bg);
+  border-bottom: 1px solid var(--showcase-border);
   transition: all 0.3s ease;
+  color: var(--base-text);
 }
 
 .drawer-header-showcase:hover {
-  background: var(--showcase-gradient-hover);
+  background: var(--showcase-hover);
+  border-bottom-color: var(--showcase-accent);
 }
 
 .drawer-header-members {
-  background: var(--members-gradient);
+  background: var(--members-bg);
+  border-bottom: 1px solid var(--members-border);
   transition: all 0.3s ease;
+  color: var(--base-text);
 }
 
 .drawer-header-members:hover {
-  background: var(--members-gradient-hover);
+  background: var(--members-hover);
+  border-bottom-color: var(--members-accent);
 }
 
 .drawer-header-invitations {
-  background: var(--invitations-gradient);
+  background: var(--invitations-bg);
+  border-bottom: 1px solid var(--invitations-border);
   transition: all 0.3s ease;
+  color: var(--base-text);
 }
 
 .drawer-header-invitations:hover {
-  background: var(--invitations-gradient-hover);
+  background: var(--invitations-hover);
+  border-bottom-color: var(--invitations-accent);
 }
 
+/* Headers communication - Famille verte désaturée */
 .drawer-header-posts {
-  background: var(--posts-gradient);
+  background: var(--posts-bg);
+  border-bottom: 1px solid var(--posts-border);
   transition: all 0.3s ease;
+  color: var(--base-text);
 }
 
 .drawer-header-posts:hover {
-  background: var(--posts-gradient-hover);
+  background: var(--posts-hover);
+  border-bottom-color: var(--posts-accent);
 }
 
 .drawer-header-messages {
-  background: var(--messages-gradient);
+  background: var(--messages-bg);
+  border-bottom: 1px solid var(--messages-border);
   transition: all 0.3s ease;
+  color: var(--base-text);
 }
 
 .drawer-header-messages:hover {
-  background: var(--messages-gradient-hover);
+  background: var(--messages-hover);
+  border-bottom-color: var(--messages-accent);
 }
 
 .drawer-header-events {
-  background: var(--events-gradient);
+  background: var(--events-bg);
+  border-bottom: 1px solid var(--events-border);
   transition: all 0.3s ease;
+  color: var(--base-text);
 }
 
 .drawer-header-events:hover {
-  background: var(--events-gradient-hover);
+  background: var(--events-hover);
+  border-bottom-color: var(--events-accent);
 }
 
 /* ===== ÉTATS SELON LES PROPORTIONS ===== */

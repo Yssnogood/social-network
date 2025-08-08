@@ -44,7 +44,7 @@ export default function AdaptivePostsList({
   };
 
   return (
-    <div className={`${getSpacing()} h-full flex flex-col`}>
+    <div className={`${getSpacing()} h-full flex flex-col overflow-hidden`}>
       {/* Créateur de post - toujours présent, adaptatif selon l'espace */}
       <div className="flex-shrink-0 mb-2">
         {drawerPercentage >= 35 || showCompactCreator ? (

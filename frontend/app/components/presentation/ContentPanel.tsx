@@ -63,6 +63,7 @@ export default function ContentPanel({
 }: ContentPanelProps) {
     const {
         drawerConfig,
+        handleDrawerClick,
         toggleDrawer,
         getDrawerStyle,
         isDrawerClosed,
@@ -94,7 +95,7 @@ export default function ContentPanel({
         
         return (
             <button
-                onClick={() => toggleDrawer(drawer)}
+                onClick={() => handleDrawerClick(drawer)}
                 className="h-full bg-gray-800 hover:bg-gray-700 border-r border-gray-700 flex flex-col items-center justify-center transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
                 style={{ width: '40px' }}
                 title={`Ouvrir ${title}`}
@@ -120,18 +121,16 @@ export default function ContentPanel({
         );
     };
 
-    // Composant de header cliquable selon les recherches UX + nouvelles règles strictes
+    // Composant de header cliquable avec logique d'agrandissement progressif
     const DrawerHeader = ({ drawer, count }: { drawer: DrawerType, count: number }) => {
         const isClosed = isDrawerClosed(drawer);
         const percentage = drawerConfig[drawer];
         const { largestDrawer, openCount } = getConfigStats();
         const isLargest = largestDrawer.drawer === drawer;
-        const canClose = openCount > 1; // Ne peut fermer que s'il y a plus d'1 tiroir ouvert
         const title = getDrawerTitle(drawer);
         
         const getHeaderClassName = () => {
             const baseClasses = "w-full flex items-center justify-between p-4 transition-colors duration-200 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset";
-            const disabledClasses = !canClose && !isClosed ? "cursor-not-allowed opacity-75" : "";
             
             let drawerClass = "";
             switch (drawer) {
@@ -141,24 +140,21 @@ export default function ContentPanel({
                 default: drawerClass = "bg-gray-800 hover:bg-gray-700 focus:bg-gray-700"; break;
             }
             
-            return `${baseClasses} ${disabledClasses} ${drawerClass}`;
+            return `${baseClasses} ${drawerClass}`;
         };
         
         return (
             <div className={getHeaderClassName()}>
-                {/* Bouton principal pour toggle */}
+                {/* Bouton principal pour agrandissement progressif (nouvelle logique) */}
                 <button
-                    onClick={() => toggleDrawer(drawer)}
-                    disabled={!canClose && !isClosed} // Empêche de fermer le dernier tiroir
+                    onClick={() => handleDrawerClick(drawer)}
                     className="flex-1 flex items-center justify-between p-4 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
                     aria-expanded={!isClosed}
                     aria-controls={`drawer-content-${drawer}`}
                     title={
-                        !canClose && !isClosed 
-                            ? `${title} (impossible de fermer le dernier tiroir)` 
-                            : isClosed 
+                        isClosed 
                             ? `Ouvrir ${title}` 
-                            : `Fermer ${title}`
+                            : `Agrandir ${title}`
                     }
                 >
                     <div className="flex items-center gap-3">
@@ -201,11 +197,11 @@ export default function ContentPanel({
 
     return (
         <div className="h-full bg-gray-900 flex flex-col">
-            {/* Container de tous les tiroirs (ouverts ET fermés) - GARANTIT 100% largeur */}
-            <div className="flex-1 flex">
+            {/* Container de tous les tiroirs (ouverts ET fermés) - GARANTIT 100% largeur ET hauteur */}
+            <div className="flex-1 flex h-full">
                 {/* Posts Drawer - TOUJOURS RENDU */}
                 <div 
-                    className={`drawer-transition drawer-posts border-r border-gray-700 relative flex flex-col ${
+                    className={`drawer-transition drawer-posts border-r border-gray-700 relative flex flex-col h-full ${
                         isDrawerClosed('posts') ? 'drawer-closed' :
                         drawerConfig.posts <= 30 ? 'drawer-compact' :
                         drawerConfig.posts >= 60 ? 'drawer-expanded' :
@@ -244,7 +240,7 @@ export default function ContentPanel({
 
                 {/* Messages Drawer - TOUJOURS RENDU */}
                 <div 
-                    className={`drawer-transition drawer-messages border-r border-gray-700 relative flex flex-col ${
+                    className={`drawer-transition drawer-messages border-r border-gray-700 relative flex flex-col h-full ${
                         isDrawerClosed('messages') ? 'drawer-closed' :
                         drawerConfig.messages <= 30 ? 'drawer-compact' :
                         drawerConfig.messages >= 60 ? 'drawer-expanded' :
@@ -284,7 +280,7 @@ export default function ContentPanel({
 
                 {/* Events Drawer - TOUJOURS RENDU */}
                 <div 
-                    className={`drawer-transition drawer-events relative flex flex-col ${
+                    className={`drawer-transition drawer-events relative flex flex-col h-full ${
                         isDrawerClosed('events') ? 'drawer-closed' :
                         drawerConfig.events <= 30 ? 'drawer-compact' :
                         drawerConfig.events >= 60 ? 'drawer-expanded' :

@@ -174,15 +174,15 @@ export default function OnePageLayout({
           </div>
         </div>
 
-        {/* Colonne centrale - Contenu dynamique */}
-        <div className="flex-1 bg-gray-900 overflow-y-auto">
+        {/* Colonne centrale - Contenu dynamique sans scroll global */}
+        <div className="flex-1 bg-gray-900 overflow-hidden">
           <div className={
             centralView === 'group-editor' || 
             centralView === 'event-editor' || 
             centralView === 'group-presentation' || 
             centralView === 'event-presentation'
               ? "h-full" // Pas de padding pour les panneaux - hauteur complète
-              : "p-2 sm:p-4" // Padding normal pour les autres vues
+              : "p-2 sm:p-4 h-full overflow-y-auto" // Padding normal pour les autres vues avec scroll local
           }>
             {renderCentralView()}
           </div>

@@ -42,7 +42,7 @@ export default function AdaptiveEventsList({
   const pastEvents = safeEvents.filter(event => new Date(event.event_date) < now);
 
   return (
-    <div className={`${getSpacing()} h-full flex flex-col`}>
+    <div className={`${getSpacing()} h-full flex flex-col overflow-hidden`}>
       {/* Créateur d'événement - toujours présent, adaptatif selon l'espace */}
       {onCreateEvent && (
         <div className="flex-shrink-0 mb-2">

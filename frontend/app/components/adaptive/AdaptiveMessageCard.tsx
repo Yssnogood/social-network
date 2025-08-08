@@ -236,7 +236,7 @@ export function AdaptiveMessageList({
   }
 
   return (
-    <div className={`space-y-${adaptiveConfig.state === 'compact' ? '1' : '3'} flex flex-col`}>
+    <div className={`space-y-${adaptiveConfig.state === 'compact' ? '1' : '3'} flex flex-col h-full overflow-hidden`}>
       {messages.map((message, index) => {
         const previousMessage = index > 0 ? messages[index - 1] : null;
         const isConsecutive = previousMessage?.sender_id === message.sender_id;
