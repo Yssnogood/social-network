@@ -153,18 +153,106 @@
 
 /* Styles responsive pour les animations */
 @media (max-width: 768px) {
-    .drawer-transition {
+    .drawer-transition,
+    .vertical-panel-transition,
+    .vertical-panel-major-transition {
         /* Animations plus rapides sur mobile pour une meilleure UX */
         transition-duration: 0.2s;
     }
     
-    .drawer-opening, .drawer-closing {
+    .drawer-opening, .drawer-closing,
+    .vertical-panel-expanding, .vertical-panel-collapsing {
         animation-duration: 0.2s;
     }
     
     /* Réduire les effets de glow sur mobile pour les performances */
-    .glow-on-change {
+    .glow-on-change,
+    .vertical-proportion-change {
         animation: none;
+    }
+    
+    /* Poignées plus grandes sur mobile pour faciliter l'interaction tactile */
+    .vertical-panel-handle-transition {
+        min-height: 48px; /* Minimum recommandé pour l'accessibilité tactile */
+        padding: 12px 16px;
+    }
+    
+    /* Textes plus grands sur mobile */
+    .vertical-panel-handle-transition h2 {
+        font-size: 1rem !important;
+    }
+    
+    /* Indicateurs de taille plus visibles sur mobile */
+    .vertical-size-indicator {
+        width: 6px;
+        height: 6px;
+    }
+    
+    /* Classes responsive pour containers */
+    .mobile-vertical-panels {
+        /* Espacement réduit sur mobile */
+        gap: 0.25rem;
+    }
+    
+    .mobile-vertical-panels .vertical-panel-transition {
+        /* Transitions plus rapides sur mobile */
+        transition-duration: 0.2s;
+    }
+    
+    /* Poignées mobile */
+    .mobile-handle {
+        font-size: 1rem !important;
+        min-height: 48px; /* Taille tactile recommandée */
+    }
+    
+    .mobile-handle h2 {
+        font-size: 1rem !important;
+    }
+}
+
+/* Styles pour tablettes */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .tablet-vertical-panels {
+        gap: 0.5rem;
+    }
+    
+    .tablet-handle {
+        min-height: 44px;
+    }
+    
+    .tablet-handle h2 {
+        font-size: 0.95rem;
+    }
+    
+    /* Animation légèrement plus lente sur tablette */
+    .tablet-vertical-panels .vertical-panel-transition {
+        transition-duration: 0.25s;
+    }
+}
+
+/* Styles pour desktop */
+@media (min-width: 1024px) {
+    .desktop-vertical-panels {
+        gap: 1rem;
+    }
+    
+    .desktop-handle {
+        min-height: 40px;
+    }
+    
+    .desktop-handle h2 {
+        font-size: 0.875rem;
+    }
+    
+    /* Animation complète sur desktop */
+    .desktop-vertical-panels .vertical-panel-transition {
+        transition-duration: 0.3s;
+    }
+    
+    /* Effets hover plus prononcés sur desktop (pas de touch) */
+    .desktop-handle:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 }
 
@@ -181,10 +269,223 @@
     .drawer-header,
     .drawer-content-fade-in,
     .elastic-resize,
-    .tooltip-fade {
+    .tooltip-fade,
+    /* Nouvelles classes verticales */
+    .vertical-panel-transition,
+    .vertical-panel-major-transition,
+    .vertical-panel-expanding,
+    .vertical-panel-collapsing,
+    .vertical-panel-handle-transition,
+    .vertical-proportion-change,
+    .vertical-size-indicator,
+    .vertical-content-resize,
+    .vertical-content-compact,
+    .vertical-content-full,
+    .vertical-fullscreen-enter,
+    .vertical-handle-background-transition {
         animation: none !important;
         transition: none !important;
     }
+}
+
+/* Amélioration pour le mode high contrast */
+@media (prefers-contrast: high) {
+    .vertical-panel-handle-transition {
+        border: 2px solid white !important;
+    }
+    
+    .vertical-size-indicator {
+        border: 1px solid white !important;
+    }
+    
+    .vertical-size-indicator.active {
+        background-color: yellow !important;
+        border-color: black !important;
+    }
+}
+
+/* Support pour les thèmes sombres/clairs du système */
+@media (prefers-color-scheme: dark) {
+    /* Les couleurs sont déjà optimisées pour le sombre, mais on peut affiner */
+    .vertical-panel-transition {
+        border-color: rgb(75, 85, 99); /* gray-600 plus visible en sombre */
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    /* Si jamais on veut supporter un thème clair */
+    .vertical-panel-transition {
+        background-color: rgb(249, 250, 251); /* gray-50 */
+        border-color: rgb(209, 213, 219); /* gray-300 */
+        color: rgb(17, 24, 39); /* gray-900 */
+    }
+}
+
+/* Support pour focus visible amélioré */
+@media (prefers-reduced-transparency: reduce) {
+    .vertical-panel-handle-transition:focus {
+        background-color: rgb(37, 99, 235) !important; /* blue-600 solide */
+        outline: 3px solid yellow !important;
+        outline-offset: 2px !important;
+    }
+}
+
+/* ===== ANIMATIONS VERTICALES POUR PANNEAUX VERTICAL ===== */
+
+/* Transition fluide pour les panneaux verticaux */
+.vertical-panel-transition {
+    transition: height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                max-height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                opacity 0.3s ease,
+                transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animation spéciale pour les grandes transitions (0 → 3/3 ou 3/3 → 0) */
+.vertical-panel-major-transition {
+    transition: height 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                max-height 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                opacity 0.4s ease,
+                transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Animation d'expansion verticale (fermeture → ouverture) */
+.vertical-panel-expanding {
+    animation: expand-vertical 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Animation de réduction verticale (ouverture → fermeture) */
+.vertical-panel-collapsing {
+    animation: collapse-vertical 0.4s cubic-bezier(0.55, 0.055, 0.675, 0.19);
+}
+
+/* Animation poignée verticale - effet d'accordéon */
+.vertical-panel-handle-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vertical-panel-handle-transition:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Keyframes pour expansion verticale */
+@keyframes expand-vertical {
+    from {
+        height: 0;
+        opacity: 0;
+        transform: scaleY(0);
+    }
+    60% {
+        opacity: 0.8;
+        transform: scaleY(1.02);
+    }
+    to {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+}
+
+/* Keyframes pour réduction verticale */
+@keyframes collapse-vertical {
+    from {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+    40% {
+        opacity: 0.6;
+        transform: scaleY(0.95);
+    }
+    to {
+        height: 0;
+        opacity: 0;
+        transform: scaleY(0);
+    }
+}
+
+/* Animation spéciale pour les changements de proportion verticaux */
+.vertical-proportion-change {
+    animation: proportion-pulse-vertical 0.6s ease-out;
+}
+
+@keyframes proportion-pulse-vertical {
+    0% {
+        border-color: rgb(75, 85, 99); /* gray-600 */
+    }
+    50% {
+        border-color: rgb(59, 130, 246); /* blue-500 */
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+    100% {
+        border-color: rgb(75, 85, 99);
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+}
+
+/* Animation pour les indicateurs de taille verticaux */
+.vertical-size-indicator {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vertical-size-indicator.active {
+    animation: indicator-glow 0.8s ease-in-out;
+}
+
+@keyframes indicator-glow {
+    0%, 100% {
+        background-color: rgb(59, 130, 246); /* blue-500 */
+    }
+    50% {
+        background-color: rgb(96, 165, 250); /* blue-400 */
+        box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+    }
+}
+
+/* Animation fluide du contenu lors des changements de proportion */
+.vertical-content-resize {
+    transition: padding 0.3s ease, 
+                font-size 0.3s ease,
+                line-height 0.3s ease;
+}
+
+/* Modes adaptatifs avec transitions */
+.vertical-content-compact {
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: scale(0.95);
+}
+
+.vertical-content-full {
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: scale(1);
+}
+
+/* Animation spéciale lors du passage en plein écran */
+.vertical-fullscreen-enter {
+    animation: fullscreen-expand 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes fullscreen-expand {
+    from {
+        transform: scale(0.9);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.02);
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Animation pour les poignées avec image de fond */
+.vertical-handle-background-transition {
+    transition: all 0.4s ease,
+                background-size 0.4s ease,
+                background-position 0.4s ease;
+}
+
+.vertical-handle-background-transition:hover {
+    background-size: 105% !important;
 }
 
 /* Classes utilitaires pour déclencher les animations */
@@ -194,4 +495,12 @@
 
 .trigger-elastic {
     transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+.trigger-vertical-elastic {
+    transition: height 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+.trigger-vertical-proportion {
+    animation: proportion-pulse-vertical 0.6s ease-out;
 }

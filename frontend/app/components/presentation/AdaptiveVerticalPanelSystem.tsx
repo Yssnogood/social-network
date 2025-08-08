@@ -6,6 +6,7 @@ import PresentationContentPanel from './PresentationContentPanel';
 import ContentPanel from './ContentPanel';
 import { useVerticalPanelState } from '../../hooks/useVerticalDrawers';
 import { Group, Event, GroupPost, GroupComment, GroupMessage, User, GroupMember } from '../../types/group';
+import '../../styles/drawer-animations.css';
 
 interface AdaptiveVerticalPanelSystemProps {
     // Informations de base
@@ -136,7 +137,9 @@ export default function AdaptiveVerticalPanelSystem({
         }
         
         return (
-            <div className={`h-full ${config.isCompact ? 'presentation-compact' : ''}`}>
+            <div className={`h-full transition-all duration-300 ${
+                config.isCompact ? 'presentation-compact vertical-content-compact' : 'vertical-content-full'
+            }`}>
                 <PresentationContentPanel
                     type={type}
                     selectedItem={selectedItem}
@@ -150,9 +153,10 @@ export default function AdaptiveVerticalPanelSystem({
                     photoGallery={photoGallery}
                 />
                 
-                {/* Overlay d'adaptation si nécessaire */}
+                {/* Overlay d'adaptation avec animation fade-in si nécessaire */}
                 {config.isCompact && (
-                    <div className="absolute top-0 right-0 bg-blue-600/10 px-2 py-1 text-xs text-blue-400 rounded-bl">
+                    <div className="absolute top-0 right-0 bg-blue-600/10 px-2 py-1 text-xs text-blue-400 rounded-bl 
+                                   drawer-content-fade-in animate-pulse">
                         Mode compact
                     </div>
                 )}
@@ -171,7 +175,9 @@ export default function AdaptiveVerticalPanelSystem({
         }
         
         return (
-            <div className={`h-full ${config.isCompact ? 'communication-compact' : ''}`}>
+            <div className={`h-full transition-all duration-300 ${
+                config.isCompact ? 'communication-compact vertical-content-compact' : 'vertical-content-full'
+            }`}>
                 <ContentPanel
                     type={type}
                     groupId={groupId}
@@ -193,9 +199,10 @@ export default function AdaptiveVerticalPanelSystem({
                     onDeleteEvent={onDeleteEvent}
                 />
                 
-                {/* Overlay d'adaptation si nécessaire */}
+                {/* Overlay d'adaptation avec animation fade-in si nécessaire */}
                 {config.isCompact && (
-                    <div className="absolute top-0 right-0 bg-green-600/10 px-2 py-1 text-xs text-green-400 rounded-bl">
+                    <div className="absolute top-0 right-0 bg-green-600/10 px-2 py-1 text-xs text-green-400 rounded-bl 
+                                   drawer-content-fade-in animate-pulse">
                         Mode compact
                     </div>
                 )}
@@ -205,42 +212,107 @@ export default function AdaptiveVerticalPanelSystem({
     
     return (
         <>
-            {/* CSS pour les modes adaptatifs */}
+            {/* CSS pour les modes adaptatifs avec animations améliorées */}
             <style jsx>{`
                 .presentation-compact .drawer-transition {
-                    transition: all 0.2s ease;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 }
                 
                 .presentation-compact .p-4 {
                     padding: 0.5rem;
+                    transition: padding 0.3s ease;
                 }
                 
                 .communication-compact .drawer-transition {
-                    transition: all 0.2s ease;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 }
                 
                 .communication-compact .p-4 {
                     padding: 0.5rem;
+                    transition: padding 0.3s ease;
                 }
                 
-                /* Styles pour mode compact - tiroirs plus petits */
+                /* Styles pour mode compact - tiroirs plus petits avec animations */
                 .presentation-compact .drawer-header {
                     padding: 0.5rem 1rem;
                     min-height: 2.5rem;
+                    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                    border-left: 2px solid transparent;
+                }
+                
+                .presentation-compact .drawer-header:hover {
+                    border-left-color: rgba(59, 130, 246, 0.5);
+                    transform: translateX(1px);
                 }
                 
                 .communication-compact .drawer-header {
                     padding: 0.5rem 1rem;  
                     min-height: 2.5rem;
+                    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                    border-left: 2px solid transparent;
                 }
                 
-                /* Textes plus petits en mode compact */
+                .communication-compact .drawer-header:hover {
+                    border-left-color: rgba(34, 197, 94, 0.5);
+                    transform: translateX(1px);
+                }
+                
+                /* Textes plus petits en mode compact avec transitions */
                 .presentation-compact .text-sm {
                     font-size: 0.75rem;
+                    transition: font-size 0.3s ease, opacity 0.3s ease;
                 }
                 
                 .communication-compact .text-sm {
                     font-size: 0.75rem;
+                    transition: font-size 0.3s ease, opacity 0.3s ease;
+                }
+                
+                /* Animation pour les contenus qui apparaissent en mode compact */
+                .presentation-compact > *:not(.absolute) {
+                    animation: compact-slide-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                }
+                
+                .communication-compact > *:not(.absolute) {
+                    animation: compact-slide-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                }
+                
+                @keyframes compact-slide-in {
+                    from {
+                        opacity: 0.7;
+                        transform: scale(0.98);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                }
+                
+                /* Animation fluide pour les changements de mode */
+                .vertical-content-compact {
+                    animation: content-compact-enter 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                }
+                
+                .vertical-content-full {
+                    animation: content-full-enter 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                }
+                
+                @keyframes content-compact-enter {
+                    from {
+                        transform: scale(1.02);
+                    }
+                    to {
+                        transform: scale(0.95);
+                    }
+                }
+                
+                @keyframes content-full-enter {
+                    from {
+                        transform: scale(0.98);
+                    }
+                    to {
+                        transform: scale(1);
+                    }
                 }
             `}</style>
             

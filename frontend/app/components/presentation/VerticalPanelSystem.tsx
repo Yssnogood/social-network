@@ -1,7 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useVerticalDrawers, type VerticalPanelType } from '../../hooks/useVerticalDrawers';
+import { useVerticalPanelResponsive } from '../../hooks/useResponsive';
+import '../../styles/drawer-animations.css';
 
 interface VerticalPanelSystemProps {
     // Contenu du panneau Présentation
@@ -40,21 +42,135 @@ export default function VerticalPanelSystem({
     className = ''
 }: VerticalPanelSystemProps) {
     
+    // États pour tracking des animations
+    const [animatingPanels, setAnimatingPanels] = useState<Set<VerticalPanelType>>(new Set());
+    const [lastChangedPanel, setLastChangedPanel] = useState<VerticalPanelType | null>(null);
+    const [previousConfig, setPreviousConfig] = useState<any>(null);
+    
+    // Hook responsive pour adaptations selon la taille d'écran
+    const responsiveConfig = useVerticalPanelResponsive();
+
     const {
         config,
         handlePanelClick,
         getPanelInfo,
         getConfigStats
     } = useVerticalDrawers({
-        onConfigChange
+        onConfigChange: (newConfig) => {
+            // Détecter les changements majeurs pour les animations
+            if (previousConfig) {
+                const changedPanels = new Set<VerticalPanelType>();
+                
+                Object.keys(newConfig).forEach(panelKey => {
+                    const panel = panelKey as VerticalPanelType;
+                    if (newConfig[panel] !== previousConfig[panel]) {
+                        changedPanels.add(panel);
+                        setLastChangedPanel(panel);
+                    }
+                });
+                
+                if (changedPanels.size > 0) {
+                    setAnimatingPanels(changedPanels);
+                    
+                    // Nettoyer l'animation après délai
+                    setTimeout(() => {
+                        setAnimatingPanels(new Set());
+                    }, 600);
+                }
+            }
+            
+            setPreviousConfig({ ...config });
+            onConfigChange?.(newConfig);
+        }
     });
 
     const presentationInfo = getPanelInfo('presentation');
     const communicationInfo = getPanelInfo('communication');
     const stats = getConfigStats();
 
+    // Handler de clic avec animation enhanced et contraintes responsives
+    const handleAnimatedPanelClick = (panelType: VerticalPanelType) => {
+        // Marquer le panneau comme en cours d'animation
+        setAnimatingPanels(new Set([panelType]));
+        setLastChangedPanel(panelType);
+        
+        // Déclencher le changement de configuration
+        handlePanelClick(panelType);
+    };
+
     /**
-     * Composant Poignée cliquable pour un panneau
+     * Détermine les classes CSS d'animation pour un panneau
+     */
+    const getPanelAnimationClasses = (panelType: VerticalPanelType): string => {
+        const panelInfo = getPanelInfo(panelType);
+        const isAnimating = animatingPanels.has(panelType);
+        const wasLastChanged = lastChangedPanel === panelType;
+        
+        let classes = ['vertical-panel-transition'];
+        
+        // Animation majeure pour changements 0 ↔ 3/3
+        if (previousConfig && isAnimating) {
+            const oldSize = previousConfig[panelType];
+            const newSize = panelInfo.size;
+            
+            if ((oldSize === '0' && newSize === '3/3') || (oldSize === '3/3' && newSize === '0')) {
+                classes.push('vertical-panel-major-transition');
+            }
+            
+            // Animation d'expansion ou de réduction
+            if (oldSize === '0' && newSize !== '0') {
+                classes.push('vertical-panel-expanding');
+            } else if (oldSize !== '0' && newSize === '0') {
+                classes.push('vertical-panel-collapsing');
+            }
+            
+            // Pulse pour changements de proportion
+            if (wasLastChanged) {
+                classes.push('vertical-proportion-change');
+            }
+        }
+        
+        // Animation plein écran
+        if (panelInfo.isFullScreen && wasLastChanged) {
+            classes.push('vertical-fullscreen-enter');
+        }
+        
+        return classes.join(' ');
+    };
+
+    /**
+     * Détermine les classes d'animation pour les poignées
+     */
+    const getHandleAnimationClasses = (panelType: VerticalPanelType): string => {
+        const classes = ['vertical-panel-handle-transition'];
+        const panelInfo = getPanelInfo(panelType);
+        
+        // Animation spéciale pour poignées avec background
+        if (panelType === 'presentation' && presentationBackgroundImage) {
+            classes.push('vertical-handle-background-transition');
+        }
+        
+        return classes.join(' ');
+    };
+
+    /**
+     * Classes pour le contenu adaptatif
+     */
+    const getContentAnimationClasses = (panelType: VerticalPanelType): string => {
+        const panelInfo = getPanelInfo(panelType);
+        const classes = ['vertical-content-resize'];
+        
+        if (panelInfo.size === '1/3') {
+            classes.push('vertical-content-compact');
+        } else {
+            classes.push('vertical-content-full');
+        }
+        
+        return classes.join(' ');
+    };
+
+    /**
+     * Composant Poignée cliquable pour un panneau avec animations améliorées
      */
     const PanelHandle = ({ 
         panelType, 
@@ -67,18 +183,24 @@ export default function VerticalPanelSystem({
     }) => {
         const panelInfo = getPanelInfo(panelType);
         const isPresentationPanel = panelType === 'presentation';
+        const animationClasses = getHandleAnimationClasses(panelType);
+        const isLastChanged = lastChangedPanel === panelType;
         
         return (
             <button
-                onClick={() => handlePanelClick(panelType)}
+                onClick={() => handleAnimatedPanelClick(panelType)}
                 className={`
-                    w-full flex items-center justify-between px-4 py-3 transition-all duration-300 
-                    text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset
+                    w-full flex items-center justify-between text-left 
+                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset
+                    focus:ring-offset-2 focus:ring-offset-gray-900
+                    ${animationClasses} ${responsiveConfig.responsiveClasses.handle}
+                    ${responsiveConfig.handlePadding}
                     ${panelInfo.isClosed 
-                        ? 'h-12 bg-gray-800 hover:bg-gray-700 border-b border-gray-600' 
-                        : 'h-16 bg-gray-900 hover:bg-gray-800 border-b-2 border-gray-600'
+                        ? `${responsiveConfig.screenInfo.isMobile ? 'h-14' : 'h-12'} bg-gray-800 hover:bg-gray-700 border-b border-gray-600` 
+                        : `${responsiveConfig.screenInfo.isMobile ? 'h-20' : 'h-16'} bg-gray-900 hover:bg-gray-800 border-b-2 border-gray-600`
                     }
                     ${panelInfo.isFullScreen ? 'shadow-lg border-blue-600' : ''}
+                    ${isLastChanged && animatingPanels.has(panelType) ? 'trigger-vertical-proportion' : ''}
                 `}
                 title={
                     panelInfo.isClosed 
@@ -87,7 +209,23 @@ export default function VerticalPanelSystem({
                         ? `Réduire ${title}` 
                         : `Agrandir ${title}`
                 }
-                aria-label={`${title} - ${panelInfo.size} de l'écran`}
+                aria-label={`Poignée ${title}, actuellement ${panelInfo.size} de l'écran. ${
+                    panelInfo.isClosed 
+                        ? 'Appuyez pour ouvrir' 
+                        : panelInfo.isFullScreen 
+                        ? 'Appuyez pour réduire' 
+                        : 'Appuyez pour agrandir'
+                }`}
+                aria-expanded={!panelInfo.isClosed}
+                aria-controls={`vertical-panel-${panelType}`}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleAnimatedPanelClick(panelType);
+                    }
+                }}
                 style={
                     isPresentationPanel && backgroundImage && !panelInfo.isClosed
                         ? {
@@ -132,17 +270,17 @@ export default function VerticalPanelSystem({
                         ▼
                     </span>
                     
-                    {/* Indicateur visuel de taille */}
+                    {/* Indicateur visuel de taille avec animations */}
                     <div className="flex flex-col gap-1">
-                        <div className={`h-1 w-4 rounded transition-colors duration-200 ${
-                            panelInfo.size === '0' ? 'bg-gray-600' : 'bg-blue-500'
-                        }`} />
-                        <div className={`h-1 w-4 rounded transition-colors duration-200 ${
-                            ['1/3', '2/3', '3/3'].includes(panelInfo.size) ? 'bg-blue-500' : 'bg-gray-600'
-                        }`} />
-                        <div className={`h-1 w-4 rounded transition-colors duration-200 ${
-                            ['2/3', '3/3'].includes(panelInfo.size) ? 'bg-blue-500' : 'bg-gray-600'
-                        }`} />
+                        <div className={`h-1 w-4 rounded vertical-size-indicator ${
+                            panelInfo.size !== '0' ? 'bg-blue-500 active' : 'bg-gray-600'
+                        } ${isLastChanged && panelInfo.size !== '0' ? 'active' : ''}`} />
+                        <div className={`h-1 w-4 rounded vertical-size-indicator ${
+                            ['1/3', '2/3', '3/3'].includes(panelInfo.size) ? 'bg-blue-500 active' : 'bg-gray-600'
+                        } ${isLastChanged && ['1/3', '2/3', '3/3'].includes(panelInfo.size) ? 'active' : ''}`} />
+                        <div className={`h-1 w-4 rounded vertical-size-indicator ${
+                            ['2/3', '3/3'].includes(panelInfo.size) ? 'bg-blue-500 active' : 'bg-gray-600'
+                        } ${isLastChanged && ['2/3', '3/3'].includes(panelInfo.size) ? 'active' : ''}`} />
                     </div>
                 </div>
             </button>
@@ -150,7 +288,7 @@ export default function VerticalPanelSystem({
     };
 
     /**
-     * Composant Panneau avec contenu scrollable
+     * Composant Panneau avec contenu scrollable et animations
      */
     const Panel = ({ 
         panelType, 
@@ -160,6 +298,7 @@ export default function VerticalPanelSystem({
         children: React.ReactNode; 
     }) => {
         const panelInfo = getPanelInfo(panelType);
+        const contentClasses = getContentAnimationClasses(panelType);
         
         if (panelInfo.isClosed) {
             return null; // Le panneau fermé n'affiche que sa poignée
@@ -167,11 +306,13 @@ export default function VerticalPanelSystem({
 
         return (
             <div 
-                className="flex-1 bg-gray-900 overflow-hidden flex flex-col"
+                className={`flex-1 bg-gray-900 overflow-hidden flex flex-col ${contentClasses}`}
                 id={`vertical-panel-${panelType}`}
             >
-                {/* Contenu scrollable */}
-                <div className="flex-1 overflow-y-auto">
+                {/* Contenu scrollable avec fade-in */}
+                <div className={`flex-1 overflow-y-auto ${
+                    lastChangedPanel === panelType && !panelInfo.isClosed ? 'drawer-content-fade-in' : ''
+                }`}>
                     {children}
                 </div>
             </div>
@@ -179,7 +320,26 @@ export default function VerticalPanelSystem({
     };
 
     return (
-        <div className={`h-full flex flex-col bg-gray-900 ${className}`}>
+        <div 
+            className={`h-full flex flex-col bg-gray-900 ${className} ${responsiveConfig.responsiveClasses.container}`}
+            role="main"
+            aria-label="Système de panneaux verticaux"
+            aria-describedby="vertical-panels-description"
+            style={{
+                // Hauteur minimale adaptative
+                minHeight: `${responsiveConfig.minPanelHeight * 2}px`
+            }}
+        >
+            {/* Description cachée pour les lecteurs d'écran */}
+            <div 
+                id="vertical-panels-description" 
+                className="sr-only"
+                aria-live="polite"
+            >
+                Système à 2 panneaux verticaux: {presentationTitle} ({presentationInfo.size}) et Communication ({communicationInfo.size}).
+                Cliquez sur les poignées pour ajuster les proportions.
+            </div>
+            
             {/* DEBUG INFO (à supprimer en production) */}
             {process.env.NODE_ENV === 'development' && (
                 <div className="absolute top-0 right-0 z-50 bg-black/80 text-white text-xs p-2 m-2 rounded">
@@ -188,9 +348,19 @@ export default function VerticalPanelSystem({
             )}
 
             {/* ===== PANNEAU PRÉSENTATION ===== */}
-            <div 
-                className="flex flex-col transition-all duration-300 border-b border-gray-700"
+            <section 
+                className={`flex flex-col border-b border-gray-700 ${getPanelAnimationClasses('presentation')}`}
                 style={presentationInfo.style}
+                aria-label={`Panneau ${presentationTitle}`}
+                aria-expanded={!presentationInfo.isClosed}
+                role="region"
+                tabIndex={presentationInfo.isClosed ? 0 : -1}
+                onKeyDown={(e) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && presentationInfo.isClosed) {
+                        e.preventDefault();
+                        handleAnimatedPanelClick('presentation');
+                    }
+                }}
             >
                 {/* Poignée Présentation */}
                 <PanelHandle 
@@ -203,12 +373,22 @@ export default function VerticalPanelSystem({
                 <Panel panelType="presentation">
                     {presentationContent}
                 </Panel>
-            </div>
+            </section>
 
             {/* ===== PANNEAU COMMUNICATION ===== */}
-            <div 
-                className="flex flex-col transition-all duration-300"
+            <section 
+                className={`flex flex-col ${getPanelAnimationClasses('communication')}`}
                 style={communicationInfo.style}
+                aria-label="Panneau Communication"
+                aria-expanded={!communicationInfo.isClosed}
+                role="region"
+                tabIndex={communicationInfo.isClosed ? 0 : -1}
+                onKeyDown={(e) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && communicationInfo.isClosed) {
+                        e.preventDefault();
+                        handleAnimatedPanelClick('communication');
+                    }
+                }}
             >
                 {/* Poignée Communication */}
                 <PanelHandle 
@@ -220,7 +400,7 @@ export default function VerticalPanelSystem({
                 <Panel panelType="communication">
                     {communicationContent}
                 </Panel>
-            </div>
+            </section>
         </div>
     );
 }
