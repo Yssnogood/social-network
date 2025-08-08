@@ -120,11 +120,12 @@ export default function AdaptiveEventCard({
       role="article"
       aria-label={`Événement ${event.title}`}
     >
-      {/* Header de l'événement */}
-      <header className="vignette-meta">
-        <div className="flex items-center justify-between">
-          <div className="min-w-0 flex-1">
-            <h3 className="vignette-title text-emerald-400 font-semibold">
+      {/* Layout 2 colonnes : informations (3/4) + boutons (1/4) */}
+      <div className="flex gap-2 h-full">
+        {/* Colonne informations (3/4 de la largeur) */}
+        <div className="flex-1 min-w-0 flex flex-col" style={{width: '75%'}}>
+          <header className="vignette-meta">
+            <h3 className="vignette-title text-emerald-400 font-semibold truncate">
               {event.title}
             </h3>
             <time 
@@ -134,16 +135,48 @@ export default function AdaptiveEventCard({
               <span>📅</span>
               <span>{formatEventDate(event.event_date)}</span>
             </time>
-          </div>
+          </header>
+        </div>
 
-          {/* Statut visuel (compact) */}
-          {adaptiveConfig.state === 'compact' && (
-            <div className={`vignette-badge ${isPastEvent ? 'bg-gray-600/20 text-gray-400' : 'bg-emerald-600/20 text-emerald-400'}`}>
-              {isPastEvent ? 'Passé' : 'À venir'}
-            </div>
+        {/* Colonne boutons (1/4 de la largeur) */}
+        <div className="flex-shrink-0 flex flex-col justify-start gap-0.5" style={{width: '25%'}}>
+          {!isPastEvent && !isLoading && (
+            <>
+              <button
+                onClick={() => handleEventResponse('going')}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded flex items-center justify-center h-6 text-xs leading-none flex-shrink-0"
+                disabled={isLoading}
+                title="Participer à cet événement"
+              >
+                {adaptiveConfig.state === 'compact' ? '✓' : 'Participe'}
+              </button>
+              
+              <button
+                onClick={() => handleEventResponse('not_going')}
+                className="bg-red-600 hover:bg-red-700 text-white font-medium rounded flex items-center justify-center h-6 text-xs leading-none flex-shrink-0"
+                disabled={isLoading}
+                title="Ne pas participer à cet événement"
+              >
+                {adaptiveConfig.state === 'compact' ? '✗' : 'Non'}
+              </button>
+
+              <button
+                onClick={() => handleEventResponse('maybe')}
+                className="bg-amber-600 hover:bg-amber-700 text-white font-medium rounded flex items-center justify-center h-6 text-xs leading-none flex-shrink-0"
+                disabled={isLoading}
+                title="Peut-être participer à cet événement"
+              >
+                {adaptiveConfig.state === 'compact' ? '?' : 'Peut-être'}
+              </button>
+            </>
+          )}
+          
+          {/* Indicateur de chargement */}
+          {isLoading && (
+            <span className="animate-spin text-gray-400 text-xs text-center">⟳</span>
           )}
         </div>
-      </header>
+      </div>
 
       {/* Description de l'événement */}
       {adaptiveConfig.shouldShowDescription && (
@@ -156,77 +189,50 @@ export default function AdaptiveEventCard({
       {adaptiveConfig.state !== 'compact' && (
         <div className="vignette-meta">
           <div className="flex items-center gap-4 text-xs">
-            {/* Statut de l'événement */}
-            <div className={`vignette-badge ${isPastEvent ? 'bg-gray-600/20 text-gray-400' : 'bg-emerald-600/20 text-emerald-400'}`}>
-              {isPastEvent ? '⏰ Terminé' : '🎯 À venir'}
-            </div>
-            
             {/* Créateur (état étendu uniquement) */}
             {adaptiveConfig.state === 'extended' && (
               <span className="opacity-70">
                 Créé par {event.creator_username}
               </span>
             )}
+
+            {/* Indicateur de chargement */}
+            {isLoading && (
+              <div className="flex items-center gap-1 text-gray-400">
+                <span className="animate-spin">⟳</span>
+                <span className="text-xs">Traitement...</span>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Actions de l'événement */}
-      <footer className="vignette-actions">
-        {!isPastEvent && !isLoading && (
-          <>
-            <button
-              onClick={() => handleEventResponse('going')}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded flex items-center gap-1"
-              disabled={isLoading}
-            >
-              {adaptiveConfig.state === 'compact' ? '✓' : '✓ Participer'}
-            </button>
-            
-            <button
-              onClick={() => handleEventResponse('not_going')}
-              className="bg-red-600 hover:bg-red-700 text-white font-medium rounded flex items-center gap-1"
-              disabled={isLoading}
-            >
-              {adaptiveConfig.state === 'compact' ? '✗' : '✗ Ne pas participer'}
-            </button>
-          </>
-        )}
-
-        {/* Actions secondaires */}
-        {adaptiveConfig.shouldShowSecondaryActions && (
-          <>
+      {/* Actions secondaires de l'événement (seulement en extended) */}
+      {adaptiveConfig.state === 'extended' && (
+        <footer className="vignette-actions">
+          <div className="flex-1 flex items-center gap-2">
+            {/* Bouton supprimer (visible pour créateur) */}
             {canDelete && (
               <button
                 onClick={handleDelete}
-                className="secondary-action bg-gray-600 hover:bg-gray-700 text-white font-medium rounded"
+                className="text-gray-400 hover:text-red-400 font-medium flex items-center gap-1"
                 disabled={isLoading}
+                title="Supprimer cet événement"
               >
                 🗑 Supprimer
               </button>
             )}
-            
-            {adaptiveConfig.state === 'extended' && (
-              <>
-                <button className="secondary-action text-gray-400 hover:text-gray-300 font-medium">
-                  📤 Partager
-                </button>
-                <button className="secondary-action text-gray-400 hover:text-gray-300 font-medium">
-                  📋 Copier le lien
-                </button>
-              </>
-            )}
-          </>
-        )}
 
-        {/* Indicateur de chargement */}
-        {isLoading && (
-          <div className="flex items-center gap-2 text-gray-400">
-            <span className="animate-spin">⟳</span>
-            <span className="text-xs">Traitement...</span>
+            {/* Actions de partage */}
+            <button className="secondary-action text-gray-400 hover:text-gray-300 font-medium">
+              📤 Partager
+            </button>
+            <button className="secondary-action text-gray-400 hover:text-gray-300 font-medium">
+              📋 Copier le lien
+            </button>
           </div>
-        )}
-      </footer>
+        </footer>
+      )}
 
       {/* Détails supplémentaires (état étendu uniquement) */}
       {adaptiveConfig.state === 'extended' && !isPastEvent && (

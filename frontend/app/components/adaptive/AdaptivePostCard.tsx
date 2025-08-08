@@ -115,12 +115,28 @@ export default function AdaptivePostCard({
             </div>
           </div>
 
-          {/* Indicateur de commentaires (compact) */}
-          {adaptiveConfig.state === 'compact' && post.comments_count > 0 && (
-            <div className="vignette-badge bg-blue-600/20 text-blue-400 vignette-indicator">
-              {post.comments_count}
-            </div>
-          )}
+          {/* Actions du header (droite) */}
+          <div className="flex items-center gap-2">
+            {/* Indicateur de commentaires (compact) */}
+            {adaptiveConfig.state === 'compact' && post.comments_count > 0 && (
+              <div className="vignette-badge bg-blue-600/20 text-blue-400 vignette-indicator">
+                {post.comments_count}
+              </div>
+            )}
+            
+            {/* Bouton Partager dans le coin */}
+            <button 
+              className="text-gray-400 hover:text-blue-300 font-medium flex items-center justify-center transition-colors"
+              title="Partager ce post"
+              aria-label="Partager ce post"
+            >
+              {adaptiveConfig.state === 'compact' ? (
+                <span className="text-sm">↗</span>
+              ) : (
+                <span className="text-sm">↗</span>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -131,46 +147,45 @@ export default function AdaptivePostCard({
         </div>
       )}
 
-      {/* Actions du post */}
+      {/* Actions du post - layout optimisé */}
       <footer className="vignette-actions">
-        <button
-          onClick={onToggleComments}
-          className="text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
-          disabled={isLoadingComments}
-        >
-          {isLoadingComments ? (
-            <span className="animate-spin">⟳</span>
-          ) : (
-            <span>{showComments ? '▼' : '▶'}</span>
-          )}
-          
-          {adaptiveConfig.state !== 'compact' && (
-            <span>
-              {showComments ? 'Masquer' : 'Voir'} commentaires
-              {post.comments_count > 0 && (
-                <span className="vignette-badge bg-blue-600/20 text-blue-400 ml-1">
-                  {post.comments_count}
-                </span>
-              )}
-            </span>
-          )}
-          
-          {adaptiveConfig.state === 'compact' && post.comments_count > 0 && (
-            <span>{post.comments_count}</span>
-          )}
-        </button>
+        {/* Actions principales (gauche) */}
+        <div className="flex-1 flex items-center gap-2">
+          <button
+            onClick={onToggleComments}
+            className="text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
+            disabled={isLoadingComments}
+          >
+            {isLoadingComments ? (
+              <span className="animate-spin">⟳</span>
+            ) : (
+              <span>{showComments ? '▼' : '▶'}</span>
+            )}
+            
+            {adaptiveConfig.state !== 'compact' && (
+              <span>
+                {showComments ? 'Masquer' : 'Voir'} commentaires
+                {post.comments_count > 0 && (
+                  <span className="vignette-badge bg-blue-600/20 text-blue-400 ml-1">
+                    {post.comments_count}
+                  </span>
+                )}
+              </span>
+            )}
+            
+            {adaptiveConfig.state === 'compact' && post.comments_count > 0 && (
+              <span>{post.comments_count}</span>
+            )}
+          </button>
 
-        {/* Actions secondaires (visibles selon l'état) */}
-        {adaptiveConfig.shouldShowSecondaryActions && (
-          <>
+          {/* J'aime (visible selon l'état) */}
+          {adaptiveConfig.shouldShowSecondaryActions && (
             <button className="secondary-action text-gray-400 hover:text-gray-300 font-medium">
-              ♥ J'aime
+              {adaptiveConfig.state === 'compact' ? '♥' : '♥ J\'aime'}
             </button>
-            <button className="secondary-action text-gray-400 hover:text-gray-300 font-medium">
-              ↗ Partager
-            </button>
-          </>
-        )}
+          )}
+        </div>
+
       </footer>
 
       {/* Section commentaires (étendue) */}

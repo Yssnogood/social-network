@@ -147,8 +147,8 @@ export function getVignetteStyles(adaptiveConfig: AdaptiveConfig): React.CSSProp
     case 'compact':
       return {
         ...baseStyles,
-        minHeight: '2rem',
-        maxHeight: '3rem',
+        minHeight: '3rem',
+        maxHeight: '4.5rem',
       };
 
     case 'extended':

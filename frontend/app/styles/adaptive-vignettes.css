@@ -53,18 +53,23 @@
   opacity: 0.8;
   display: flex;
   gap: 0.25rem;
-  align-items: center;
+  align-items: flex-start;
+  min-height: 2.5rem; /* Hauteur suffisante pour les boutons en colonne */
 }
 
 .vignette-compact .vignette-actions {
   display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   gap: 0.125rem;
+  min-height: 2.5rem; /* Hauteur augmentée pour les boutons en colonne */
 }
 
 .vignette-compact .vignette-actions button {
   padding: 0.125rem 0.25rem;
   font-size: 0.625rem;
   border-radius: 0.25rem;
+  flex-shrink: 0; /* Empêche la compression des boutons */
 }
 
 .vignette-compact .vignette-actions .secondary-action {
@@ -104,14 +109,17 @@
 
 .vignette-normal .vignette-actions {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 0.25rem;
-  flex-wrap: wrap;
+  min-height: 2rem; /* Hauteur minimum pour éviter le débordement */
 }
 
 .vignette-normal .vignette-actions button {
   padding: 0.25rem 0.5rem;
   font-size: var(--font-compact);
   border-radius: 0.375rem;
+  flex-shrink: 0; /* Empêche la compression des boutons */
 }
 
 .vignette-normal .vignette-actions .secondary-action {
@@ -150,9 +158,11 @@
 
 .vignette-extended .vignette-actions {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 0.5rem;
-  flex-wrap: wrap;
   margin-top: 1rem;
+  min-height: 2.5rem; /* Hauteur minimum pour éviter le débordement */
 }
 
 .vignette-extended .vignette-actions button {
@@ -160,6 +170,7 @@
   font-size: var(--font-normal);
   border-radius: 0.5rem;
   transition: all 0.2s ease;
+  flex-shrink: 0; /* Empêche la compression des boutons */
 }
 
 .vignette-extended .vignette-actions .secondary-action {
@@ -168,18 +179,18 @@
 
 /* ===== TYPES DE VIGNETTES SPÉCIFIQUES ===== */
 
-/* Vignette Post */
-.vignette-post {
-  background: rgba(255, 255, 255, 0.05);
+/* Vignette Post - Spécificité élevée pour surcharger Tailwind */
+article.vignette-post {
+  background: rgba(75, 85, 99, 0.15) !important; /* Gris bleuté sobre */
   border-radius: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3) !important; /* Bordure bleue subtile */
   margin-bottom: var(--gap-normal);
   transition: all 0.3s ease;
 }
 
-.vignette-post:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
+article.vignette-post:hover {
+  background: rgba(75, 85, 99, 0.25) !important;
+  border-color: rgba(59, 130, 246, 0.5) !important;
 }
 
 .vignette-post.vignette-compact {
@@ -190,21 +201,21 @@
 .vignette-post.vignette-extended {
   margin-bottom: var(--gap-extended);
   border-radius: 0.75rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* Vignette Event */
-.vignette-event {
-  background: rgba(16, 185, 129, 0.05); /* Teinte verte pour événements */
+/* Vignette Event - Spécificité élevée pour surcharger Tailwind */
+article.vignette-event {
+  background: rgba(107, 114, 128, 0.15) !important; /* Gris avec nuance verte sobre */
   border-radius: 0.5rem;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.3) !important; /* Bordure émeraude subtile */
   margin-bottom: var(--gap-normal);
   transition: all 0.3s ease;
 }
 
-.vignette-event:hover {
-  background: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.3);
+article.vignette-event:hover {
+  background: rgba(107, 114, 128, 0.25) !important;
+  border-color: rgba(16, 185, 129, 0.5) !important;
 }
 
 .vignette-event.vignette-compact {
@@ -218,18 +229,18 @@
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
 }
 
-/* Vignette Message */
+/* Vignette Message - Spécificité élevée pour surcharger Tailwind */
 .vignette-message {
-  background: rgba(217, 119, 6, 0.05); /* Teinte ambre pour messages */
+  background: rgba(156, 163, 175, 0.15) !important; /* Gris avec nuance ambre sobre */
   border-radius: 0.5rem;
-  border: 1px solid rgba(217, 119, 6, 0.2);
+  border: 1px solid rgba(217, 119, 6, 0.3) !important; /* Bordure ambre subtile */
   margin-bottom: var(--gap-normal);
   transition: all 0.3s ease;
 }
 
 .vignette-message:hover {
-  background: rgba(217, 119, 6, 0.1);
-  border-color: rgba(217, 119, 6, 0.3);
+  background: rgba(156, 163, 175, 0.25) !important;
+  border-color: rgba(217, 119, 6, 0.5) !important;
 }
 
 .vignette-message.vignette-compact {
@@ -240,7 +251,7 @@
 .vignette-message.vignette-extended {
   margin-bottom: var(--gap-extended);
   border-radius: 0.75rem;
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* ===== ÉLÉMENTS SPÉCIALISÉS ===== */
