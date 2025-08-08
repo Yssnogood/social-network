@@ -106,54 +106,38 @@ export default function PresentationContentPanel({
         const count = getDrawerCount(drawer);
         
         return (
-            <button
-                onClick={() => toggleDrawer(drawer)}
-                disabled={!canClose && !isClosed} // Empêche de fermer le dernier tiroir
-                className={`w-full flex items-center justify-between p-4 transition-colors duration-200 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${
-                    !canClose && !isClosed 
-                        ? 'bg-gray-700 cursor-not-allowed opacity-75' 
-                        : 'bg-gray-800 hover:bg-gray-700 focus:bg-gray-700'
-                }`}
-                aria-expanded={!isClosed}
-                aria-controls={`drawer-content-${drawer}`}
-                title={
-                    !canClose && !isClosed 
-                        ? `${title} (impossible de fermer le dernier tiroir)` 
-                        : isClosed 
-                        ? `Ouvrir ${title}` 
-                        : `Fermer ${title}`
-                }
-            >
-                <div className="flex items-center gap-3">
-                    {/* Icône état (▶/▼) */}
-                    <span className="text-gray-400 text-sm transition-transform duration-200">
-                        {isClosed ? '▶' : '▼'}
-                    </span>
-                    
-                    {/* Titre avec indication de pourcentage pour debug */}
-                    <h3 className="font-semibold text-white text-sm">
-                        {title}
-                        <span className="text-xs text-gray-500 ml-2">({percentage}%)</span>
-                    </h3>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                    {/* Bouton swap (visible si pas le plus grand et pas fermé et plusieurs ouverts) */}
-                    {!isClosed && !isLargest && openCount > 1 && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                swapWithLarge(drawer);
-                            }}
-                            className="p-1 text-gray-400 hover:text-blue-400 transition-colors"
-                            title={`Donner le focus à ${title}`}
-                            aria-label={`Agrandir le panneau ${title}`}
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                            </svg>
-                        </button>
-                    )}
+            <div className="w-full flex items-center bg-gray-800 hover:bg-gray-700 transition-colors duration-200">
+                {/* Bouton principal pour toggle */}
+                <button
+                    onClick={() => toggleDrawer(drawer)}
+                    disabled={!canClose && !isClosed} // Empêche de fermer le dernier tiroir
+                    className={`flex-1 flex items-center justify-between p-4 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${
+                        !canClose && !isClosed 
+                            ? 'cursor-not-allowed opacity-75' 
+                            : 'hover:bg-gray-700 focus:bg-gray-700'
+                    }`}
+                    aria-expanded={!isClosed}
+                    aria-controls={`drawer-content-${drawer}`}
+                    title={
+                        !canClose && !isClosed 
+                            ? `${title} (impossible de fermer le dernier tiroir)` 
+                            : isClosed 
+                            ? `Ouvrir ${title}` 
+                            : `Fermer ${title}`
+                    }
+                >
+                    <div className="flex items-center gap-3">
+                        {/* Icône état (▶/▼) */}
+                        <span className="text-gray-400 text-sm transition-transform duration-200">
+                            {isClosed ? '▶' : '▼'}
+                        </span>
+                        
+                        {/* Titre avec indication de pourcentage pour debug */}
+                        <h3 className="font-semibold text-white text-sm">
+                            {title}
+                            <span className="text-xs text-gray-500 ml-2">({percentage}%)</span>
+                        </h3>
+                    </div>
                     
                     {/* Compteur (seulement pour members) */}
                     {drawer === 'members' && (
@@ -161,8 +145,24 @@ export default function PresentationContentPanel({
                             {count}
                         </div>
                     )}
-                </div>
-            </button>
+                </button>
+                
+                {/* Bouton swap séparé (visible si pas le plus grand et pas fermé et plusieurs ouverts) */}
+                {!isClosed && !isLargest && openCount > 1 && (
+                    <div className="flex-shrink-0 border-l border-gray-600">
+                        <button
+                            onClick={() => swapWithLarge(drawer)}
+                            className="p-3 text-gray-400 hover:text-blue-400 hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                            title={`Donner le focus à ${title}`}
+                            aria-label={`Agrandir le panneau ${title}`}
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                            </svg>
+                        </button>
+                    </div>
+                )}
+            </div>
         );
     };
 

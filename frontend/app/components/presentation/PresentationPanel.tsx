@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useOnePage } from '../../contexts/OnePageContext';
-import PresentationContentPanel from './PresentationContentPanel';
-import ContentPanel from './ContentPanel';
+import AdaptiveVerticalPanelSystem from './AdaptiveVerticalPanelSystem';
 import { Group, Event, GroupPost, GroupComment, GroupMessage, User, GroupMember } from '../../types/group';
 import { getCurrentUserClient } from '@/services/user';
 import { 
@@ -292,54 +291,49 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
     );
 
     return (
-        <div className="h-full flex flex-col bg-gray-900">
-            {/* Panneau du HAUT - Présentation avec 3 tiroirs (40% hauteur) */}
-            <div className="h-2/5 border-b border-gray-700">
-                <PresentationContentPanel
-                    key={`presentation-${type}-${selectedItem.id}`} // Force remount pour reset config tiroirs
-                    type={type}
-                    selectedItem={selectedItem}
-                    currentUser={currentUser}
-                    members={members}
-                    memberGroups={[]} // TODO: Charger les groupes membres
-                    canInvite={canInvite}
-                    onInviteUsers={handleInviteUsers}
-                    onInviteGroups={handleInviteGroups}
-                    backgroundImage={undefined}
-                    photoGallery={[]}
-                />
-            </div>
-            
-            {/* Panneau du BAS - Communication avec tiroirs latéraux (60% hauteur) */}
-            <div className="h-3/5">
-                <ContentPanel
-                    key={`content-${type}-${selectedItem.id}`} // Force remount pour reset config tiroirs
-                    type={type}
-                    groupId={groupId}
-                    currentUser={currentUser}
-                    
-                    // Data
-                    posts={posts}
-                    messages={messages}
-                    events={events}
-                    
-                    // Posts props
-                    isLoadingPosts={isLoadingPosts}
-                    commentsByPost={commentsByPost}
-                    showCommentsForPost={showCommentsForPost}
-                    newCommentByPost={newCommentByPost}
-                    loadingComments={loadingComments}
-                    
-                    // Callbacks
-                    onCreatePost={handleCreatePost}
-                    onToggleComments={handleToggleComments}
-                    onCommentChange={handleCommentChange}
-                    onCreateComment={handleCreateComment}
-                    onSendMessage={handleSendMessage}
-                    onEventResponse={handleEventResponse}
-                    onDeleteEvent={handleDeleteEvent}
-                />
-            </div>
+        <div className="h-full bg-gray-900">
+            <AdaptiveVerticalPanelSystem
+                key={`adaptive-vertical-${type}-${selectedItem.id}`} // Force remount pour reset config
+                type={type}
+                selectedItem={selectedItem}
+                currentUser={currentUser}
+                
+                // Données présentation
+                members={members}
+                memberGroups={[]} // TODO: Charger les groupes membres
+                canInvite={canInvite}
+                onInviteUsers={handleInviteUsers}
+                onInviteGroups={handleInviteGroups}
+                backgroundImage={undefined} // TODO: Intégrer image de fond depuis les données
+                photoGallery={[]} // TODO: Intégrer galerie photos
+                
+                // Données communication
+                posts={posts}
+                messages={messages}
+                events={events}
+                
+                // Props posts
+                isLoadingPosts={isLoadingPosts}
+                commentsByPost={commentsByPost}
+                showCommentsForPost={showCommentsForPost}
+                newCommentByPost={newCommentByPost}
+                loadingComments={loadingComments}
+                
+                // Callbacks communication
+                onCreatePost={handleCreatePost}
+                onToggleComments={handleToggleComments}
+                onCommentChange={handleCommentChange}
+                onCreateComment={handleCreateComment}
+                onSendMessage={handleSendMessage}
+                onEventResponse={handleEventResponse}
+                onDeleteEvent={handleDeleteEvent}
+                
+                // Callback de changement de configuration
+                onConfigChange={(config) => {
+                    console.log('📊 Configuration verticale mise à jour:', config);
+                    // TODO: Optionnel - sauvegarder les préférences utilisateur
+                }}
+            />
         </div>
     );
 }
