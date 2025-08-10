@@ -121,7 +121,11 @@ func (r *PostRepository) GetPosts(ps *services.PostService, curr_user *models.Us
 		if err != nil {
 			return nil, err
 		}
-		likes, _ := ps.GetLikes(post.ID)
+		// Get likes and dislikes counts
+		likeCount, _ := r.GetLikesCount(post.ID)
+		dislikeCount, _ := r.GetDislikesCount(post.ID)
+		userReaction, _ := r.GetUserReaction(post.ID, curr_user.ID)
+		
 		commentCount, err := r.GetNumberOfComments(post.ID)
 		if err != nil {
 			return nil, err
@@ -143,10 +147,12 @@ func (r *PostRepository) GetPosts(ps *services.PostService, curr_user *models.Us
 		}
 		if !isPrivate {
 			posts = append(posts, map[string]any{
-				"post":       post,
-				"user":       user,
-				"like":       len(likes),
-				"user_liked": slices.Contains(likes, curr_user.Username),
+				"post":         post,
+				"user":         user,
+				"like":         likeCount,
+				"dislike":      dislikeCount,
+				"user_liked":   userReaction == "like",
+				"user_disliked": userReaction == "dislike",
 			})
 		}
 	}
@@ -190,51 +196,99 @@ func (r *PostRepository) Update(post *models.Post) error {
 	return nil
 }
 
-// ADD or DELETE a Like on a post
+// ADD or UPDATE a Like on a post with exclusivity (can't like AND dislike)
 func (r *PostRepository) Like(post_id int64, user_id int64) string {
-	stmt, err := r.db.Prepare(`
-		SELECT id 
+	// Check if user already has a reaction
+	var existingReaction string
+	err := r.db.QueryRow(`
+		SELECT reaction_type 
 		FROM post_like
-		WHERE post_id = ? AND user_id = ?;
-	`)
-	if err != nil {
+		WHERE post_id = ? AND user_id = ?
+	`, post_id, user_id).Scan(&existingReaction)
+	
+	if err == sql.ErrNoRows {
+		// No existing reaction, add a like
+		r.AddReaction(post_id, user_id, "like")
+		return "liked"
+	} else if err != nil {
 		return ""
 	}
-	var id int64
-	err = stmt.QueryRow(post_id, user_id).Scan(&id)
-	if err != nil {
-		r.AddLike(post_id, user_id)
-		return "liked"
+	
+	// If existing reaction is like, remove it (toggle off)
+	if existingReaction == "like" {
+		r.DeleteReaction(post_id, user_id)
+		return "unliked"
 	}
-	r.DeleteLike(post_id, user_id)
+	
+	// If existing reaction is dislike, update to like
+	r.UpdateReaction(post_id, user_id, "like")
+	return "liked"
+}
+
+// ADD or UPDATE a Dislike on a post with exclusivity
+func (r *PostRepository) Dislike(post_id int64, user_id int64) string {
+	// Check if user already has a reaction
+	var existingReaction string
+	err := r.db.QueryRow(`
+		SELECT reaction_type 
+		FROM post_like
+		WHERE post_id = ? AND user_id = ?
+	`, post_id, user_id).Scan(&existingReaction)
+	
+	if err == sql.ErrNoRows {
+		// No existing reaction, add a dislike
+		r.AddReaction(post_id, user_id, "dislike")
+		return "disliked"
+	} else if err != nil {
+		return ""
+	}
+	
+	// If existing reaction is dislike, remove it (toggle off)
+	if existingReaction == "dislike" {
+		r.DeleteReaction(post_id, user_id)
+		return "undisliked"
+	}
+	
+	// If existing reaction is like, update to dislike
+	r.UpdateReaction(post_id, user_id, "dislike")
 	return "disliked"
 }
 
-// Like a Post
-func (r *PostRepository) AddLike(post_id int64, user_id int64) {
+// Add a reaction (like or dislike) to a post
+func (r *PostRepository) AddReaction(post_id int64, user_id int64, reaction_type string) error {
 	stmt, err := r.db.Prepare(`
-	INSERT INTO post_like (post_id,user_id,created_at)
-	VALUES(?,?,?);
+		INSERT INTO post_like (post_id, user_id, reaction_type, created_at)
+		VALUES(?, ?, ?, ?)
 	`)
 	if err != nil {
-		return
+		return err
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(
-		post_id,
-		user_id,
-		time.Now())
-	if err != nil {
-		fmt.Println(err)
-		r.DeleteLike(post_id, user_id)
-		return
-	}
+	
+	_, err = stmt.Exec(post_id, user_id, reaction_type, time.Now())
+	return err
 }
 
-// Delete a post like from the database
-func (r *PostRepository) DeleteLike(post_id int64, user_id int64) error {
+// Update an existing reaction
+func (r *PostRepository) UpdateReaction(post_id int64, user_id int64, reaction_type string) error {
 	stmt, err := r.db.Prepare(`
-		DELETE FROM post_like WHERE post_id = ? AND user_id = ?;
+		UPDATE post_like 
+		SET reaction_type = ?, created_at = ?
+		WHERE post_id = ? AND user_id = ?
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	
+	_, err = stmt.Exec(reaction_type, time.Now(), post_id, user_id)
+	return err
+}
+
+// Delete a reaction from the database
+func (r *PostRepository) DeleteReaction(post_id int64, user_id int64) error {
+	stmt, err := r.db.Prepare(`
+		DELETE FROM post_like WHERE post_id = ? AND user_id = ?
 	`)
 	if err != nil {
 		return err
@@ -242,11 +296,49 @@ func (r *PostRepository) DeleteLike(post_id int64, user_id int64) error {
 	defer stmt.Close()
 
 	_, err = stmt.Exec(post_id, user_id)
-	if err != nil {
-		return err
-	}
+	return err
+}
 
-	return nil
+// Get likes count for a post (only likes, not dislikes)
+func (r *PostRepository) GetLikesCount(post_id int64) (int64, error) {
+	var count int64
+	err := r.db.QueryRow(`
+		SELECT COUNT(*) FROM post_like 
+		WHERE post_id = ? AND reaction_type = 'like'
+	`, post_id).Scan(&count)
+	
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
+	return count, err
+}
+
+// Get dislikes count for a post
+func (r *PostRepository) GetDislikesCount(post_id int64) (int64, error) {
+	var count int64
+	err := r.db.QueryRow(`
+		SELECT COUNT(*) FROM post_like 
+		WHERE post_id = ? AND reaction_type = 'dislike'
+	`, post_id).Scan(&count)
+	
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
+	return count, err
+}
+
+// Get user's reaction on a post (like, dislike, or none)
+func (r *PostRepository) GetUserReaction(post_id int64, user_id int64) (string, error) {
+	var reaction_type string
+	err := r.db.QueryRow(`
+		SELECT reaction_type FROM post_like 
+		WHERE post_id = ? AND user_id = ?
+	`, post_id, user_id).Scan(&reaction_type)
+	
+	if err == sql.ErrNoRows {
+		return "", nil // No reaction
+	}
+	return reaction_type, err
 }
 
 // Delete a post from the database
@@ -316,7 +408,7 @@ func (r *PostRepository) GetLikedPostsByUserId(userID int64) ([]int64, error) {
 	query := `
 		SELECT post_id 
 		FROM post_like 
-		WHERE user_id = ?
+		WHERE user_id = ? AND reaction_type = 'like'
 	`
 
 	rows, err := r.db.Query(query, userID)

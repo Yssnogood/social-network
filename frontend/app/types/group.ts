@@ -44,6 +44,10 @@ export type GroupPost = {
 	created_at: string;
 	updated_at: string;
 	comments_count: number;
+	likes_count?: number;
+	dislikes_count?: number;
+	user_liked?: boolean;
+	user_disliked?: boolean;
 };
 
 export type GroupComment = {

@@ -74,7 +74,7 @@ export async function getGroupEvents(groupId: number): Promise<Event[]> {
 }
 
 // Implemented functions for group interactions
-export async function createGroupPost(groupId: number, content: string): Promise<GroupPost> {
+export async function createGroupPost(groupId: number, postData: { content: string, imageUrl?: string }): Promise<GroupPost> {
     try {
         const response = await fetch(`${API_BASE_URL}/groups/${groupId}/posts`, {
             method: "POST",
@@ -82,7 +82,10 @@ export async function createGroupPost(groupId: number, content: string): Promise
                 "Content-Type": "application/json"
             },
             credentials: "include",
-            body: JSON.stringify({ content })
+            body: JSON.stringify({ 
+                content: postData.content,
+                image_path: postData.imageUrl 
+            })
         });
 
         if (!response.ok) {

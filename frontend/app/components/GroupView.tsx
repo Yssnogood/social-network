@@ -10,7 +10,7 @@ import GroupHeader from './groupComponent/GroupHeader';
 import MembersList from './groupComponent/MembersList';
 import MessageInput from './groupComponent/MessageInput';
 import MessagesList from './groupComponent/MessagesList';
-import PostsList from './groupComponent/PostsList';
+import UniversalPostsList from './universal/UniversalPostsList';
 import EventsList from './groupComponent/EventsList';
 import TabNavigation from './groupComponent/TabNavigation';
 
@@ -134,13 +134,16 @@ export default function GroupView({ groupId }: GroupViewProps) {
         }
     };
 
-    const createPost = async (content: string) => {
+    const createPost = async (postData: any) => {
         try {
             const res = await fetch(`http://localhost:8090/api/groups/${groupId}/posts`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ content }),
+                body: JSON.stringify({ 
+                    content: postData.content,
+                    image_path: postData.imageUrl 
+                }),
             });
             
             if (!res.ok) throw new Error(await res.text());
@@ -308,17 +311,13 @@ export default function GroupView({ groupId }: GroupViewProps) {
                     )}
 
                     {activeTab === 'posts' && (
-                        <PostsList
+                        <UniversalPostsList
                             posts={posts}
                             isLoading={false}
-                            commentsByPost={{}}
-                            showCommentsForPost={{}}
-                            newCommentByPost={{}}
-                            loadingComments={{}}
+                            context="group"
                             onCreatePost={createPost}
-                            onToggleComments={() => {}}
-                            onCommentChange={() => {}}
-                            onCreateComment={() => {}}
+                            currentUser={currentUser}
+                            showCreator={true}
                         />
                     )}
                 </div>

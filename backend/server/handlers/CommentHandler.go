@@ -2,30 +2,33 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
 	"social-network/backend/database/models"
 	repository "social-network/backend/database/repositories"
+	"social-network/backend/server/middlewares"
 )
 
 // CommentHandler handles comment-related HTTP requests.
 type CommentHandler struct {
 	CommentRepository *repository.CommentRepository
 	SessionRepository *repository.SessionRepository
+	UserRepository    *repository.UserRepository
 }
 
 // NewCommentHandler creates a new CommentHandler.
-func NewCommentHandler(cr *repository.CommentRepository, sr *repository.SessionRepository) *CommentHandler {
+func NewCommentHandler(cr *repository.CommentRepository, sr *repository.SessionRepository, ur *repository.UserRepository) *CommentHandler {
 	return &CommentHandler{
 		CommentRepository: cr,
 		SessionRepository: sr,
+		UserRepository:    ur,
 	}
 }
 
 // Request structs
 type createCommentRequest struct {
-	JWT       string  `json:"jwt"`
 	PostID    int64   `json:"post_id"`
 	Content   string  `json:"content"`
 	ImagePath *string `json:"image_path,omitempty"`
@@ -63,15 +66,16 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
-	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	// Get userID from context (set by JWTMiddleware)
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
 
 	comment := &models.Comment{
 		PostID:    req.PostID,
-		UserID:    session.UserID,
+		UserID:    userID,
 		Content:   req.Content,
 		ImagePath: req.ImagePath,
 		CreatedAt: time.Now(),
@@ -85,6 +89,16 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	comment.ID = id
+	
+	// Get username for frontend
+	userName, err := h.getUsernameByID(userID)
+	if err != nil {
+		http.Error(w, "Failed to get user information: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	comment.Username = userName
+	
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(comment)
 }
@@ -184,4 +198,16 @@ func (h *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Comment deleted successfully",
 	})
+}
+
+// getUsernameByID gets the username for a user ID
+func (h *CommentHandler) getUsernameByID(userID int64) (string, error) {
+	user, err := h.UserRepository.GetByID(userID)
+	if err != nil {
+		return "", err
+	}
+	if user == nil {
+		return "", fmt.Errorf("user not found")
+	}
+	return user.Username, nil
 }

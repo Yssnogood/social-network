@@ -25,8 +25,8 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en">
-            <body className={`${inter.variable} ${robotoMono.variable} antialiased`}>
+        <html lang="en" suppressHydrationWarning>
+            <body className={`${inter.variable} ${robotoMono.variable} antialiased`} suppressHydrationWarning>
                 {/* <header><Navbar /></header> */}
                 <CookiesProvider><main>{children}</main></CookiesProvider>
             </body>

@@ -174,9 +174,49 @@ func (h *PostHandler) LikePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.PostRepository.Like(req.Post_ID, userID)
+	result := h.PostRepository.Like(req.Post_ID, userID)
+	
+	// Get updated counts
+	likeCount, _ := h.PostRepository.GetLikesCount(req.Post_ID)
+	dislikeCount, _ := h.PostRepository.GetDislikesCount(req.Post_ID)
+	
+	response := map[string]interface{}{
+		"status": result,
+		"likes": likeCount,
+		"dislikes": dislikeCount,
+	}
+	
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *PostHandler) DislikePost(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	var req LikePostRequest // Reuse same structure as it has post_id
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	result := h.PostRepository.Dislike(req.Post_ID, userID)
+	
+	// Get updated counts
+	likeCount, _ := h.PostRepository.GetLikesCount(req.Post_ID)
+	dislikeCount, _ := h.PostRepository.GetDislikesCount(req.Post_ID)
+	
+	response := map[string]interface{}{
+		"status": result,
+		"likes": likeCount,
+		"dislikes": dislikeCount,
+	}
+	
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 // GetRecentsPosts retrieves recents posts.

@@ -8,7 +8,9 @@ export interface Post {
   imageUrl?: string;
   createdAt: Date;
   likes: number;
+  dislikes: number;
   liked: boolean;
+  disliked: boolean;
   comments: number;
 }
 
@@ -40,8 +42,10 @@ export async function getPosts(): Promise<Post[]> {
                   privacy: post.post.privacy_type,
                   createdAt: new Date(Date.parse(post.post.created_at)),
                   content: post.post.content,
-                  likes: post.like,
-                  liked: post.user_liked,
+                  likes: post.like || 0,
+                  dislikes: post.dislike || 0,
+                  liked: post.user_liked || false,
+                  disliked: post.user_disliked || false,
                   comments: post.post.comments_count
 
                 }
@@ -60,32 +64,51 @@ export async function getPosts(): Promise<Post[]> {
   return posts;
 }
 
-export async function LikePost(post_id:number) {
-  const resp = await fetch(url+'/like',{
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    credentials: "include",
-    body: JSON.stringify({
-      post_id: post_id
-    })
-  })
-  if (resp.ok) {
-    let post = document.getElementById(String(post_id))
-    let like_button = post?.querySelector('.like')
-    let like_count = document.getElementById(`like ${post_id}`)
-    if (like_button?.classList.contains("liked")) {
-      like_button.classList.remove("liked")
-      if (like_count) {
-        like_count.innerText = String(Number(like_count.innerText) - 1)
-      }
-    } else {
-      like_button?.classList.add("liked")
-      if (like_count) {
-        like_count.innerText = String(Number(like_count.innerText) + 1)
-      }
+export async function LikePost(post_id: number): Promise<{ status: string; likes: number; dislikes: number } | null> {
+  try {
+    const resp = await fetch(url + '/like', {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        post_id: post_id
+      })
+    });
+    
+    if (resp.ok) {
+      const data = await resp.json();
+      return data;
     }
+    return null;
+  } catch (error) {
+    console.error("Error liking post:", error);
+    return null;
+  }
+}
+
+export async function DislikePost(post_id: number): Promise<{ status: string; likes: number; dislikes: number } | null> {
+  try {
+    const resp = await fetch(url + '/dislike', {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        post_id: post_id
+      })
+    });
+    
+    if (resp.ok) {
+      const data = await resp.json();
+      return data;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error disliking post:", error);
+    return null;
   }
 }
 
@@ -109,8 +132,10 @@ export async function getSpecificPost(post_id: number): Promise<Post | null> {
         privacy: r.post.privacy_type,
         createdAt: new Date(Date.parse(r.post.created_at)),
         content: r.post.content,
-        likes:r.likes, // needs to be changed to get the proper like count
-        liked: r.liked, // same, doesn't know if the user liked the post
+        likes: r.likes || 0,
+        dislikes: r.dislikes || 0,
+        liked: r.liked || false,
+        disliked: r.disliked || false,
         comments: r.post.comments_count
       };
       console.log(newPost)
@@ -141,7 +166,9 @@ export async function createPost(postData: {
     id: 0,
     createdAt: new Date(),
     likes: 0,
-    liked:false,
+    dislikes: 0,
+    liked: false,
+    disliked: false,
     comments: 0
   };
         try {
@@ -169,8 +196,10 @@ export async function createPost(postData: {
                   privacy: r.post.privacy_type,
                   createdAt: new Date(Date.parse(r.post.created_at)),
                   content: r.post.content,
-                  likes: r.like,
-                  liked: r.user_liked,
+                  likes: r.like || 0,
+                  dislikes: r.dislike || 0,
+                  liked: r.user_liked || false,
+                  disliked: r.user_disliked || false,
                   comments: 0
 
                 }

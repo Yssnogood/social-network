@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import AdaptivePostsList from '../adaptive/AdaptivePostsList';
+import { useState, useMemo } from 'react';
+import UniversalPostsList from '../universal/UniversalPostsList';
 import { AdaptiveMessageList } from '../adaptive/AdaptiveMessageCard';
 import AdaptiveEventsList from '../adaptive/AdaptiveEventsList';
 import MessageInput from '../groupComponent/MessageInput';
@@ -33,7 +33,7 @@ interface ContentPanelProps {
     onCreatePost?: (content: string) => Promise<void>;
     onToggleComments?: (postId: number) => Promise<void>;
     onCommentChange?: (postId: number, value: string) => void;
-    onCreateComment?: (postId: number, userId: number, username: string) => Promise<void>;
+    onCreateComment?: (postId: number, userId: number, username: string, content?: string) => Promise<void>;
     onSendMessage?: (content: string) => Promise<void>;
     onEventResponse?: (eventId: number, status: string) => Promise<void>;
     onDeleteEvent?: (eventId: number) => Promise<void>;
@@ -71,6 +71,17 @@ export default function ContentPanel({
         getConfigStats,
         getOpenDrawersCount
     } = useDrawerProportions();
+    
+    // Stabiliser drawerPercentage pour éviter les re-renders constants
+    const stableDrawerPercentage = useMemo(() => {
+        const percentage = drawerConfig.posts;
+        // Convertir la string en nombre pour UniversalPostsList
+        if (percentage === '0') return 0;
+        if (percentage === '1/3') return 33;
+        if (percentage === '2/3') return 66;
+        if (percentage === '3/3') return 100;
+        return 50; // default
+    }, [drawerConfig.posts]);
     
     const [messageInput, setMessageInput] = useState('');
 
@@ -220,17 +231,21 @@ export default function ContentPanel({
                             
                             {/* Contenu scrollable */}
                             <div className="flex-1 overflow-y-auto p-4">
-                                <AdaptivePostsList
-                                    posts={posts}
-                                    isLoading={isLoadingPosts}
-                                    drawerPercentage={drawerConfig.posts}
+                                <UniversalPostsList
+                                    key="group-posts-list"
+                                    posts={posts || []}
+                                    isLoading={isLoadingPosts || false}
+                                    context="group"
+                                    onCreatePost={onCreatePost}
+                                    currentUser={currentUser}
+                                    showCreator={true}
+                                    drawerPercentage={stableDrawerPercentage}
                                     commentsByPost={commentsByPost}
                                     showCommentsForPost={showCommentsForPost}
                                     newCommentByPost={newCommentByPost}
                                     loadingComments={loadingComments}
-                                    onCreatePost={onCreatePost || (async () => {})}
-                                    onToggleComments={onToggleComments || (async () => {})}
-                                    onCommentChange={onCommentChange || (() => {})}
+                                    onToggleComments={onToggleComments}
+                                    onCommentChange={onCommentChange}
                                     onCreateComment={onCreateComment || (async () => {})}
                                 />
                             </div>

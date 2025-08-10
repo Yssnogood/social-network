@@ -7,61 +7,47 @@ import { getCurrentUser, getCurrentUserId } from "../../services/auth";
 import { usePresence } from "../hooks/usePresence";
 import { createNotification, fetchNotifications } from "../../services/notifications";
 
-// Composants pour le système one page
+// Composants pour le système unifié
 import { OnePageProvider } from "../contexts/OnePageContext";
 import OnePageLayout from "../components/OnePageLayout";
-import CreatePostModal from "../components/CreatePostModal";
-import GroupCreationModal from "../components/creation/modals/GroupCreationModal";
 import ClientOnly from "../components/ClientOnly";
 
-// Composants traditionnels du merge
-import Header from "../components/Header";
-import CreatePostButton from "../components/CreatePostButton";
-import CreateGroupButton from "../components/CreateGroupButton";
-import GroupsList from "../components/GroupsList";
-import PostsList from "../components/PostsList";
-
-interface HomeProps {
-    useOnePageLayout?: boolean; // Toggle entre les deux modes
-}
-
-export default function Home({ useOnePageLayout = true }: HomeProps) {
+export default function Home(): JSX.Element {
     const cookies = useCookies();
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     
     // Établir la connexion de présence automatiquement
-    const { isConnected } = usePresence();
+    usePresence();
     const [showNotifications, setShowNotifications] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
-    const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
-    const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
-    const [groups, setGroups] = useState([]);
+    const [currentUser, setCurrentUser] = useState<any>(null);
 
-    // Charger les notifications
+    // Charger les notifications et utilisateur actuel
     useEffect(() => {
-        const getNotif = async () => {
+        const getNotifAndUser = async () => {
             try {
                 const userId = await getCurrentUserId();
                 if (!userId) {
-                    // Pas d'utilisateur connecté, rediriger vers login
-                    // window.location.href = '/login'; // Temporairement désactivé pour éviter la boucle
                     console.log('User not logged in');
                     return;
                 }
 
-                const fetchedNotifications = await fetchNotifications(null, userId);
+                // Charger les notifications
+                const fetchedNotifications = await fetchNotifications(null, userId.toString());
                 if (Array.isArray(fetchedNotifications)) {
                     setNotifications(fetchedNotifications);
                 }
+
+                // Charger l'utilisateur actuel
+                const user = await getCurrentUser();
+                setCurrentUser(user);
             } catch (error) {
-                console.error("Failed to fetch notifications:", error);
-                // En cas d'erreur d'authentification, rediriger vers login
-                // window.location.href = '/login'; // Temporairement désactivé pour éviter la boucle
+                console.error("Failed to fetch notifications or user:", error);
             }
         };
 
-        getNotif();
+        getNotifAndUser();
     }, [cookies]);
 
     // Charger les posts
@@ -82,33 +68,13 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
         loadPosts();
     }, [cookies]);
 
-    // Charger les groupes
-    useEffect(() => {
-        fetchGroups();
-    }, [cookies]);
-
     // Handlers
     const handleToggleNotifications = () => {
         setShowNotifications(!showNotifications);
     };
 
-    const handleOpenPostModal = () => {
-        setIsCreatePostModalOpen(true);
-    };
-
-    const handleClosePostModal = () => {
-        setIsCreatePostModalOpen(false);
-    };
-
-    const handleOpenGroupModal = () => {
-        setIsCreateGroupModalOpen(true);
-    };
-
-    const handleCloseGroupModal = () => {
-        setIsCreateGroupModalOpen(false);
-    };
-
-    const handleSubmitPost = async (postData: { content: string; privacy: number; viewers: number[], imageUrl?: string }) => {
+    // Handler pour créer un post avec le nouveau système
+    const handleCreatePost = async (postData: any) => {
         try {
             const newPost = await createPost(postData);
 
@@ -121,70 +87,13 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
             });
             
             setPosts([newPost, ...posts]);
-            handleClosePostModal();
         } catch (error) {
             console.error("Failed to create post:", error);
         }
     };
 
-    // Fonction pour recharger les groupes
-    const fetchGroups = async () => {
-        try {
-            const response = await fetch("http://localhost:8090/api/groups", {
-                method: "GET",
-                credentials: "include",
-            });
-            if (!response.ok) throw new Error("Erreur lors de la récupération des groupes");
-            const allGroups = await response.json();
-            setGroups(allGroups);
-        } catch (error) {
-            console.error("Erreur de chargement des groupes:", error);
-        }
-    };
-
-    // Mode One Page Layout (nouveau système)
-    if (useOnePageLayout) {
-        return (
-            <ClientOnly 
-                fallback={
-                    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                            <p className="mt-4 text-gray-400">Chargement...</p>
-                        </div>
-                    </div>
-                }
-            >
-                <OnePageProvider>
-                    <OnePageLayout
-                        username={cookies.get("user")}
-                        notifications={notifications}
-                        showNotifications={showNotifications}
-                        onToggleNotifications={handleToggleNotifications}
-                        posts={posts}
-                        isLoading={isLoading}
-                        jwt=""
-                        onOpenPostModal={handleOpenPostModal}
-                    />
-
-                    {/* NOTE: Modales supprimées en mode OnePageLayout - remplacées par les panneaux */}
-
-                    {/* Bouton pour basculer vers le mode traditionnel */}
-                    <button
-                        onClick={() => window.location.href = '/home?legacy=true'}
-                        className="fixed top-20 left-4 bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded-lg text-sm z-40 transition-colors"
-                        title="Mode traditionnel"
-                    >
-                        Mode Classic
-                    </button>
-                </OnePageProvider>
-            </ClientOnly>
-        );
-    }
-
-    // Mode Traditionnel (système du merge)
     return (
-        <ClientOnly
+        <ClientOnly 
             fallback={
                 <div className="min-h-screen bg-gray-900 flex items-center justify-center">
                     <div className="text-center">
@@ -194,55 +103,18 @@ export default function Home({ useOnePageLayout = true }: HomeProps) {
                 </div>
             }
         >
-            <Header
-                username={cookies.get("user")}
-                notifications={notifications}
-                showNotifications={showNotifications}
-                onToggleNotifications={handleToggleNotifications}
-            />
-
-            <CreatePostButton onClick={handleOpenPostModal} />
-
-            <CreateGroupButton onClick={handleOpenGroupModal} />
-
-            <GroupsList groups={groups} />
-
-            <div className="dark:bg-background pt-16 px-4 flex justify-center">
-                <div className="w-full max-w-xl mx-auto">
-                    <PostsList
-                        posts={posts}
-                        isLoading={isLoading}
-                        jwt=""
-                        onlineUser={cookies.get("user")}
-                    />
-                </div>
-            </div>
-
-            {/* Modals */}
-            <CreatePostModal
-                isOpen={isCreatePostModalOpen}
-                onClose={handleClosePostModal}
-                onSubmit={handleSubmitPost}
-            />
-
-            <GroupCreationModal
-                isOpen={isCreateGroupModalOpen}
-                onClose={handleCloseGroupModal}
-                onSuccess={(groupId) => {
-                    console.log('Group created with ID:', groupId);
-                    // Recharger la liste des groupes
-                    fetchGroups();
-                }}
-            />
-
-            {/* Bouton pour basculer vers le mode one page */}
-            <button
-                onClick={() => window.location.href = '/home'}
-                className="fixed top-20 left-4 bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm z-40 transition-colors"
-                title="Mode One Page"
-            >
-                Mode One Page
-            </button>
+            <OnePageProvider>
+                <OnePageLayout
+                    username={cookies.get("user")}
+                    notifications={notifications}
+                    showNotifications={showNotifications}
+                    onToggleNotifications={handleToggleNotifications}
+                    posts={posts}
+                    isLoading={isLoading}
+                    onCreatePost={handleCreatePost}
+                    currentUser={currentUser}
+                />
+            </OnePageProvider>
         </ClientOnly>
     );
 }

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { GroupPost, GroupComment } from '../../types/group';
 import { usePostVignette, getCombinedVignetteClasses, getVignetteStyles } from '../../hooks/useAdaptiveVignette';
+import { usePostLike } from '../../hooks/usePostLike';
 import '../../styles/adaptive-vignettes.css';
 
 interface AdaptivePostCardProps {
@@ -12,6 +13,10 @@ interface AdaptivePostCardProps {
   showComments?: boolean;
   newComment?: string;
   isLoadingComments?: boolean;
+  initialLiked?: boolean;
+  initialDisliked?: boolean;
+  initialLikeCount?: number;
+  initialDislikeCount?: number;
   onToggleComments?: () => Promise<void>;
   onCommentChange?: (value: string) => void;
   onCreateComment?: () => Promise<void>;
@@ -24,12 +29,33 @@ export default function AdaptivePostCard({
   showComments = false,
   newComment = '',
   isLoadingComments = false,
+  initialLiked = false,
+  initialDisliked = false,
+  initialLikeCount = 0,
+  initialDislikeCount = 0,
   onToggleComments,
   onCommentChange,
   onCreateComment,
 }: AdaptivePostCardProps) {
   const adaptiveConfig = usePostVignette(drawerPercentage);
   const [isHovered, setIsHovered] = useState(false);
+  
+  // Hook pour gérer les likes/dislikes
+  const {
+    liked,
+    disliked,
+    likeCount,
+    dislikeCount,
+    isLoading: isLikeLoading,
+    handleLike,
+    handleDislike,
+  } = usePostLike({
+    postId: post.id,
+    initialLiked,
+    initialDisliked,
+    initialLikeCount,
+    initialDislikeCount,
+  });
 
   // Classes CSS combinées
   const cardClasses = getCombinedVignetteClasses(
@@ -178,11 +204,51 @@ export default function AdaptivePostCard({
             )}
           </button>
 
-          {/* J'aime (visible selon l'état) */}
+          {/* J'aime / J'aime pas (visible selon l'état) */}
           {adaptiveConfig.shouldShowSecondaryActions && (
-            <button className="secondary-action text-gray-400 hover:text-gray-300 font-medium">
-              {adaptiveConfig.state === 'compact' ? '♥' : '♥ J\'aime'}
-            </button>
+            <div className="flex items-center gap-3">
+              {/* Bouton J'aime */}
+              <button 
+                onClick={handleLike}
+                disabled={isLikeLoading}
+                className={`secondary-action font-medium transition-colors ${
+                  liked 
+                    ? 'text-green-400 hover:text-green-300' 
+                    : 'text-gray-400 hover:text-gray-300'
+                }`}
+              >
+                {adaptiveConfig.state === 'compact' ? (
+                  <span className="flex items-center gap-1">
+                    ♥ {likeCount > 0 && likeCount}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    ♥ J'aime {likeCount > 0 && `(${likeCount})`}
+                  </span>
+                )}
+              </button>
+
+              {/* Bouton J'aime pas */}
+              <button 
+                onClick={handleDislike}
+                disabled={isLikeLoading}
+                className={`secondary-action font-medium transition-colors ${
+                  disliked 
+                    ? 'text-red-400 hover:text-red-300' 
+                    : 'text-gray-400 hover:text-gray-300'
+                }`}
+              >
+                {adaptiveConfig.state === 'compact' ? (
+                  <span className="flex items-center gap-1">
+                    ♠ {dislikeCount > 0 && dislikeCount}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    ♠ J'aime pas {dislikeCount > 0 && `(${dislikeCount})`}
+                  </span>
+                )}
+              </button>
+            </div>
           )}
         </div>
 

@@ -14,6 +14,7 @@ func PostRoutes(r *mux.Router, postHandler *handlers.PostHandler) {
 	r.Handle("/api/posts", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.GetRecentsPosts))).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/posts_user", postHandler.GetPostsFromUserByID).Methods("POST")
 	r.Handle("/api/like", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.LikePost))).Methods("POST", "OPTIONS")
+	r.Handle("/api/dislike", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.DislikePost))).Methods("POST", "OPTIONS")
 	r.Handle("/api/posts/{id}", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.GetPost))).Methods("POST", "OPTIONS")
 	// r.HandleFunc("/api/posts/{id}", postHandler.UpdatePost).Methods("PUT")
 	r.Handle("/api/posts/{id}", middlewares.JWTMiddleware(http.HandlerFunc(postHandler.DeletePost))).Methods("DELETE", "OPTIONS")

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useOnePage } from '../../contexts/OnePageContext';
 import AdaptiveVerticalPanelSystem from './AdaptiveVerticalPanelSystem';
 import { Group, Event, GroupPost, GroupComment, GroupMessage, User, GroupMember } from '../../types/group';
@@ -136,17 +136,20 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
     };
 
     // Real API handlers connected to services
-    const handleCreatePost = async (content: string) => {
+    const handleCreatePost = useCallback(async (postData: any) => {
         try {
-            await createGroupPost(groupId, content);
+            await createGroupPost(groupId, {
+                content: postData.content,
+                imageUrl: postData.imageUrl
+            });
             await loadPosts(); // Refresh posts after creation
         } catch (error) {
             console.error('Error creating post:', error);
             setError('Erreur lors de la création du post');
         }
-    };
+    }, [groupId, loadPosts]);
 
-    const handleToggleComments = async (postId: number) => {
+    const handleToggleComments = useCallback(async (postId: number) => {
         try {
             setShowCommentsForPost(prev => ({
                 ...prev,
@@ -169,43 +172,69 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
         } catch (error) {
             console.error('Error toggling comments:', error);
         }
-    };
+    }, [groupId, commentsByPost]);
 
-    const handleCommentChange = (postId: number, value: string) => {
+    const handleCommentChange = useCallback((postId: number, value: string) => {
         setNewCommentByPost(prev => ({
             ...prev,
             [postId]: value
         }));
-    };
+    }, []);
 
-    const handleCreateComment = async (postId: number, userId: number, username: string) => {
+    const handleCreateComment = useCallback(async (postId: number, userId: number, username: string, providedContent?: string) => {
         try {
-            const content = newCommentByPost[postId];
-            if (!content?.trim()) return;
-
-            await createGroupPostComment(groupId, postId, content);
+            // Use provided content (from form) or fallback to state
+            const content = providedContent || newCommentByPost[postId];
+            console.log('PresentationPanel.handleCreateComment:', {
+                postId,
+                userId,
+                username,
+                providedContent,
+                fallbackContent: newCommentByPost[postId],
+                finalContent: content
+            });
             
-            // Clear the comment input
+            if (!content?.trim()) {
+                console.log('No content to submit, aborting');
+                return;
+            }
+
+            console.log('Creating group comment for group', groupId, 'post', postId, 'content:', content);
+            const newComment = await createGroupPostComment(groupId, postId, content);
+            console.log('Group comment created successfully:', newComment);
+            
+            // Clear the comment input FIRST
             setNewCommentByPost(prev => ({
                 ...prev,
                 [postId]: ''
             }));
             
-            // Refresh comments to show the new one
-            const updatedComments = await getGroupPostComments(groupId, postId);
-            setCommentsByPost(prev => ({ ...prev, [postId]: updatedComments }));
+            // Add new comment immediately to state (optimistic update)
+            setCommentsByPost(prev => ({ 
+                ...prev, 
+                [postId]: [...(prev[postId] || []), newComment]
+            }));
             
             // Update the posts array to increment comment count
             setPosts(prev => prev.map(post => 
                 post.id === postId 
-                    ? { ...post, comments_count: post.comments_count + 1 }
+                    ? { ...post, comments_count: (post.comments_count || 0) + 1 }
                     : post
             ));
+            
+            // Refresh comments to ensure consistency (in background)
+            try {
+                const updatedComments = await getGroupPostComments(groupId, postId);
+                setCommentsByPost(prev => ({ ...prev, [postId]: updatedComments }));
+            } catch (refreshError) {
+                console.warn('Could not refresh comments:', refreshError);
+                // Keep optimistic update if refresh fails
+            }
         } catch (error) {
             console.error('Error creating comment:', error);
             setError('Erreur lors de la création du commentaire');
         }
-    };
+    }, [groupId, newCommentByPost]);
 
     const handleSendMessage = async (content: string) => {
         try {

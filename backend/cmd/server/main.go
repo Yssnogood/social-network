@@ -87,7 +87,7 @@ func main() {
 	// Handlers
 	userHandler := appHandlers.NewUserHandler(userService, userRepo, sessionRepo)
 	postHandler := appHandlers.NewPostHandler(postService, postRepo, sessionRepo, userRepo)
-	commentHandler := appHandlers.NewCommentHandler(commentRepo, sessionRepo)
+	commentHandler := appHandlers.NewCommentHandler(commentRepo, sessionRepo, userRepo)
 	followerHandler := appHandlers.NewFollowerHandler(followerRepo, notificationRepo)
 	messageHandler := appHandlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
 	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo, followerRepo, groupRepo)

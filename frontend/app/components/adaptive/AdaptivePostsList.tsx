@@ -137,6 +137,10 @@ export default function AdaptivePostsList({
               showComments={showCommentsForPost[post.id] || false}
               newComment={newCommentByPost[post.id] || ''}
               isLoadingComments={loadingComments[post.id] || false}
+              initialLiked={post.user_liked || false}
+              initialDisliked={post.user_disliked || false}
+              initialLikeCount={post.likes_count || 0}
+              initialDislikeCount={post.dislikes_count || 0}
               onToggleComments={() => onToggleComments(post.id)}
               onCommentChange={(value) => onCommentChange(post.id, value)}
               onCreateComment={() => onCreateComment(post.id, post.user_id || 0, post.username || 'Utilisateur')}

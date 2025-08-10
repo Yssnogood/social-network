@@ -17,8 +17,11 @@ export async function getComments(postId: number, jwt?: string): Promise<Comment
     try {
         const resp = await fetch(`${url}/comments/${postId}`, {
             method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
             body: JSON.stringify({
-                jwt: jwt,
                 post_id: postId
             })
         });
@@ -98,10 +101,19 @@ export async function createComment(
     };
 
     try {
+        console.log('Creating comment with data:', {
+            post_id: commentData.postId,
+            content: commentData.content,
+            image_path: commentData.imageUrl
+        });
+        
         const resp = await fetch(`${url}/comments`, {
             method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
             body: JSON.stringify({
-                jwt: jwt,
                 post_id: commentData.postId,
                 content: commentData.content,
                 image_path: commentData.imageUrl
@@ -110,16 +122,26 @@ export async function createComment(
 
         if (resp.ok) {
             const r = await resp.json();
+            console.log('Comment API response:', r);
+            
+            // Handle both formats: direct comment object or wrapped in {comment: ...}
+            const commentData = r.comment || r;
+            
             newComment = {
-                id: r.comment.id,
-                postId: r.comment.post_id,
-                userId: r.comment.user_id,
-                userName: r.username || "User",
-                content: r.comment.content,
-                imageUrl: r.comment.image_path,
-                createdAt: new Date(Date.parse(r.comment.created_at)),
-                author:""
+                id: commentData.id,
+                postId: commentData.post_id,
+                userId: commentData.user_id,
+                userName: r.username || commentData.username || "User",
+                content: commentData.content,
+                imageUrl: commentData.image_path,
+                createdAt: new Date(Date.parse(commentData.created_at)),
+                author: commentData.author || ""
             };
+        } else {
+            console.error('Comment API error:', resp.status, resp.statusText);
+            console.error('Response headers:', Object.fromEntries(resp.headers.entries()));
+            const responseText = await resp.text();
+            console.error('Response body:', responseText);
         }
     } catch (error) {
         console.error("Failed to create comment:", error);
