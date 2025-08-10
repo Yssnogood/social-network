@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import VerticalPanelSystem from './VerticalPanelSystem';
 import PresentationContentPanel from './PresentationContentPanel';
 import ContentPanel from './ContentPanel';
-import { useVerticalPanelState } from '../../hooks/useVerticalDrawers';
+import { useVerticalDrawerProportions } from '../../hooks/useVerticalDrawerProportions';
 import { Group, Event, GroupPost, GroupComment, GroupMessage, User, GroupMember } from '../../types/group';
 import '../../styles/drawer-animations.css';
 
@@ -88,12 +88,28 @@ export default function AdaptiveVerticalPanelSystem({
     onConfigChange
 }: AdaptiveVerticalPanelSystemProps) {
     
-    // État des panneaux verticaux pour adaptation
+    // État des panneaux verticaux pour adaptation avec nouveau hook
     const { 
-        presentationInfo, 
-        communicationInfo,
-        config 
-    } = useVerticalPanelState();
+        drawerConfig,
+        isDrawerClosed
+    } = useVerticalDrawerProportions();
+    
+    // Helper pour obtenir les informations d'un panneau
+    const getPanelInfo = (panelType: 'presentation' | 'communication') => {
+        const size = drawerConfig[panelType];
+        const isClosed = isDrawerClosed(panelType);
+        const isFullScreen = size === '3/3';
+        
+        return {
+            size,
+            isClosed,
+            isFullScreen
+        };
+    };
+
+    const presentationInfo = getPanelInfo('presentation');
+    const communicationInfo = getPanelInfo('communication');
+    const config = drawerConfig;
     
     // Calcul de l'ID du groupe (pour les groupes c'est selectedItem.id, pour les événements c'est group_id)
     const groupId = type === 'group' ? selectedItem.id : (selectedItem as Event).group_id;

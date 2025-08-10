@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useVerticalDrawers, type VerticalPanelType } from '../../hooks/useVerticalDrawers';
+import { useVerticalDrawerProportions, type VerticalDrawerType } from '../../hooks/useVerticalDrawerProportions';
 import { useVerticalPanelResponsive } from '../../hooks/useResponsive';
 import '../../styles/drawer-animations.css';
 import '../../styles/drawer-colors.css';
@@ -44,26 +44,28 @@ export default function VerticalPanelSystem({
 }: VerticalPanelSystemProps) {
     
     // États pour tracking des animations
-    const [animatingPanels, setAnimatingPanels] = useState<Set<VerticalPanelType>>(new Set());
-    const [lastChangedPanel, setLastChangedPanel] = useState<VerticalPanelType | null>(null);
+    const [animatingPanels, setAnimatingPanels] = useState<Set<VerticalDrawerType>>(new Set());
+    const [lastChangedPanel, setLastChangedPanel] = useState<VerticalDrawerType | null>(null);
     const [previousConfig, setPreviousConfig] = useState<any>(null);
     
     // Hook responsive pour adaptations selon la taille d'écran
     const responsiveConfig = useVerticalPanelResponsive();
 
+    // Utilisation du nouveau hook useVerticalDrawerProportions avec logique de clic améliorée
     const {
-        config,
-        handlePanelClick,
-        getPanelInfo,
+        drawerConfig: config,
+        handleDrawerClick,
+        getDrawerStyle,
+        isDrawerClosed,
         getConfigStats
-    } = useVerticalDrawers({
+    } = useVerticalDrawerProportions({
         onConfigChange: (newConfig) => {
             // Détecter les changements majeurs pour les animations
             if (previousConfig) {
-                const changedPanels = new Set<VerticalPanelType>();
+                const changedPanels = new Set<VerticalDrawerType>();
                 
                 Object.keys(newConfig).forEach(panelKey => {
-                    const panel = panelKey as VerticalPanelType;
+                    const panel = panelKey as VerticalDrawerType;
                     if (newConfig[panel] !== previousConfig[panel]) {
                         changedPanels.add(panel);
                         setLastChangedPanel(panel);
@@ -85,24 +87,38 @@ export default function VerticalPanelSystem({
         }
     });
 
+    // Fonction helper pour obtenir les informations d'un panneau avec la nouvelle API
+    const getPanelInfo = (drawerType: VerticalDrawerType) => {
+        const size = config[drawerType];
+        const isClosed = isDrawerClosed(drawerType);
+        const isFullScreen = size === '3/3';
+        
+        return {
+            size,
+            isClosed,
+            isFullScreen,
+            style: getDrawerStyle(drawerType)
+        };
+    };
+
     const presentationInfo = getPanelInfo('presentation');
     const communicationInfo = getPanelInfo('communication');
     const stats = getConfigStats();
 
     // Handler de clic avec animation enhanced et contraintes responsives
-    const handleAnimatedPanelClick = (panelType: VerticalPanelType) => {
+    const handleAnimatedPanelClick = (panelType: VerticalDrawerType) => {
         // Marquer le panneau comme en cours d'animation
         setAnimatingPanels(new Set([panelType]));
         setLastChangedPanel(panelType);
         
-        // Déclencher le changement de configuration
-        handlePanelClick(panelType);
+        // Déclencher le changement de configuration avec la nouvelle logique
+        handleDrawerClick(panelType);
     };
 
     /**
      * Détermine les classes CSS d'animation pour un panneau
      */
-    const getPanelAnimationClasses = (panelType: VerticalPanelType): string => {
+    const getPanelAnimationClasses = (panelType: VerticalDrawerType): string => {
         const panelInfo = getPanelInfo(panelType);
         const isAnimating = animatingPanels.has(panelType);
         const wasLastChanged = lastChangedPanel === panelType;
@@ -142,7 +158,7 @@ export default function VerticalPanelSystem({
     /**
      * Détermine les classes d'animation pour les poignées
      */
-    const getHandleAnimationClasses = (panelType: VerticalPanelType): string => {
+    const getHandleAnimationClasses = (panelType: VerticalDrawerType): string => {
         const classes = ['vertical-panel-handle-transition'];
         const panelInfo = getPanelInfo(panelType);
         
@@ -157,7 +173,7 @@ export default function VerticalPanelSystem({
     /**
      * Classes pour le contenu adaptatif
      */
-    const getContentAnimationClasses = (panelType: VerticalPanelType): string => {
+    const getContentAnimationClasses = (panelType: VerticalDrawerType): string => {
         const panelInfo = getPanelInfo(panelType);
         const classes = ['vertical-content-resize'];
         
@@ -178,7 +194,7 @@ export default function VerticalPanelSystem({
         title, 
         backgroundImage 
     }: { 
-        panelType: VerticalPanelType; 
+        panelType: VerticalDrawerType; 
         title: string; 
         backgroundImage?: string; 
     }) => {
@@ -296,7 +312,7 @@ export default function VerticalPanelSystem({
         panelType, 
         children 
     }: { 
-        panelType: VerticalPanelType; 
+        panelType: VerticalDrawerType; 
         children: React.ReactNode; 
     }) => {
         const panelInfo = getPanelInfo(panelType);

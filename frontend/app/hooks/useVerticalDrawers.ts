@@ -13,17 +13,17 @@ const VERTICAL_PANEL_KEYS = ['presentation', 'communication'] as const;
 
 // Configurations prédéfinies spécifiques au système vertical
 export const VERTICAL_PANEL_CONFIGS: Record<string, VerticalPanelConfig> = {
-    // Configuration par défaut : Présentation 2/3, Communication 1/3
-    default: { presentation: '2/3', communication: '1/3' },
+    // Configuration par défaut : Présentation 1/3, Communication 2/3 (NOUVELLE CONFIGURATION)
+    default: { presentation: '1/3', communication: '2/3' },
     
     // Configurations avec focus
     presentationFocus: { presentation: '3/3', communication: '0' },
     communicationFocus: { presentation: '0', communication: '3/3' },
     
-    // Configuration équilibrée (si jamais nécessaire)
-    balanced: { presentation: '1/3', communication: '2/3' }, // Communication en focus
+    // Configuration équilibrée (ancienne configuration par défaut)
+    balanced: { presentation: '2/3', communication: '1/3' }, // Présentation en focus
     
-    // Configuration inversée
+    // Configuration inversée (maintenant identique au défaut - pour compatibilité)
     inverted: { presentation: '1/3', communication: '2/3' },
 };
 

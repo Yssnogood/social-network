@@ -5,8 +5,8 @@ import ShowcasePanel from './ShowcasePanel';
 import MembersPanel from './MembersPanel';
 import InvitationsPanel from './InvitationsPanel';
 import { Group, Event, GroupMember, User } from '../../types/group';
-import { usePresentationDrawerProportions } from '../../hooks/usePresentationDrawerProportions';
-import type { PresentationDrawerType } from '../../hooks/usePresentationDrawerProportions';
+import { usePresentationDrawers } from '../../hooks/useUnifiedDrawerProportions';
+import type { PresentationDrawerType } from '../../hooks/useUnifiedDrawerProportions';
 import '../../styles/drawer-animations.css';
 import '../../styles/drawer-colors.css';
 
@@ -37,27 +37,28 @@ export default function PresentationContentPanel({
 }: PresentationContentPanelProps) {
     const {
         drawerConfig,
-        toggleDrawer,
+        handleDrawerClick,        // Nouveau : logique progressive au lieu de toggleDrawer
+        toggleDrawer,             // Conservé pour compatibilité
         getDrawerStyle,
         isDrawerClosed,
         swapWithLarge,
         getConfigStats,
         getOpenDrawersCount
-    } = usePresentationDrawerProportions();
+    } = usePresentationDrawers();  // Nouveau hook avec mode progressif par défaut
     
     const getDrawerTitle = (drawer: PresentationDrawerType) => {
         switch (drawer) {
-            case 'presentation': return type === 'event' ? 'Présentation événement' : 'Présentation groupe';
+            case 'info': return type === 'event' ? 'Présentation événement' : 'Présentation groupe';
             case 'members': return type === 'event' ? 'Participants' : 'Membres';
-            case 'invitations': return 'Invitations';
+            case 'gallery': return 'Invitations';  // Renommé car maintenant c'est uniquement pour les invitations
         }
     };
 
     const getDrawerCount = (drawer: PresentationDrawerType) => {
         switch (drawer) {
-            case 'presentation': return 1; // Toujours 1 item de présentation
+            case 'info': return 1; // Toujours 1 item de présentation
             case 'members': return members.length + memberGroups.length;
-            case 'invitations': return 0; // Pas de count fixe pour invitations
+            case 'gallery': return 0; // Pas de compteur pour les invitations
         }
     };
 
@@ -68,7 +69,7 @@ export default function PresentationContentPanel({
         
         return (
             <button
-                onClick={() => toggleDrawer(drawer)}
+                onClick={() => handleDrawerClick(drawer)}
                 className="h-full bg-gray-800 hover:bg-gray-700 border-r border-gray-700 flex flex-col items-center justify-center transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
                 style={{ width: '40px' }}
                 title={`Ouvrir ${title}`}
@@ -109,9 +110,9 @@ export default function PresentationContentPanel({
         const getHeaderClassName = () => {
             const baseClasses = "w-full flex items-center transition-colors duration-200";
             switch (drawer) {
-                case 'presentation': return `${baseClasses} drawer-header-showcase`;
+                case 'info': return `${baseClasses} drawer-header-showcase`;
                 case 'members': return `${baseClasses} drawer-header-members`;
-                case 'invitations': return `${baseClasses} drawer-header-invitations`;
+                case 'gallery': return `${baseClasses} drawer-header-gallery`;
                 default: return `${baseClasses} bg-gray-800 hover:bg-gray-700`;
             }
         };
@@ -120,7 +121,7 @@ export default function PresentationContentPanel({
             <div className={getHeaderClassName()}>
                 {/* Bouton principal pour toggle */}
                 <button
-                    onClick={() => toggleDrawer(drawer)}
+                    onClick={() => handleDrawerClick(drawer)}
                     disabled={!canClose && !isClosed} // Empêche de fermer le dernier tiroir
                     className={`flex-1 flex items-center justify-between p-4 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${
                         !canClose && !isClosed 
@@ -186,23 +187,23 @@ export default function PresentationContentPanel({
         <div className="h-full bg-gray-900 flex flex-col">
             {/* Container de tous les tiroirs (ouverts ET fermés) - GARANTIT 100% largeur */}
             <div className="flex-1 flex">
-                {/* Presentation Drawer - TOUJOURS RENDU */}
+                {/* Info Drawer - TOUJOURS RENDU */}
                 <div 
                     className={`drawer-transition drawer-showcase border-r border-gray-700 relative flex flex-col ${
-                        isDrawerClosed('presentation') ? 'drawer-closed' :
-                        drawerConfig.presentation <= 30 ? 'drawer-compact' :
-                        drawerConfig.presentation >= 60 ? 'drawer-expanded' :
+                        isDrawerClosed('info') ? 'drawer-closed' :
+                        drawerConfig.info <= 30 ? 'drawer-compact' :
+                        drawerConfig.info >= 60 ? 'drawer-expanded' :
                         'drawer-normal'
                     }`}
-                    style={getDrawerStyle('presentation')}
+                    style={getDrawerStyle('info')}
                 >
-                    {isDrawerClosed('presentation') ? (
-                        <ClosedDrawerBar drawer="presentation" />
+                    {isDrawerClosed('info') ? (
+                        <ClosedDrawerBar drawer="info" />
                     ) : (
                         <>
                             {/* Header cliquable */}
                             <div className="flex-shrink-0 border-b border-gray-700">
-                                <DrawerHeader drawer="presentation" />
+                                <DrawerHeader drawer="info" />
                             </div>
                             
                             {/* Contenu scrollable */}
@@ -254,24 +255,24 @@ export default function PresentationContentPanel({
 
                 {/* Invitations Drawer - TOUJOURS RENDU */}
                 <div 
-                    className={`drawer-transition drawer-invitations relative flex flex-col ${
-                        isDrawerClosed('invitations') ? 'drawer-closed' :
-                        drawerConfig.invitations <= 30 ? 'drawer-compact' :
-                        drawerConfig.invitations >= 60 ? 'drawer-expanded' :
+                    className={`drawer-transition drawer-gallery relative flex flex-col ${
+                        isDrawerClosed('gallery') ? 'drawer-closed' :
+                        drawerConfig.gallery <= 30 ? 'drawer-compact' :
+                        drawerConfig.gallery >= 60 ? 'drawer-expanded' :
                         'drawer-normal'
                     }`}
-                    style={getDrawerStyle('invitations')}
+                    style={getDrawerStyle('gallery')}
                 >
-                    {isDrawerClosed('invitations') ? (
-                        <ClosedDrawerBar drawer="invitations" />
+                    {isDrawerClosed('gallery') ? (
+                        <ClosedDrawerBar drawer="gallery" />
                     ) : (
                         <>
                             {/* Header cliquable */}
                             <div className="flex-shrink-0 border-b border-gray-700">
-                                <DrawerHeader drawer="invitations" />
+                                <DrawerHeader drawer="gallery" />
                             </div>
                             
-                            {/* Contenu scrollable */}
+                            {/* Contenu scrollable - Maintenant uniquement pour les invitations */}
                             <div className="flex-1 overflow-hidden">
                                 <InvitationsPanel
                                     groupId={selectedItem.id}

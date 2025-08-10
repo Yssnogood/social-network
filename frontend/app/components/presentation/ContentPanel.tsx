@@ -6,8 +6,8 @@ import { AdaptiveMessageList } from '../adaptive/AdaptiveMessageCard';
 import AdaptiveEventsList from '../adaptive/AdaptiveEventsList';
 import MessageInput from '../groupComponent/MessageInput';
 import { GroupPost, GroupComment, GroupMessage, Event, User } from '../../types/group';
-import { useDrawerProportions } from '../../hooks/useDrawerProportions';
-import type { DrawerType } from '../../hooks/useDrawerProportions';
+import { useCommunicationDrawers } from '../../hooks/useUnifiedDrawerProportions';
+import type { CommunicationDrawerType } from '../../hooks/useUnifiedDrawerProportions';
 import '../../styles/drawer-animations.css';
 import '../../styles/drawer-colors.css';
 import '../../styles/adaptive-vignettes.css';
@@ -70,7 +70,7 @@ export default function ContentPanel({
         swapWithLarge,
         getConfigStats,
         getOpenDrawersCount
-    } = useDrawerProportions();
+    } = useCommunicationDrawers();
     
     // Stabiliser drawerPercentage pour éviter les re-renders constants
     const stableDrawerPercentage = useMemo(() => {
@@ -92,7 +92,7 @@ export default function ContentPanel({
         }
     };
 
-    const getDrawerTitle = (drawer: DrawerType) => {
+    const getDrawerTitle = (drawer: CommunicationDrawerType) => {
         switch (drawer) {
             case 'posts': return type === 'event' ? 'Posts de l\'événement' : 'Posts du groupe';
             case 'messages': return type === 'event' ? 'Chat événement' : 'Chat du groupe';
@@ -101,7 +101,7 @@ export default function ContentPanel({
     };
 
     // Composant barre verticale pour tiroir fermé avec nom pivoté
-    const ClosedDrawerBar = ({ drawer, count }: { drawer: DrawerType, count: number }) => {
+    const ClosedDrawerBar = ({ drawer, count }: { drawer: CommunicationDrawerType, count: number }) => {
         const title = getDrawerTitle(drawer);
         
         return (
@@ -133,7 +133,7 @@ export default function ContentPanel({
     };
 
     // Composant de header cliquable avec logique d'agrandissement progressif
-    const DrawerHeader = ({ drawer, count }: { drawer: DrawerType, count: number }) => {
+    const DrawerHeader = ({ drawer, count }: { drawer: CommunicationDrawerType, count: number }) => {
         const isClosed = isDrawerClosed(drawer);
         const percentage = drawerConfig[drawer];
         const { largestDrawer, openCount } = getConfigStats();
