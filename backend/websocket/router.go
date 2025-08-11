@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// SetupWebSocketRoutes sets up all WebSocket-related routes
+// SetupWebSocketRoutes sets up all WebSocket-related routes and returns the Hub
 func SetupWebSocketRoutes(
 	router *mux.Router,
 	messageRepo repository.MessageRepositoryInterface,
@@ -17,7 +17,7 @@ func SetupWebSocketRoutes(
 	groupRepo repository.GroupRepositoryInterface,
 	eventRepo repository.EventRepositoryInterface,
 	userRepo repository.UserRepositoryInterface,
-) {
+) *Hub {
 	// Create WebSocket handler
 	wsHandler := NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo, groupRepo, eventRepo, userRepo)
 
@@ -33,4 +33,7 @@ func SetupWebSocketRoutes(
 	
 	// Additional WebSocket API routes
 	router.HandleFunc("/api/users/online", wsHandler.GetOnlineUsers).Methods("GET")
+	
+	// 🎯 Retourner le Hub pour utilisation dans les handlers HTTP
+	return wsHandler.hub
 }

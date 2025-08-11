@@ -55,6 +55,12 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
     // 🎯 NOUVELLE LOGIQUE CONTEXTUELLE - distingue groupe vs événement
     const discussionContext: DiscussionContext = ContextualMessageService.getDiscussionContext(type, selectedItem);
     
+    console.log(`🎯 PresentationPanel: contexte = ${discussionContext.type} ID:${discussionContext.id}`, {
+        type,
+        selectedItem,
+        discussionContext
+    });
+    
     // 🔌 WebSocket contextuel pour les messages temps réel
     useContextualWebSocket({ 
         context: discussionContext, 

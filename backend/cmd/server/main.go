@@ -84,14 +84,17 @@ func main() {
 	userService := services.NewUserService(db)
 	postService := services.NewPostService(db)
 
-	// Handlers
+	// WebSocket routes - unified system (crée le Hub d'abord)
+	wsHub := websocket.SetupWebSocketRoutes(r, messageRepo, conversationRepo, conversationMembersRepo, groupRepo, eventRepo, userRepo)
+
+	// Handlers (EventHandler reçoit maintenant le Hub pour broadcast temps réel)
 	userHandler := appHandlers.NewUserHandler(userService, userRepo, sessionRepo)
 	postHandler := appHandlers.NewPostHandler(postService, postRepo, sessionRepo, userRepo)
 	commentHandler := appHandlers.NewCommentHandler(commentRepo, sessionRepo, userRepo)
 	followerHandler := appHandlers.NewFollowerHandler(followerRepo, notificationRepo)
 	messageHandler := appHandlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
 	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo, followerRepo, groupRepo)
-	eventHandler := appHandlers.NewEventHandler(eventRepo, userRepo)
+	eventHandler := appHandlers.NewEventHandler(eventRepo, userRepo, wsHub) // 🎯 Ajout du Hub WebSocket
 	uploadHandler := appHandlers.NewUploadHandler("./uploads")
 
 	groupHandler := appHandlers.NewGroupHandler(groupRepo, sessionRepo, userRepo, notificationRepo)
@@ -108,9 +111,6 @@ func main() {
 	routes.NotificationsRoutes(r, notificationHandler)
 	routes.EventsRoutes(r, eventHandler)
 	routes.UploadRoutes(r, uploadHandler)
-
-	// WebSocket routes - unified system
-	websocket.SetupWebSocketRoutes(r, messageRepo, conversationRepo, conversationMembersRepo, groupRepo, eventRepo, userRepo)
 
 	// Lancement du serveur HTTP
 	port := os.Getenv("PORT")

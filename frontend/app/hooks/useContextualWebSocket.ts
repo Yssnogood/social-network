@@ -11,27 +11,43 @@ interface UseContextualWebSocketProps {
 
 /**
  * Hook unifié qui gère WebSocket selon le contexte (groupe vs événement)
+ * 🎯 SOLUTION CONFORME AUX RÈGLES REACT HOOKS
  */
 export const useContextualWebSocket = ({ context, setMessages }: UseContextualWebSocketProps) => {
     const [isConnected, setIsConnected] = useState(false);
 
-    // Hook pour les messages de groupe
+    // Créer les callbacks qui seront utilisés selon le contexte
+    const onGroupMessages = (msgs: GroupMessage[]) => {
+        if (context.type === 'group') {
+            console.log(`🔌 WebSocket GROUPE reçu ${msgs.length} messages pour groupe ${context.id}`);
+            setMessages(msgs as ContextualMessage[]);
+        }
+    };
+    
+    const onEventMessages = (msgs: EventMessage[]) => {
+        if (context.type === 'event') {
+            console.log(`🔌 WebSocket ÉVÉNEMENT reçu ${msgs.length} messages pour événement ${context.id}`);
+            setMessages(msgs as ContextualMessage[]);
+        }
+    };
+
+    // 🎯 TOUJOURS appeler les hooks, mais ne traiter que le bon selon le contexte
     useGroupWebSocket(
         context.type === 'group' ? context.id.toString() : '', 
-        context.type === 'group' ? (msgs) => setMessages(msgs as ContextualMessage[]) : () => {}
+        onGroupMessages
     );
 
-    // Hook pour les messages d'événement  
     useEventWebSocket(
         context.type === 'event' ? context.id.toString() : '',
-        context.type === 'event' ? (msgs) => setMessages(msgs as ContextualMessage[]) : () => {}
+        onEventMessages
     );
 
     useEffect(() => {
-        // Simuler l'état de connexion selon le contexte
+        console.log(`🎯 WebSocket contextuel activé pour ${context.type} ID:${context.id}`);
         setIsConnected(true);
         
         return () => {
+            console.log(`🎯 WebSocket contextuel déconnecté pour ${context.type} ID:${context.id}`);
             setIsConnected(false);
         };
     }, [context.type, context.id]);
@@ -46,7 +62,7 @@ export const useContextualWebSocket = ({ context, setMessages }: UseContextualWe
  * Hook utilitaire pour transformer les messages selon le contexte
  */
 export const useMessageTransform = (context: DiscussionContext) => {
-    const transformMessage = (message: any): ContextualMessage => {
+    const transformMessage = (message: GroupMessage | EventMessage): ContextualMessage => {
         if (context.type === 'group') {
             // Assurer que c'est un GroupMessage
             return {
@@ -72,7 +88,7 @@ export const useMessageTransform = (context: DiscussionContext) => {
         }
     };
 
-    const transformMessages = (messages: any[]): ContextualMessage[] => {
+    const transformMessages = (messages: (GroupMessage | EventMessage)[]): ContextualMessage[] => {
         return messages.map(transformMessage);
     };
 

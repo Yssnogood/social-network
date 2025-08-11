@@ -533,3 +533,8 @@ func (h *Hub) broadcastToEvent(eventID int64, message WSMessage) {
 	}
 }
 
+// BroadcastToEvent sends a message to all clients in an event (public method for handlers)
+func (h *Hub) BroadcastToEvent(eventID int64, message WSMessage) {
+	h.broadcastToEvent(eventID, message)
+}
+

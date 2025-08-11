@@ -10,6 +10,7 @@ import (
 	"social-network/backend/database/models"
 	repository "social-network/backend/database/repositories"
 	"social-network/backend/server/middlewares"
+	"social-network/backend/websocket"
 
 	"github.com/gorilla/mux"
 )
@@ -18,15 +19,18 @@ import (
 type EventHandler struct {
 	EventRepository *repository.EventRepository
 	UserRepository  repository.UserRepositoryInterface
+	Hub             *websocket.Hub // 🎯 Ajout du Hub WebSocket pour broadcast temps réel
 }
 
-// NewEventHandler creates a new EventHandler.
-func NewEventHandler(er *repository.EventRepository, ur repository.UserRepositoryInterface) *EventHandler {
+// NewEventHandler creates a new EventHandler instance
+func NewEventHandler(eventRepo *repository.EventRepository, userRepo repository.UserRepositoryInterface, hub *websocket.Hub) *EventHandler {
 	return &EventHandler{
-		EventRepository: er,
-		UserRepository:  ur,
+		EventRepository: eventRepo,
+		UserRepository:  userRepo,
+		Hub:             hub,
 	}
 }
+
 
 // Request DTOs
 
@@ -183,6 +187,22 @@ func (h *EventHandler) CreateEventMessage(w http.ResponseWriter, r *http.Request
 		return
 	}
 	message.ID = id
+
+	// 🎯 BROADCAST VIA WEBSOCKET APRÈS SAUVEGARDE DB
+	if h.Hub != nil {
+		wsMessage := websocket.WSMessage{
+			Type:      "event_message_received",
+			EventID:   eventID,
+			Content:   message.Content,
+			SenderID:  userID,
+			Username:  userName,
+			MessageID: id,
+			Timestamp: message.CreatedAt,
+		}
+		
+		// Broadcast vers tous les clients connectés à cet événement
+		h.Hub.BroadcastToEvent(eventID, wsMessage)
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(message)
