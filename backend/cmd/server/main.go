@@ -98,6 +98,7 @@ func main() {
 	uploadHandler := appHandlers.NewUploadHandler("./uploads")
 
 	groupHandler := appHandlers.NewGroupHandler(groupRepo, sessionRepo, userRepo, notificationRepo)
+	invitationHandler := appHandlers.NewInvitationHandler(groupRepo, sessionRepo, userRepo, notificationRepo)
 
 	// CORS handled by Gorilla handlers at the end
 
@@ -107,6 +108,7 @@ func main() {
 	routes.CommentsRoutes(r, commentHandler)
 	routes.FollowersRoutes(r, followerHandler)
 	routes.GroupRoutes(r, groupHandler)
+	routes.InvitationRoutes(r, invitationHandler)
 	routes.MessageRoutes(r, messageHandler)
 	routes.NotificationsRoutes(r, notificationHandler)
 	routes.EventsRoutes(r, eventHandler)

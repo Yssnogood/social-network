@@ -379,3 +379,110 @@ func (r *GroupRepository) GetCommentsByPostID(postID int64) ([]models.GroupComme
 
 	return comments, nil
 }
+
+// GetInvitationByID retrieves a specific invitation by its ID
+func (r *GroupRepository) GetInvitationByID(invitationID int64) (*models.GroupInvitation, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT id, group_id, inviter_id, invitee_id, pending, create_at
+		FROM group_invitations
+		WHERE id = ?
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	var invitation models.GroupInvitation
+	err = stmt.QueryRow(invitationID).Scan(
+		&invitation.ID,
+		&invitation.GroupID,
+		&invitation.InviterID,
+		&invitation.InviteeID,
+		&invitation.Pending,
+		&invitation.CreatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("invitation not found")
+		}
+		return nil, err
+	}
+
+	return &invitation, nil
+}
+
+// GetPendingInvitationsByUser retrieves all pending invitations for a specific user
+func (r *GroupRepository) GetPendingInvitationsByUser(userID int64) ([]models.GroupInvitation, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT id, group_id, inviter_id, invitee_id, pending, create_at
+		FROM group_invitations
+		WHERE invitee_id = ? AND pending = 1
+		ORDER BY create_at DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var invitations []models.GroupInvitation
+	for rows.Next() {
+		var invitation models.GroupInvitation
+		if err := rows.Scan(
+			&invitation.ID,
+			&invitation.GroupID,
+			&invitation.InviterID,
+			&invitation.InviteeID,
+			&invitation.Pending,
+			&invitation.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		invitations = append(invitations, invitation)
+	}
+
+	return invitations, nil
+}
+
+// GetInvitationsByInviter retrieves all invitations sent by a specific user
+func (r *GroupRepository) GetInvitationsByInviter(inviterID int64) ([]models.GroupInvitation, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT id, group_id, inviter_id, invitee_id, pending, create_at
+		FROM group_invitations
+		WHERE inviter_id = ?
+		ORDER BY create_at DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(inviterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var invitations []models.GroupInvitation
+	for rows.Next() {
+		var invitation models.GroupInvitation
+		if err := rows.Scan(
+			&invitation.ID,
+			&invitation.GroupID,
+			&invitation.InviterID,
+			&invitation.InviteeID,
+			&invitation.Pending,
+			&invitation.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		invitations = append(invitations, invitation)
+	}
+
+	return invitations, nil
+}

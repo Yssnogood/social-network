@@ -275,7 +275,7 @@ export default function PresentationContentPanel({
                             {/* Contenu scrollable - Maintenant uniquement pour les invitations */}
                             <div className="flex-1 unified-drawer-scroll">
                                 <InvitationsPanel
-                                    groupId={selectedItem.id}
+                                    groupId={type === 'group' ? selectedItem.id : (selectedItem as Event).group_id}
                                     currentUserId={currentUser?.id}
                                     canInvite={canInvite}
                                     onInviteUsers={onInviteUsers}

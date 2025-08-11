@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import { CookiesProvider } from "next-client-cookies/server";
 import { Navbar } from "./components/navbar";
+import ToastProvider from "./components/ui/ToastProvider";
 import "./globals.css";
 
 const inter = Inter({
@@ -28,7 +29,11 @@ export default function RootLayout({
         <html lang="en" suppressHydrationWarning>
             <body className={`${inter.variable} ${robotoMono.variable} antialiased`} suppressHydrationWarning>
                 {/* <header><Navbar /></header> */}
-                <CookiesProvider><main>{children}</main></CookiesProvider>
+                <CookiesProvider>
+                    <ToastProvider>
+                        <main>{children}</main>
+                    </ToastProvider>
+                </CookiesProvider>
             </body>
         </html>
     );

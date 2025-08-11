@@ -7,6 +7,7 @@ import { fetchFriends, fetchFollowing, fetchAllUsersWithStatus } from '@/service
 import { Group } from '../../types/group';
 import { getGroupsByUser } from '@/services/group';
 import { getCurrentUserId } from '@/services/auth';
+import { useToastContext } from '../ui/ToastProvider';
 
 // Types pour les onglets
 type MainTabType = 'users' | 'groups';
@@ -37,6 +38,7 @@ export default function InvitationsPanel({
     onInviteGroups
 }: InvitationsPanelProps) {
     const { navigateToChat } = useOnePage();
+    const { success, error: showError } = useToastContext();
     
     // State pour les onglets
     const [mainTab, setMainTab] = useState<MainTabType>('users');
@@ -55,6 +57,7 @@ export default function InvitationsPanel({
     
     // State pour le chargement
     const [isLoading, setIsLoading] = useState(false);
+    const [isSendingInvitations, setIsSendingInvitations] = useState(false);
     const [error, setError] = useState<string | null>(null);
     
     // Charger les données selon l'onglet actif
@@ -171,16 +174,35 @@ export default function InvitationsPanel({
     const handleSendInvitations = async () => {
         if (selectedItems.length === 0) return;
         
+        setIsSendingInvitations(true);
+        setError(null);
+        
         try {
             if (mainTab === 'users' && onInviteUsers) {
                 await onInviteUsers(selectedItems);
+                success(
+                    'Invitations envoyées !',
+                    `${selectedItems.length} invitation${selectedItems.length > 1 ? 's' : ''} envoyée${selectedItems.length > 1 ? 's' : ''} avec succès`
+                );
             } else if (mainTab === 'groups' && onInviteGroups) {
                 await onInviteGroups(selectedItems);
+                success(
+                    'Invitations de groupe envoyées !',
+                    `${selectedItems.length} groupe${selectedItems.length > 1 ? 's' : ''} invité${selectedItems.length > 1 ? 's' : ''} avec succès`
+                );
             }
+            // Désélection automatique après succès
             setSelectedItems([]);
         } catch (err) {
             console.error('Error sending invitations:', err);
-            setError('Erreur lors de l\'envoi des invitations');
+            const errorMsg = 'Erreur lors de l\'envoi des invitations';
+            setError(errorMsg);
+            showError(
+                'Échec d\'envoi',
+                errorMsg
+            );
+        } finally {
+            setIsSendingInvitations(false);
         }
     };
     
@@ -193,9 +215,11 @@ export default function InvitationsPanel({
             <div
                 key={item.id}
                 className={`flex items-center p-3 border-b border-gray-700 transition-colors ${
-                    canInvite ? 'hover:bg-gray-700 cursor-pointer' : ''
-                } ${isSelected ? 'bg-blue-900 bg-opacity-30' : ''}`}
-                onClick={() => canInvite && toggleSelection(item.id)}
+                    canInvite && !isSendingInvitations ? 'hover:bg-gray-700 cursor-pointer' : ''
+                } ${isSelected ? 'bg-blue-900 bg-opacity-30' : ''} ${
+                    isSendingInvitations ? 'opacity-60' : ''
+                }`}
+                onClick={() => canInvite && !isSendingInvitations && toggleSelection(item.id)}
             >
                 <div className="relative">
                     {isUser ? (
@@ -232,8 +256,11 @@ export default function InvitationsPanel({
                         <input
                             type="checkbox"
                             checked={isSelected}
+                            disabled={isSendingInvitations}
                             onChange={() => {}}
-                            className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                            className={`w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 ${
+                                isSendingInvitations ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
                         />
                     </div>
                 )}
@@ -252,9 +279,17 @@ export default function InvitationsPanel({
                     {canInvite && selectedItems.length > 0 && (
                         <button
                             onClick={handleSendInvitations}
-                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
+                            disabled={isSendingInvitations}
+                            className={`px-3 py-1 text-white text-sm rounded transition-colors flex items-center gap-2 ${
+                                isSendingInvitations 
+                                    ? 'bg-gray-600 cursor-not-allowed' 
+                                    : 'bg-blue-600 hover:bg-blue-700'
+                            }`}
                         >
-                            Inviter ({selectedItems.length})
+                            {isSendingInvitations && (
+                                <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
+                            )}
+                            {isSendingInvitations ? 'Envoi...' : `Inviter (${selectedItems.length})`}
                         </button>
                     )}
                 </div>

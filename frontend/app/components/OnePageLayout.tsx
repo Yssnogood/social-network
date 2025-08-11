@@ -5,7 +5,7 @@ import { useOnePage } from '../contexts/OnePageContext';
 import Header from './Header';
 import ChatPanel from './ChatPanel';
 import UsersListPanel from './UsersListPanel';
-import GroupsPanel from './GroupsPanel';
+import GroupsPanelWithInvitations from './GroupsPanelWithInvitations';
 import EventsPanel from './EventsPanel';
 import UniversalPostsList from './universal/UniversalPostsList';
 import GroupView from './GroupView';
@@ -193,9 +193,9 @@ export default function OnePageLayout({
 
         {/* Colonne droite - Groupes et Événements */}
         <div className="hidden lg:flex w-64 xl:w-80 bg-gray-800 border-l border-gray-700 flex-col">
-          {/* Groups Panel - Moitié supérieure */}
+          {/* Groups Panel with Invitations - Moitié supérieure */}
           <div className="h-1/2 border-b border-gray-700 overflow-hidden">
-            <GroupsPanel />
+            <GroupsPanelWithInvitations />
           </div>
           
           {/* Events Panel - Moitié inférieure */}

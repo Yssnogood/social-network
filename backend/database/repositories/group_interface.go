@@ -18,6 +18,9 @@ type GroupRepositoryInterface interface {
 	// Invitation management
 	CreateGroupInvitation(groupID, inviterID, inviteeID int64) (*models.Group, error)
 	DeleteInvitation(userID, groupID int64) error
+	GetInvitationByID(invitationID int64) (*models.GroupInvitation, error)
+	GetPendingInvitationsByUser(userID int64) ([]models.GroupInvitation, error)
+	GetInvitationsByInviter(inviterID int64) ([]models.GroupInvitation, error)
 	
 	// Message management
 	CreateGroupMessage(groupMessage *models.GroupMessage) (int64, error)
