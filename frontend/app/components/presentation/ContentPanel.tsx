@@ -230,7 +230,7 @@ export default function ContentPanel({
                             </div>
                             
                             {/* Contenu scrollable */}
-                            <div className="flex-1 overflow-y-auto p-4">
+                            <div className="flex-1 unified-drawer-scroll p-4">
                                 <UniversalPostsList
                                     key="group-posts-list"
                                     posts={posts || []}
@@ -273,7 +273,7 @@ export default function ContentPanel({
                             </div>
                             
                             {/* Messages scrollables */}
-                            <div className="flex-1 overflow-y-auto p-4">
+                            <div className="flex-1 unified-drawer-scroll p-4">
                                 <AdaptiveMessageList 
                                     messages={messages}
                                     drawerPercentage={drawerConfig.messages}
@@ -313,7 +313,7 @@ export default function ContentPanel({
                             </div>
                             
                             {/* Contenu scrollable */}
-                            <div className="flex-1 overflow-y-auto p-4">
+                            <div className="flex-1 unified-drawer-scroll p-4">
                                 <AdaptiveEventsList
                                     events={events}
                                     drawerPercentage={drawerConfig.events}

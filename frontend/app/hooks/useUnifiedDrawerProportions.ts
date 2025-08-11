@@ -1,23 +1,27 @@
 'use client';
 
 import { useProportionSystem, createDefaultPresets, type ProportionConfig, type ProportionSize } from './useProportionSystem';
+import { useContextPersistedProportions } from './usePersistedProportions';
 
 // Types unifiés pour tous les contextes de tiroirs
-export type UnifiedDrawerContext = 'communication' | 'presentation';
+export type UnifiedDrawerContext = 'communication' | 'presentation' | 'creation';
 export type CommunicationDrawerType = 'posts' | 'messages' | 'events';
 export type PresentationDrawerType = 'info' | 'members' | 'gallery';
-export type UnifiedDrawerType = CommunicationDrawerType | PresentationDrawerType;
+export type CreationDrawerType = 'config' | 'preview' | 'invitations';
+export type UnifiedDrawerType = CommunicationDrawerType | PresentationDrawerType | CreationDrawerType;
 export type UnifiedDrawerSize = ProportionSize;
 
 // Configurations spécialisées selon le contexte
 type CommunicationDrawerConfig = ProportionConfig<CommunicationDrawerType>;
 type PresentationDrawerConfig = ProportionConfig<PresentationDrawerType>;
-type UnifiedDrawerConfig = CommunicationDrawerConfig | PresentationDrawerConfig;
+type CreationDrawerConfig = ProportionConfig<CreationDrawerType>;
+type UnifiedDrawerConfig = CommunicationDrawerConfig | PresentationDrawerConfig | CreationDrawerConfig;
 
 // Définition des tiroirs par contexte
 const DRAWER_KEYS_BY_CONTEXT = {
     communication: ['posts', 'messages', 'events'] as const,
-    presentation: ['info', 'members', 'gallery'] as const
+    presentation: ['info', 'members', 'gallery'] as const,
+    creation: ['config', 'preview', 'invitations'] as const
 } as const;
 
 // Modes comportementaux
@@ -26,8 +30,12 @@ export type DrawerBehaviorMode = 'progressive' | 'toggle';
 interface UseUnifiedDrawerProportionsOptions<T extends UnifiedDrawerContext> {
     context: T;
     mode?: DrawerBehaviorMode;
-    initialConfig?: T extends 'communication' ? CommunicationDrawerConfig : PresentationDrawerConfig;
-    onConfigChange?: (config: T extends 'communication' ? CommunicationDrawerConfig : PresentationDrawerConfig) => void;
+    initialConfig?: T extends 'communication' ? CommunicationDrawerConfig : 
+                    T extends 'presentation' ? PresentationDrawerConfig : 
+                    CreationDrawerConfig;
+    onConfigChange?: (config: T extends 'communication' ? CommunicationDrawerConfig : 
+                             T extends 'presentation' ? PresentationDrawerConfig : 
+                             CreationDrawerConfig) => void;
 }
 
 /**
@@ -52,13 +60,31 @@ export function useUnifiedDrawerProportions<T extends UnifiedDrawerContext>(
     const defaultPresets = createDefaultPresets(drawerKeys);
     const resolvedInitialConfig = initialConfig || defaultPresets.balanced;
     
-    // Utilisation du système générique
+    // Intégration de la persistance pour le contexte spécifique
+    const persistence = useContextPersistedProportions(
+        context, // 'communication', 'presentation', ou 'creation'
+        drawerKeys,
+        resolvedInitialConfig
+    );
+    
+    // Charger la configuration initiale (persistée ou par défaut)
+    const loadedConfig = persistence.loadInitialConfig() || resolvedInitialConfig;
+    
+    // Wrapper pour la sauvegarde automatique
+    const handleConfigChange = (config: any) => {
+        persistence.persistConfig(config);
+        if (onConfigChange) {
+            onConfigChange(config);
+        }
+    };
+    
+    // Utilisation du système générique avec persistance
     const proportionSystem = useProportionSystem({
         direction: 'horizontal',
-        drawerKeys,
-        initialConfig: resolvedInitialConfig,
-        defaultPresets,
-        onConfigChange
+        drawerKeys: drawerKeys as any,
+        initialConfig: loadedConfig as any,
+        defaultPresets: defaultPresets as any,
+        onConfigChange: handleConfigChange
     });
 
     /**
@@ -98,7 +124,7 @@ export function useUnifiedDrawerProportions<T extends UnifiedDrawerContext>(
                     [drawerType]: '1/3',
                     [largestOther]: newLargestSize,
                     [smallestOther]: newSmallestSize
-                } as UnifiedDrawerConfig);
+                } as any);
                 break;
                 
             case '1/3': // 1/3 → 2/3 (agrandir)
@@ -110,13 +136,13 @@ export function useUnifiedDrawerProportions<T extends UnifiedDrawerContext>(
                         [drawerType]: '2/3',
                         [otherDrawers[0]]: '0',
                         [otherDrawers[1]]: '1/3'
-                    } as UnifiedDrawerConfig);
+                    } as any);
                 } else if (openDrawers.length === 1) {
                     proportionSystem.setDrawerConfig({
                         [drawerType]: '2/3',
                         [openDrawers[0]]: '1/3',
                         [closedDrawers[0]]: '0'
-                    } as UnifiedDrawerConfig);
+                    } as any);
                 } else {
                     const largestOpen = openDrawers.reduce((largest, drawer) => 
                         currentConfig[drawer] > currentConfig[largest] ? drawer : largest
@@ -126,7 +152,7 @@ export function useUnifiedDrawerProportions<T extends UnifiedDrawerContext>(
                         [drawerType]: '2/3',
                         [largestOpen]: '1/3',
                         [smallestOpen]: '0'
-                    } as UnifiedDrawerConfig);
+                    } as any);
                 }
                 break;
                 
@@ -135,7 +161,7 @@ export function useUnifiedDrawerProportions<T extends UnifiedDrawerContext>(
                     [drawerType]: '3/3',
                     [otherDrawers[0]]: '0',
                     [otherDrawers[1]]: '0'
-                } as UnifiedDrawerConfig);
+                } as any);
                 break;
                 
             case '3/3': // 3/3 → équilibré (retour)
@@ -185,18 +211,29 @@ export function useUnifiedDrawerProportions<T extends UnifiedDrawerContext>(
         setBalancedMode: proportionSystem.setBalancedMode,          // Mode équilibré
         maximizeDrawer: proportionSystem.maximizeDrawer,            // Plein écran
         setDrawerConfig: proportionSystem.setDrawerConfig,          // Configuration directe
+        setPresetConfig: (presetName: string) => {                 // Configuration prédéfinie
+            if (defaultPresets && defaultPresets[presetName]) {
+                proportionSystem.setDrawerConfig(defaultPresets[presetName]);
+            }
+        },
         
         // Utilitaires
         getDrawerStyle: proportionSystem.getDrawerStyle,            // Style CSS
         getTailwindClass: proportionSystem.getTailwindClass,        // Classes Tailwind
         isDrawerClosed: proportionSystem.isDrawerClosed,            // État fermé
         getOpenDrawersCount: proportionSystem.getOpenDrawersCount, // Nombre ouverts
+        getOpenDrawers: proportionSystem.getOpenDrawers,           // Liste des tiroirs ouverts
         getConfigStats: proportionSystem.getConfigStats,           // Statistiques
+        validateConfig: proportionSystem.validateConfig,           // Validation
         
         // Informations de contexte
         context,
         mode,
         drawerKeys: [...drawerKeys],
+        
+        // Fonctions de persistance
+        clearPersistedProportions: persistence.clearContext,        // Effacer les proportions sauvegardées
+        getPersistenceStats: persistence.getStats,                  // Statistiques de stockage
         
         // Constantes
         DRAWER_PRESETS: defaultPresets
@@ -234,5 +271,21 @@ export function usePresentationDrawers(options: {
     });
 }
 
+/**
+ * Hook spécialisé pour le panneau création
+ * Remplace useCreationDrawerProportions avec logique progressive
+ */
+export function useCreationDrawers(options: {
+    initialConfig?: CreationDrawerConfig;
+    onConfigChange?: (config: CreationDrawerConfig) => void;
+    mode?: DrawerBehaviorMode;
+} = {}) {
+    return useUnifiedDrawerProportions({
+        context: 'creation' as const,
+        mode: 'progressive', // Par défaut en mode progressif pour la cohérence
+        ...options
+    });
+}
+
 // Types exportés pour compatibilité
-export type { CommunicationDrawerConfig, PresentationDrawerConfig, UnifiedDrawerConfig };
+export type { CommunicationDrawerConfig, PresentationDrawerConfig, CreationDrawerConfig, UnifiedDrawerConfig };

@@ -50,7 +50,7 @@ export default function PresentationContentPanel({
         switch (drawer) {
             case 'info': return type === 'event' ? 'Présentation événement' : 'Présentation groupe';
             case 'members': return type === 'event' ? 'Participants' : 'Membres';
-            case 'gallery': return 'Invitations';  // Renommé car maintenant c'est uniquement pour les invitations
+            case 'gallery': return 'Invitations';  // Tiroir pour les invitations
         }
     };
 
@@ -207,7 +207,7 @@ export default function PresentationContentPanel({
                             </div>
                             
                             {/* Contenu scrollable */}
-                            <div className="flex-1 overflow-y-auto">
+                            <div className="flex-1 unified-drawer-scroll">
                                 <ShowcasePanel 
                                     type={type}
                                     data={selectedItem}
@@ -240,7 +240,7 @@ export default function PresentationContentPanel({
                             </div>
                             
                             {/* Contenu scrollable */}
-                            <div className="flex-1 overflow-hidden">
+                            <div className="flex-1 unified-drawer-scroll">
                                 <MembersPanel
                                     members={members}
                                     memberGroups={memberGroups}
@@ -273,7 +273,7 @@ export default function PresentationContentPanel({
                             </div>
                             
                             {/* Contenu scrollable - Maintenant uniquement pour les invitations */}
-                            <div className="flex-1 overflow-hidden">
+                            <div className="flex-1 unified-drawer-scroll">
                                 <InvitationsPanel
                                     groupId={selectedItem.id}
                                     currentUserId={currentUser?.id}

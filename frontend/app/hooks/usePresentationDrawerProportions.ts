@@ -9,9 +9,9 @@ export type PresentationDrawerType = UnifiedPresentationDrawerType;
 export type DrawerSize = UnifiedDrawerSize;
 export type PresentationDrawerConfig = ProportionConfig<PresentationDrawerType>;
 
-// Constantes de compatibilité
-const PRESENTATION_DRAWER_KEYS = ['presentation', 'members', 'invitations'] as const;
-export const PRESENTATION_DRAWER_CONFIGS = createDefaultPresets(PRESENTATION_DRAWER_KEYS, 'presentation');
+// Constantes de compatibilité - CORRIGES pour correspondre au système unifié
+const PRESENTATION_DRAWER_KEYS = ['info', 'members', 'gallery'] as const;
+export const PRESENTATION_DRAWER_CONFIGS = createDefaultPresets(PRESENTATION_DRAWER_KEYS, 'info');
 
 interface UsePresentationDrawerProportionsOptions {
     initialConfig?: PresentationDrawerConfig;
@@ -23,13 +23,13 @@ interface UsePresentationDrawerProportionsOptions {
  * @deprecated Utilisez usePresentationDrawers du système unifié
  */
 export function usePresentationDrawerProportions(options: UsePresentationDrawerProportionsOptions = {}) {
-    const { initialConfig = PRESENTATION_DRAWER_CONFIGS.presentationLarge, onConfigChange } = options;
+    const { initialConfig = PRESENTATION_DRAWER_CONFIGS.infoLarge, onConfigChange } = options;
     
     // Utilisation du système unifié
     const unifiedSystem = usePresentationDrawers({
         initialConfig,
         onConfigChange,
-        behaviorMode: 'toggle' // Mode toggle pour la présentation
+        mode: 'progressive' // Mode progressif pour cohérence avec le système unifié
     });
 
     // Alias pour compatibilité avec l'API existante

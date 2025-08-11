@@ -42,7 +42,8 @@ export async function getGroupMessages(groupId: number): Promise<GroupMessage[]>
         }
 
         const data = await response.json();
-        return data;
+        // S'assurer que nous retournons toujours un tableau, même si l'API retourne null
+        return Array.isArray(data) ? data : [];
     } catch (error) {
         console.error('Error fetching group messages:', error);
         // Return empty array as fallback

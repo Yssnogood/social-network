@@ -58,6 +58,22 @@
   --events-accent: #8a4a6a;          /* Accent rose accessible */
   --events-hover: #6a3d5a;           /* État hover sobre */
 
+  /* CRÉATION - Famille violette désaturée (Configuration, création) */
+  --config-bg: #1a171b;             /* Violet très sombre désaturé */
+  --config-border: #4a2d5a;         /* Violet sombre désaturé */
+  --config-accent: #7a4a8a;         /* Accent violet accessible */
+  --config-hover: #5a3d6a;          /* État hover sobre */
+
+  --preview-bg: #191b17;            /* Lime très sombre désaturé */
+  --preview-border: #3d5a2d;        /* Lime sombre désaturé */
+  --preview-accent: #6a8a4a;        /* Accent lime accessible */
+  --preview-hover: #5a6a3d;         /* État hover sobre */
+
+  --invitations-creation-bg: #1b1917; /* Orange très sombre désaturé */
+  --invitations-creation-border: #5a4a2d; /* Orange sombre désaturé */
+  --invitations-creation-accent: #8a7a4a; /* Accent orange accessible */
+  --invitations-creation-hover: #6a5a3d;  /* État hover sobre */
+
   /* ===== NIVEAU 3 : VIGNETTES (déjà définies dans adaptive-vignettes.css) ===== */
   --vignette-post-bg: rgba(30, 41, 59, 0.15);      /* Gris bleuté transparent */
   --vignette-post-border: rgba(77, 124, 191, 0.3);  /* Bordure bleue subtile */
@@ -154,6 +170,25 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Tiroirs de création */
+.drawer-config {
+  background: var(--config-bg);
+  border-left: 3px solid var(--config-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drawer-preview {
+  background: var(--preview-bg);
+  border-left: 3px solid var(--preview-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drawer-invitations-creation {
+  background: var(--invitations-creation-bg);
+  border-left: 3px solid var(--invitations-creation-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* ===== HEADERS DES TIROIRS - COULEURS UNIES SOBRES ===== */
 
 /* Headers présentation - Famille bleue désaturée */
@@ -230,6 +265,43 @@
   border-bottom-color: var(--events-accent);
 }
 
+/* Headers création - Famille violette/orange/lime désaturée */
+.drawer-header-config {
+  background: var(--config-bg);
+  border-bottom: 1px solid var(--config-border);
+  transition: all 0.3s ease;
+  color: var(--base-text);
+}
+
+.drawer-header-config:hover {
+  background: var(--config-hover);
+  border-bottom-color: var(--config-accent);
+}
+
+.drawer-header-preview {
+  background: var(--preview-bg);
+  border-bottom: 1px solid var(--preview-border);
+  transition: all 0.3s ease;
+  color: var(--base-text);
+}
+
+.drawer-header-preview:hover {
+  background: var(--preview-hover);
+  border-bottom-color: var(--preview-accent);
+}
+
+.drawer-header-invitations-creation {
+  background: var(--invitations-creation-bg);
+  border-bottom: 1px solid var(--invitations-creation-border);
+  transition: all 0.3s ease;
+  color: var(--base-text);
+}
+
+.drawer-header-invitations-creation:hover {
+  background: var(--invitations-creation-hover);
+  border-bottom-color: var(--invitations-creation-accent);
+}
+
 /* ===== ÉTATS SELON LES PROPORTIONS ===== */
 
 /* États des panneaux verticaux */
@@ -284,7 +356,10 @@
   .drawer-invitations,
   .drawer-posts,
   .drawer-messages,
-  .drawer-events {
+  .drawer-events,
+  .drawer-config,
+  .drawer-preview,
+  .drawer-invitations-creation {
     border-left-width: 4px;
   }
   
@@ -323,7 +398,10 @@
   .drawer-header-invitations,
   .drawer-header-posts,
   .drawer-header-messages,
-  .drawer-header-events {
+  .drawer-header-events,
+  .drawer-header-config,
+  .drawer-header-preview,
+  .drawer-header-invitations-creation {
     transition: none !important;
   }
 }

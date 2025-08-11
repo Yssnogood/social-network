@@ -19,16 +19,42 @@ export const useGroupWebSocket = (
 
 			socket.onmessage = (event) => {
 				try {
-					const newMsg = JSON.parse(event.data);
-					setMessages((prev) => {
-						const safePrev = Array.isArray(prev) ? prev : [];
-						if (safePrev.some((msg) => msg.id === newMsg.id)) {
-							return safePrev;
+					// Vérifier que les données sont bien du JSON avant de parser
+				if (typeof event.data !== 'string' || event.data.trim() === '') {
+					console.warn("WebSocket received empty or invalid data:", event.data);
+					return;
+				}
+				
+				// Gérer les messages multiples séparés par des retours à la ligne
+				const messages = event.data.trim().split('\n').filter(line => line.trim());
+				
+				for (const messageData of messages) {
+					try {
+						const newMsg = JSON.parse(messageData);
+						
+						// Ignorer les messages de système (connection_success, group_join_success)
+						if (newMsg.type === 'connection_success' || newMsg.type === 'group_join_success') {
+							console.log("WebSocket system message:", newMsg.type);
+							continue;
 						}
-						return [...safePrev, newMsg];
-					});
+						
+						// Traiter seulement les messages de chat
+						if (newMsg.content && newMsg.username) {
+							setMessages((prev) => {
+								const safePrev = Array.isArray(prev) ? prev : [];
+								if (safePrev.some((msg) => msg.id === newMsg.id)) {
+									return safePrev;
+								}
+								return [...safePrev, newMsg];
+							});
+						}
+					} catch (parseError) {
+						console.warn("Failed to parse individual message:", messageData, parseError);
+					}
+				}
 				} catch (err) {
 					console.error("Error WebSocket group:", err);
+					console.error("Raw data received:", event.data);
 				}
 			};
 

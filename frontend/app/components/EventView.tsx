@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useCookies } from "next-client-cookies";
 import { useOnePage } from '../contexts/OnePageContext';
 import { Event, EventMessage } from '../types/group';
 import { useEventWebSocket } from '../hooks/useEventWebSocket';
 import MessageInput from './groupComponent/MessageInput';
-import MessageItem from './groupComponent/MessageItem';
+import { AdaptiveMessageList } from './adaptive/AdaptiveMessageCard';
 
 interface EventViewProps {
     event: Event;
@@ -30,6 +30,18 @@ export default function EventView({ event }: EventViewProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [messages, setMessages] = useState<EventMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
+    
+    // 🎯 OPTIMISATION ESPACE : Calcul responsive du pourcentage selon largeur écran  
+    const responsiveDrawerPercentage = useMemo(() => {
+        if (typeof window !== 'undefined') {
+            const screenWidth = window.innerWidth;
+            if (screenWidth < 768) return 100; // Mobile : pleine largeur
+            if (screenWidth < 1024) return 80;  // Tablet : 80%
+            if (screenWidth < 1440) return 70;  // Desktop small : 70%
+            return 60; // Desktop large : 60% pour optimiser l'espace
+        }
+        return 70; // Valeur par défaut SSR
+    }, []);
 
     // WebSocket pour les messages en temps réel
     useEventWebSocket(event.id.toString(), setMessages);
@@ -352,21 +364,13 @@ export default function EventView({ event }: EventViewProps) {
                             />
                         </div>
 
-                        {/* Liste des messages */}
+                        {/* Liste des messages avec optimisation d'espace responsive */}
                         <div className="bg-gray-700 rounded-lg p-4 max-h-96 overflow-y-auto">
-                            {messages.length === 0 ? (
-                                <div className="text-center py-8 text-gray-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                    </svg>
-                                    <p>Aucun message pour le moment</p>
-                                    <p className="text-sm mt-1">Soyez le premier à écrire !</p>
-                                </div>
-                            ) : (
-                                messages.map(msg => (
-                                    <MessageItem key={msg.id} message={msg} />
-                                ))
-                            )}
+                            <AdaptiveMessageList 
+                                messages={messages}
+                                drawerPercentage={responsiveDrawerPercentage}
+                                currentUserId={currentUser?.id}
+                            />
                         </div>
                     </div>
                 </div>

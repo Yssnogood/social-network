@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { Group, Event, User } from '../../types/group';
-import { useCreationDrawerProportions } from '../../hooks/useCreationDrawerProportions';
-import type { CreationDrawerType } from '../../hooks/useCreationDrawerProportions';
+import { useCreationDrawers } from '../../hooks/useUnifiedDrawerProportions';
+import type { CreationDrawerType } from '../../hooks/useUnifiedDrawerProportions';
 import GroupConfigPanel from './panels/GroupConfigPanel';
 import EventConfigPanel from './panels/EventConfigPanel';
 import PreviewMembersPanel from './panels/PreviewMembersPanel';
 import CreationInvitationsPanel from './panels/CreationInvitationsPanel';
 import { getUserGroups } from '@/services/editor';
 import '../../styles/drawer-animations.css';
+import '../../styles/drawer-colors.css';
 
 // Types pour les données de création
 export interface GroupCreationData {
@@ -78,13 +79,13 @@ export default function CreationContentPanel({
 
     const {
         drawerConfig,
-        toggleDrawer,
+        handleDrawerClick,
         getDrawerStyle,
         isDrawerClosed,
         swapWithLarge,
         getConfigStats,
         getOpenDrawersCount
-    } = useCreationDrawerProportions();
+    } = useCreationDrawers();
 
     // Charger les groupes disponibles pour sélection parent (seulement pour création de groupe)
     useEffect(() => {
@@ -170,7 +171,7 @@ export default function CreationContentPanel({
         
         return (
             <button
-                onClick={() => toggleDrawer(drawer)}
+                onClick={() => handleDrawerClick(drawer)}
                 className="h-full bg-gray-800 hover:bg-gray-700 border-r border-gray-700 flex flex-col items-center justify-center transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
                 style={{ width: '40px' }}
                 title={`Ouvrir ${title}`}
@@ -198,82 +199,76 @@ export default function CreationContentPanel({
         );
     };
 
-    // Composant de header cliquable selon les recherches UX + nouvelles règles strictes
-    const DrawerHeader = ({ drawer }: { drawer: CreationDrawerType }) => {
+    // Composant de header cliquable avec logique d'agrandissement progressif (IDENTIQUE ContentPanel)
+    const DrawerHeader = ({ drawer, count }: { drawer: CreationDrawerType, count: number }) => {
         const isClosed = isDrawerClosed(drawer);
         const percentage = drawerConfig[drawer];
         const { largestDrawer, openCount } = getConfigStats();
         const isLargest = largestDrawer.drawer === drawer;
-        const canClose = openCount > 1; // Ne peut fermer que s'il y a plus d'1 tiroir ouvert
         const title = getDrawerTitle(drawer);
-        const count = getDrawerCount(drawer);
+        
+        const getHeaderClassName = () => {
+            const baseClasses = "w-full flex items-center justify-between p-4 transition-colors duration-200 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset";
+            
+            let drawerClass = "";
+            switch (drawer) {
+                case 'config': drawerClass = "drawer-header-config"; break;
+                case 'preview': drawerClass = "drawer-header-preview"; break;
+                case 'invitations': drawerClass = "drawer-header-invitations-creation"; break;
+                default: drawerClass = "bg-gray-800 hover:bg-gray-700 focus:bg-gray-700"; break;
+            }
+            
+            return `${baseClasses} ${drawerClass}`;
+        };
         
         return (
-            <div className={`w-full flex items-center justify-between p-4 transition-colors duration-200 ${
-                !canClose && !isClosed 
-                    ? 'bg-gray-700 opacity-75' 
-                    : 'bg-gray-800 hover:bg-gray-700'
-            }`}>
-                {/* Zone cliquable principal pour ouvrir/fermer */}
+            <div className={getHeaderClassName()}>
+                {/* Bouton principal pour agrandissement progressif (nouvelle logique) */}
                 <button
-                    onClick={() => toggleDrawer(drawer)}
-                    disabled={!canClose && !isClosed}
-                    className={`flex items-center gap-3 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded ${
-                        !canClose && !isClosed ? 'cursor-not-allowed' : 'cursor-pointer'
-                    }`}
+                    onClick={() => handleDrawerClick(drawer)}
+                    className="flex-1 flex items-center justify-between p-4 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
                     aria-expanded={!isClosed}
                     aria-controls={`drawer-content-${drawer}`}
                     title={
-                        !canClose && !isClosed 
-                            ? `${title} (impossible de fermer le dernier tiroir)` 
-                            : isClosed 
+                        isClosed 
                             ? `Ouvrir ${title}` 
-                            : `Fermer ${title}`
+                            : `Agrandir ${title}`
                     }
                 >
-                    {/* Icône état (▶/▼) */}
-                    <span className="text-gray-400 text-sm transition-transform duration-200">
-                        {isClosed ? '▶' : '▼'}
-                    </span>
+                    <div className="flex items-center gap-3">
+                        {/* Icône état (▶/▼) */}
+                        <span className="text-gray-400 text-sm transition-transform duration-200">
+                            {isClosed ? '▶' : '▼'}
+                        </span>
+                        
+                        {/* Titre avec indication de pourcentage pour debug */}
+                        <h3 className="font-semibold text-white text-sm">
+                            {title}
+                            <span className="text-xs text-gray-500 ml-2">({percentage})</span>
+                        </h3>
+                    </div>
                     
-                    {/* Titre avec indication de pourcentage pour debug */}
-                    <h3 className="font-semibold text-white text-sm">
-                        {title}
-                        <span className="text-xs text-gray-500 ml-2">({percentage}%)</span>
-                    </h3>
+                    {/* Compteur */}
+                    <div className="text-xs text-gray-500 min-w-[2rem] text-right">
+                        {count}
+                    </div>
                 </button>
                 
-                {/* Zone des contrôles séparés */}
-                <div className="flex items-center gap-2">
-                    {/* Bouton swap séparé (visible si pas le plus grand et pas fermé et plusieurs ouverts) */}
-                    {!isClosed && !isLargest && openCount > 1 && (
-                        <div
+                {/* Bouton swap séparé (visible si pas le plus grand et pas fermé et plusieurs ouverts) */}
+                {!isClosed && !isLargest && openCount > 1 && (
+                    <div className="flex-shrink-0 border-l border-gray-600">
+                        <button
                             onClick={() => swapWithLarge(drawer)}
-                            className="p-1 text-gray-400 hover:text-blue-400 transition-colors cursor-pointer"
+                            className="p-3 text-gray-400 hover:text-blue-400 hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
                             title={`Donner le focus à ${title}`}
-                            role="button"
-                            tabIndex={0}
                             aria-label={`Agrandir le panneau ${title}`}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    e.preventDefault();
-                                    swapWithLarge(drawer);
-                                }
-                            }}
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                             </svg>
-                        </div>
-                    )}
-                    
-                    {/* Compteur (seulement pour preview) */}
-                    {drawer === 'preview' && (
-                        <div className="text-xs text-gray-500 min-w-[2rem] text-right">
-                            {count}
-                        </div>
-                    )}
-                </div>
+                        </button>
+                    </div>
+                )}
             </div>
         );
     };
@@ -288,10 +283,15 @@ export default function CreationContentPanel({
             )}
 
             {/* Container de tous les tiroirs (ouverts ET fermés) - GARANTIT 100% largeur */}
-            <div className="flex-1 flex">
+            <div className="flex-1 flex min-h-0">
                 {/* Config Drawer - TOUJOURS RENDU */}
                 <div 
-                    className="drawer-transition border-r border-gray-700 relative flex flex-col"
+                    className={`drawer-transition drawer-config border-r border-gray-700 relative flex flex-col ${
+                        isDrawerClosed('config') ? 'drawer-closed' :
+                        drawerConfig.config <= 30 ? 'drawer-compact' :
+                        drawerConfig.config >= 60 ? 'drawer-expanded' :
+                        'drawer-normal'
+                    }`}
                     style={getDrawerStyle('config')}
                 >
                     {isDrawerClosed('config') ? (
@@ -300,11 +300,11 @@ export default function CreationContentPanel({
                         <>
                             {/* Header cliquable */}
                             <div className="flex-shrink-0 border-b border-gray-700">
-                                <DrawerHeader drawer="config" />
+                                <DrawerHeader drawer="config" count={getDrawerCount('config')} />
                             </div>
                             
                             {/* Contenu scrollable */}
-                            <div className="flex-1 overflow-y-auto">
+                            <div className="flex-1 unified-drawer-scroll">
                                 {type === 'group' ? (
                                     <GroupConfigPanel
                                         data={creationData as GroupCreationData}
@@ -330,7 +330,12 @@ export default function CreationContentPanel({
 
                 {/* Preview Drawer - TOUJOURS RENDU */}
                 <div 
-                    className="drawer-transition border-r border-gray-700 relative flex flex-col"
+                    className={`drawer-transition drawer-preview border-r border-gray-700 relative flex flex-col ${
+                        isDrawerClosed('preview') ? 'drawer-closed' :
+                        drawerConfig.preview <= 30 ? 'drawer-compact' :
+                        drawerConfig.preview >= 60 ? 'drawer-expanded' :
+                        'drawer-normal'
+                    }`}
                     style={getDrawerStyle('preview')}
                 >
                     {isDrawerClosed('preview') ? (
@@ -339,11 +344,11 @@ export default function CreationContentPanel({
                         <>
                             {/* Header cliquable */}
                             <div className="flex-shrink-0 border-b border-gray-700">
-                                <DrawerHeader drawer="preview" />
+                                <DrawerHeader drawer="preview" count={getDrawerCount('preview')} />
                             </div>
                             
                             {/* Contenu scrollable */}
-                            <div className="flex-1 overflow-hidden">
+                            <div className="flex-1 unified-drawer-scroll">
                                 <PreviewMembersPanel
                                     type={type}
                                     selectedUserIds={selectedUserIds}
@@ -359,7 +364,12 @@ export default function CreationContentPanel({
 
                 {/* Invitations Drawer - TOUJOURS RENDU */}
                 <div 
-                    className="drawer-transition relative flex flex-col"
+                    className={`drawer-transition drawer-invitations-creation relative flex flex-col ${
+                        isDrawerClosed('invitations') ? 'drawer-closed' :
+                        drawerConfig.invitations <= 30 ? 'drawer-compact' :
+                        drawerConfig.invitations >= 60 ? 'drawer-expanded' :
+                        'drawer-normal'
+                    }`}
                     style={getDrawerStyle('invitations')}
                 >
                     {isDrawerClosed('invitations') ? (
@@ -368,11 +378,11 @@ export default function CreationContentPanel({
                         <>
                             {/* Header cliquable */}
                             <div className="flex-shrink-0 border-b border-gray-700">
-                                <DrawerHeader drawer="invitations" />
+                                <DrawerHeader drawer="invitations" count={getDrawerCount('invitations')} />
                             </div>
                             
                             {/* Contenu scrollable */}
-                            <div className="flex-1 overflow-hidden">
+                            <div className="flex-1 unified-drawer-scroll">
                                 <CreationInvitationsPanel
                                     type={type}
                                     currentUserId={currentUser?.id}

@@ -17,6 +17,62 @@
     animation: drawer-slide-out 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ===== SYSTÈME DE SCROLL UNIFIÉ ===== */
+
+/* Conteneur de scroll unifié pour tous les tiroirs */
+.unified-drawer-scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Smooth scrolling pour une meilleure UX */
+    scroll-behavior: smooth;
+    /* Personnalisation de la barre de scroll pour cohérence */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+
+/* Webkit scrollbar customization (Chrome, Safari, Edge) */
+.unified-drawer-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.unified-drawer-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.unified-drawer-scroll::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.3);
+    border-radius: 3px;
+}
+
+.unified-drawer-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.5);
+}
+
+/* États adaptatifs pour différentes tailles de tiroirs */
+.drawer-compact .unified-drawer-scroll {
+    /* Scroll plus discret pour les tiroirs compacts */
+    scrollbar-width: auto;
+}
+
+.drawer-compact .unified-drawer-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.drawer-expanded .unified-drawer-scroll {
+    /* Scroll plus visible pour les tiroirs agrandis */
+    scrollbar-width: thin;
+}
+
+.drawer-expanded .unified-drawer-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+/* Scroll pour panneaux vides - assure qu'on peut toujours scroller */
+.unified-drawer-scroll.empty-content {
+    /* Garantit un espace minimum scrollable même sans contenu */
+    min-height: 100px;
+}
+
 @keyframes drawer-slide-in {
     from {
         width: 0;

@@ -118,10 +118,12 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
             setIsLoadingMessages(true);
             // 🎯 UTILISE LE SERVICE CONTEXTUEL - charge les bons messages selon le contexte !
             const contextualMessages = await ContextualMessageService.getMessages(discussionContext);
-            setMessages(contextualMessages);
+            // Assurer que nous avons toujours un tableau, pas null
+            const safeMessages = Array.isArray(contextualMessages) ? contextualMessages : [];
+            setMessages(safeMessages);
             
             console.log(`📨 Messages chargés pour ${discussionContext.type} ID:${discussionContext.id}`, {
-                count: contextualMessages.length,
+                count: safeMessages.length,
                 context: discussionContext
             });
         } catch (error) {

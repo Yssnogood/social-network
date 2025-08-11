@@ -140,7 +140,7 @@ export default function ShowcasePanel({
 
     return (
         <div className="h-full flex flex-col bg-gray-900">
-            <div className="flex-1 overflow-hidden p-4">
+            <div className="flex-1 unified-drawer-scroll p-4 min-h-0">
                 <UnifiedTabSystem
                     tabs={tabsConfig}
                     variant="default"

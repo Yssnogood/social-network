@@ -81,8 +81,8 @@ export default function AdaptiveMessageCard({
     : 'bg-gray-700/50 border-gray-600/30';
 
   return (
-    <article 
-      className={`${cardClasses} ${messageAlignment} max-w-[85%]`}
+    <div 
+      className={`${cardClasses} ${messageAlignment} ${messageColor} rounded-lg border max-w-[85%] relative group p-3`}
       style={{
         ...cardStyles,
         marginBottom: isConsecutive ? '0.25rem' : '0.75rem',
@@ -92,95 +92,71 @@ export default function AdaptiveMessageCard({
       role="article"
       aria-label={`Message de ${message.username}`}
     >
-      <div className={`${messageColor} rounded-lg border`}>
-        {/* Header du message (masqué si consécutif en mode compact) */}
-        {(!isConsecutive || adaptiveConfig.state !== 'compact') && (
-          <header className="vignette-meta">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                {/* Avatar (visible selon l'état et si pas consécutif) */}
-                {!isConsecutive && adaptiveConfig.state !== 'compact' && (
-                  <div className="vignette-avatar bg-amber-600 text-white flex items-center justify-center font-semibold">
-                    {message.username.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                
-                {/* Informations expéditeur */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className={`vignette-title font-medium truncate ${
-                      isOwnMessage ? 'text-amber-400' : 'text-blue-400'
-                    }`}>
-                      {adaptiveConfig.state === 'compact' 
-                        ? message.username.slice(0, 8) 
-                        : message.username}
-                    </h3>
-                    
-                    {/* Badge "Vous" pour les messages propres */}
-                    {isOwnMessage && adaptiveConfig.state !== 'compact' && (
-                      <span className="vignette-badge bg-amber-600/30 text-amber-300 text-xs">
-                        Vous
-                      </span>
-                    )}
-                  </div>
-                  
-                  {/* Timestamp */}
-                  {showTimeStamp && (
-                    <time 
-                      className="text-xs opacity-60"
-                      dateTime={message.created_at}
-                    >
-                      {formatTime(message.created_at)}
-                    </time>
-                  )}
-                </div>
-              </div>
-
-              {/* Indicateur de statut (compact) */}
-              {adaptiveConfig.state === 'compact' && isOwnMessage && (
-                <div className="vignette-indicator text-amber-400">
-                  ✓
-                </div>
-              )}
+      {/* Header du message avec nom et badge (masqué si consécutif en mode compact) */}
+      {(!isConsecutive || adaptiveConfig.state !== 'compact') && (
+        <div className="flex items-center gap-2 mb-2">
+          {/* Avatar (visible selon l'état et si pas consécutif) */}
+          {!isConsecutive && adaptiveConfig.state !== 'compact' && (
+            <div className="w-6 h-6 bg-amber-600 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+              {message.username?.charAt(0)?.toUpperCase() || '?'}
             </div>
-          </header>
-        )}
-
-        {/* Contenu du message */}
-        <div className="vignette-content text-gray-200">
-          {getTruncatedContent(message.content)}
-        </div>
-
-        {/* Actions du message (état étendu uniquement) */}
-        {adaptiveConfig.shouldShowSecondaryActions && adaptiveConfig.state === 'extended' && (
-          <footer className="vignette-actions opacity-0 group-hover:opacity-100 transition-opacity">
-            <button className="secondary-action text-gray-400 hover:text-gray-300 text-xs">
-              💬 Répondre
-            </button>
-            <button className="secondary-action text-gray-400 hover:text-gray-300 text-xs">
-              ⭐ Épingler
-            </button>
-            {isOwnMessage && (
-              <>
-                <button className="secondary-action text-gray-400 hover:text-gray-300 text-xs">
-                  ✏️ Modifier
-                </button>
-                <button className="secondary-action text-red-400 hover:text-red-300 text-xs">
-                  🗑 Supprimer
-                </button>
-              </>
+          )}
+          
+          {/* Nom avec badge "Vous" si besoin */}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={`font-medium text-sm truncate ${
+              isOwnMessage ? 'text-amber-400' : 'text-blue-400'
+            }`}>
+              {adaptiveConfig.state === 'compact' 
+                ? (message.username || 'Utilisateur').slice(0, 8) 
+                : (message.username || 'Utilisateur')}
+            </span>
+            
+            {isOwnMessage && adaptiveConfig.state !== 'compact' && (
+              <span className="bg-amber-600/30 text-amber-300 text-xs px-1.5 py-0.5 rounded">
+                Vous
+              </span>
             )}
-          </footer>
-        )}
+          </div>
+        </div>
+      )}
+
+      {/* Contenu du message */}
+      <div className="text-gray-200 text-sm mb-2">
+        {getTruncatedContent(message.content)}
       </div>
 
-      {/* Indicateur de statut du message (état étendu) */}
-      {adaptiveConfig.state === 'extended' && isOwnMessage && (
-        <div className="flex justify-end mt-1">
-          <span className="text-xs text-gray-500 flex items-center gap-1">
-            <span className="text-amber-400">✓</span>
-            Envoyé
-          </span>
+      {/* Heure en bas à droite */}
+      {showTimeStamp && (
+        <div className="flex justify-end">
+          <time 
+            className="text-xs text-gray-500 opacity-75"
+            dateTime={message.created_at}
+          >
+            {formatTime(message.created_at)}
+          </time>
+        </div>
+      )}
+
+      {/* Actions du message (état étendu uniquement) */}
+      {adaptiveConfig.shouldShowSecondaryActions && adaptiveConfig.state === 'extended' && (
+        <div className="flex gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button className="text-gray-400 hover:text-gray-300 text-xs">
+            💬 Répondre
+          </button>
+          <button className="text-gray-400 hover:text-gray-300 text-xs">
+            ⭐ Épingler
+          </button>
+          {isOwnMessage && (
+            <>
+              <button className="text-gray-400 hover:text-gray-300 text-xs">
+                ✏️ Modifier
+              </button>
+              <button className="text-red-400 hover:text-red-300 text-xs">
+                🗑 Supprimer
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -188,7 +164,7 @@ export default function AdaptiveMessageCard({
       {isHovered && adaptiveConfig.state === 'extended' && (
         <div className="absolute inset-0 border border-amber-400/20 rounded-lg pointer-events-none" />
       )}
-    </article>
+    </div>
   );
 }
 
@@ -235,30 +211,38 @@ export function AdaptiveMessageList({
     );
   }
 
-  return (
-    <div className={`space-y-${adaptiveConfig.state === 'compact' ? '1' : '3'} flex flex-col h-full overflow-hidden`}>
-      {messages.map((message, index) => {
-        const previousMessage = index > 0 ? messages[index - 1] : null;
-        const isConsecutive = previousMessage?.user_id === message.user_id;
-        
-        // En mode compact, grouper les messages consécutifs plus agressivement
-        const shouldShowTimeStamp = adaptiveConfig.state === 'extended' || 
-          !isConsecutive || 
-          (previousMessage && 
-            new Date(message.created_at).getTime() - new Date(previousMessage.created_at).getTime() > 300000 // 5 minutes
-          );
+  // ✅ Trier les messages par date pour avoir les plus récents en bas
+  const sortedMessages = [...messages].sort((a, b) => 
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
 
-        return (
-          <AdaptiveMessageCard
-            key={message.id}
-            message={message}
-            drawerPercentage={drawerPercentage}
-            currentUserId={currentUserId}
-            isConsecutive={isConsecutive && adaptiveConfig.state === 'compact'}
-            showTimeStamp={shouldShowTimeStamp}
-          />
-        );
-      })}
+  return (
+    <div className={`flex flex-col h-full`}>
+      {/* ✅ Conteneur scrollable pour les messages - comme dans UniversalPostsList */}
+      <div className={`flex-1 overflow-y-auto space-y-${adaptiveConfig.state === 'compact' ? '1' : '3'} pb-2`}>
+        {sortedMessages.map((message, index) => {
+          const previousMessage = index > 0 ? sortedMessages[index - 1] : null;
+          const isConsecutive = previousMessage?.user_id === message.user_id;
+          
+          // En mode compact, grouper les messages consécutifs plus agressivement
+          const shouldShowTimeStamp = adaptiveConfig.state === 'extended' || 
+            !isConsecutive || 
+            (previousMessage && 
+              new Date(message.created_at).getTime() - new Date(previousMessage.created_at).getTime() > 300000 // 5 minutes
+            );
+
+          return (
+            <AdaptiveMessageCard
+              key={`message-${message.id}-${index}`}
+              message={message}
+              drawerPercentage={drawerPercentage}
+              currentUserId={currentUserId}
+              isConsecutive={isConsecutive && adaptiveConfig.state === 'compact'}
+              showTimeStamp={shouldShowTimeStamp}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
