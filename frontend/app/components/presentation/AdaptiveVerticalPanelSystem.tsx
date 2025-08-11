@@ -118,6 +118,17 @@ export default function AdaptiveVerticalPanelSystem({
     // Calcul de l'ID du groupe (pour les groupes c'est selectedItem.id, pour les événements c'est group_id)
     const groupId = type === 'group' ? selectedItem.id : (selectedItem as Event).group_id;
     
+    // 🔧 ID de l'événement sélectionné (si on est en mode événement)
+    const selectedEventId = type === 'event' ? selectedItem.id : undefined;
+    
+    // 🔧 DEBUG: Logger pour comprendre le problème de grisage
+    console.log(`🔧 DEBUG AdaptiveVerticalPanelSystem:`, {
+        type,
+        selectedItemId: selectedItem.id,
+        selectedEventId,
+        currentUserStatus
+    });
+    
     // Titre dynamique pour la présentation
     const presentationTitle = type === 'event' 
         ? `Événement: ${selectedItem.title}` 
@@ -215,6 +226,7 @@ export default function AdaptiveVerticalPanelSystem({
                     newCommentByPost={newCommentByPost}
                     loadingComments={loadingComments}
                     currentUserStatus={currentUserStatus}
+                    selectedEventId={selectedEventId}
                     onCreatePost={onCreatePost}
                     onToggleComments={onToggleComments}
                     onCommentChange={onCommentChange}

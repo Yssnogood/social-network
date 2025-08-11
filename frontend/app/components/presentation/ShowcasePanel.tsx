@@ -93,15 +93,6 @@ export default function ShowcasePanel({
                         </div>
                     </div>
                     
-                    {/* Boutons de participation pour les événements */}
-                    {isEvent && eventData && currentUser && (
-                        <EventResponseButtons
-                            eventId={eventData.id}
-                            currentUserStatus={currentUserStatus}
-                            isEventPassed={isEventPassed}
-                            onResponseChange={handleEventResponse}
-                        />
-                    )}
                     
                     {/* Membres récents (pour les groupes seulement) */}
                     {!isEvent && members.length > 0 && (

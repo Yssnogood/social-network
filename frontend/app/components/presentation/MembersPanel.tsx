@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useOnePage } from '../../contexts/OnePageContext';
 import { GroupMember, Group } from '../../types/group';
 
@@ -24,6 +25,7 @@ export default function MembersPanel({
     type 
 }: MembersPanelProps) {
     const { navigateToChat } = useOnePage();
+    const router = useRouter();
     
     // State pour les onglets et recherche
     const [activeTab, setActiveTab] = useState<TabType>('all');
@@ -65,7 +67,7 @@ export default function MembersPanel({
     
     // Actions
     const handleUserClick = (member: GroupMember) => {
-        window.location.href = `/profile/${member.username}`;
+        router.push(`/profile/${member.username}`);
     };
     
     const handleGroupClick = (group: Group) => {

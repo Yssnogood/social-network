@@ -20,7 +20,7 @@ func UserRoutes(r *mux.Router, userHandler *handlers.UserHandler) {
 	//r.HandleFunc("/api/users/{id}", userHandler.DeleteUser).Methods("DELETE")
 
 	r.HandleFunc("/api/user", userHandler.GetCurrentUser).Methods("POST")
-	r.HandleFunc("/api/user/{id}", userHandler.GetUser).Methods("POST")
+	r.HandleFunc("/api/user/{username}", userHandler.GetUser).Methods("POST")
 	r.HandleFunc("/api/users/search/{name}/{current}", userHandler.SearchUsers).Methods("GET")
 	r.Handle("/api/users/friends", middlewares.JWTMiddleware(http.HandlerFunc(userHandler.GetUserFriends))).Methods("GET", "OPTIONS")
 	r.Handle("/api/users/following", middlewares.JWTMiddleware(http.HandlerFunc(userHandler.GetFollowingUsers))).Methods("GET", "OPTIONS")

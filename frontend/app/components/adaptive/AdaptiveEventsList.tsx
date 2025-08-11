@@ -11,6 +11,7 @@ interface AdaptiveEventsListProps {
   drawerPercentage: number;
   currentUser?: User | null;
   currentUserStatus?: 'going' | 'not_going' | 'maybe' | null;
+  selectedEventId?: number; // 🔧 Ajout de l'ID de l'événement sélectionné
   onEventResponse?: (eventId: number, status: string) => Promise<void>;
   onDeleteEvent?: (eventId: number) => Promise<void>;
   onCreateEvent?: (title: string, description: string, eventDate: string) => Promise<void>;
@@ -22,6 +23,7 @@ export default function AdaptiveEventsList({
   drawerPercentage,
   currentUser,
   currentUserStatus,
+  selectedEventId,
   onEventResponse,
   onDeleteEvent,
   onCreateEvent,
@@ -29,6 +31,14 @@ export default function AdaptiveEventsList({
   
   // État pour forcer l'affichage du créateur en mode compact
   const [showCompactCreator, setShowCompactCreator] = useState(false);
+  
+  // 🔧 DEBUG: Logger pour comprendre le problème de grisage
+  console.log(`🔧 DEBUG AdaptiveEventsList:`, {
+    eventsCount: events.length,
+    selectedEventId,
+    currentUserStatus,
+    currentUserId: currentUser?.id
+  });
   
   // Déterminer l'espacement selon la taille du tiroir
   const getSpacing = () => {

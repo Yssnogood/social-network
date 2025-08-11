@@ -64,10 +64,27 @@ export async function getUserProfile(userName?: string, useMockData: boolean = f
     try {
         const response = await fetch(`http://localhost:8090/api/user/${userName || 'current'}`,{
             method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify({
                 jwt: cookies.get("jwt")
             })
         });
+        
+        if (!response.ok) {
+            console.error(`User profile fetch failed: ${response.status} ${response.statusText}`);
+            notFound();
+        }
+        
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            console.error('Expected JSON response but got:', contentType);
+            const text = await response.text();
+            console.error('Response text:', text);
+            notFound();
+        }
+        
         return await response.json();
     } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -81,10 +98,27 @@ export async function getCurrentUser(): Promise<UserProfile> {
     try {
         const response = await fetch("http://localhost:8090/api/user", {
             method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify({
                 jwt: cookies.get("jwt")
             })
         });
+        
+        if (!response.ok) {
+            console.error(`Current user fetch failed: ${response.status} ${response.statusText}`);
+            notFound();
+        }
+        
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            console.error('Expected JSON response but got:', contentType);
+            const text = await response.text();
+            console.error('Response text:', text);
+            notFound();
+        }
+        
         return await response.json();
     } catch (error) {
         console.error('Error fetching current user:', error);

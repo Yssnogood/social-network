@@ -89,6 +89,13 @@ export default function SearchBar() {
         setShowDropdown(false);
     };
 
+    const goToProfile = (username: string) => {
+        router.push(`/profile/${username}`);
+        setQuery('');
+        setResults([]);
+        setShowDropdown(false);
+    };
+
     // Helper functions to determine follow status and group membership to display in the dropdown
     const getFollowStatus = (isFollowing: boolean, isFollowedBy: boolean) => {
         if (isFollowing && isFollowedBy) return "Suivi mutuel";
@@ -122,45 +129,61 @@ export default function SearchBar() {
                 <div className="absolute top-10 left-0 w-full bg-white text-black shadow-lg rounded-xl overflow-hidden max-h-64 overflow-y-auto">
                     {results.length > 0 ? (
                         results.map((item) => (
-                            <div
-                                key={`${item.type}-${item.id}`}
-                                className="flex items-center gap-2 px-3 py-2 hover:bg-gray-200 cursor-pointer"
-                                onClick={() => {
-                                    if (item.type === "user") startConversation(item.id);
-                                    else router.push(`/groups/${item.id}`);
-                                }}
-                            >
-                                <Image
-                                    src={item.avatar}
-                                    alt={item.type === "user" ? item.username : item.name}
-                                    width={30}
-                                    height={30}
-                                    className="rounded-full"
-                                />
-                                <div className="flex flex-col">
+                            <div key={`${item.type}-${item.id}`} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-200">
+                                {/* Zone principale cliquable pour le profil/groupe */}
+                                <div 
+                                    className="flex items-center gap-2 flex-1 cursor-pointer"
+                                    onClick={() => {
+                                        if (item.type === "user") goToProfile(item.username);
+                                        else router.push(`/groups/${item.id}`);
+                                    }}
+                                >
+                                    <Image
+                                        src={item.avatar}
+                                        alt={item.type === "user" ? item.username : item.name}
+                                        width={30}
+                                        height={30}
+                                        className="rounded-full"
+                                    />
+                                    <div className="flex flex-col">
+                                        {item.type === "user" && (
+                                            <span>{item.username}</span>
+                                        )}
+                                        {item.type === "group" && (
+                                            <>
+                                                <span className="font-semibold">{item.name}</span>
+                                                {item.description && (
+                                                    <p className="text-xs text-gray-500">{item.description}</p>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+
                                     {item.type === "user" && (
-                                        <span>{item.username}</span>
+                                        <span className="ml-auto text-xs text-green-600 font-medium">
+                                            {getFollowStatus(item.isFollowing, item.isFollowedBy)}
+                                        </span>
                                     )}
-                                    {item.type === "group" && (
-                                        <>
-                                            <span className="font-semibold">{item.name}</span>
-                                            {item.description && (
-                                                <p className="text-xs text-gray-500">{item.description}</p>
-                                            )}
-                                        </>
+
+                                    {item.type === "group" && item.isMember && (
+                                        <span className="ml-auto text-xs text-blue-600 font-medium">
+                                            {getGroupMembershipStatus(item.isMember)}
+                                        </span>
                                     )}
                                 </div>
 
+                                {/* Bouton conversation séparé pour les utilisateurs */}
                                 {item.type === "user" && (
-                                    <span className="ml-auto text-xs text-green-600 font-medium">
-                                        {getFollowStatus(item.isFollowing, item.isFollowedBy)}
-                                    </span>
-                                )}
-
-                                {item.type === "group" && item.isMember && (
-                                    <span className="ml-auto text-xs text-blue-600 font-medium">
-                                        {getGroupMembershipStatus(item.isMember)}
-                                    </span>
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            startConversation(item.id);
+                                        }}
+                                        className="p-1 text-blue-600 hover:text-blue-800 rounded"
+                                        title="Démarrer une conversation"
+                                    >
+                                        💬
+                                    </button>
                                 )}
                             </div>
                         ))

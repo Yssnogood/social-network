@@ -31,6 +31,7 @@ interface ContentPanelProps {
     
     // Current user event status
     currentUserStatus?: 'going' | 'not_going' | 'maybe' | null;
+    selectedEventId?: number; // 🔧 ID de l'événement actuellement sélectionné
     
     // Callbacks
     onCreatePost?: (content: string) => Promise<void>;
@@ -56,6 +57,7 @@ export default function ContentPanel({
     newCommentByPost = {},
     loadingComments = {},
     currentUserStatus,
+    selectedEventId,
     onCreatePost,
     onToggleComments,
     onCommentChange,
@@ -323,6 +325,7 @@ export default function ContentPanel({
                                     drawerPercentage={drawerConfig.events}
                                     currentUser={currentUser}
                                     currentUserStatus={currentUserStatus}
+                                    selectedEventId={selectedEventId}
                                     onEventResponse={onEventResponse || (async () => {})}
                                     onDeleteEvent={onDeleteEvent || (async () => {})}
                                     onCreateEvent={onCreateEvent || (async () => {})}

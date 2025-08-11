@@ -26,6 +26,7 @@ export default function AdaptiveEventCard({
   const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+
   // Classes CSS combinées
   const cardClasses = getCombinedVignetteClasses(
     'relative cursor-pointer',
@@ -81,7 +82,16 @@ export default function AdaptiveEventCard({
   const isPastEvent = new Date(event.event_date) < new Date();
   
   // Déterminer si l'utilisateur peut supprimer
-  const canDelete = currentUserId === event.created_by;
+  const canDelete = currentUserId === event.creator_id;
+  
+  // 🔧 DEBUG: Logger pour comprendre le problème de grisage
+  console.log(`🔧 DEBUG AdaptiveEventCard - Event ${event.id} "${event.title}":`, {
+    eventId: event.id,
+    currentUserStatus,
+    currentUserId,
+    isPastEvent,
+    hasStatus: currentUserStatus !== null
+  });
 
   // Gérer les réponses aux événements
   const handleEventResponse = async (status: string) => {
@@ -138,7 +148,7 @@ export default function AdaptiveEventCard({
                 <span>📅</span>
                 <span>{formatEventDate(event.event_date)}</span>
               </time>
-              {/* Indicateur de statut utilisateur */}
+              {/* Indicateur de statut utilisateur - seulement si un statut est sélectionné */}
               {currentUserStatus && !isPastEvent && adaptiveConfig.state !== 'compact' && (
                 <span className={`text-xs px-1 py-0.5 rounded flex items-center gap-1 ${
                   currentUserStatus === 'going' ? 'bg-green-600/20 text-green-400' :
@@ -161,9 +171,11 @@ export default function AdaptiveEventCard({
               <button
                 onClick={() => handleEventResponse('going')}
                 className={`font-medium rounded flex items-center justify-center h-6 text-xs leading-none flex-shrink-0 transition-colors ${
-                  currentUserStatus === 'going' 
-                    ? 'bg-emerald-700 text-white ring-2 ring-emerald-300' 
-                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  currentUserStatus === 'going'
+                    ? 'bg-emerald-700 text-white ring-2 ring-emerald-300' // Sélectionné
+                    : currentUserStatus === null || currentUserStatus === undefined
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white' // Aucun statut
+                      : 'bg-gray-600 hover:bg-gray-500 text-gray-300' // Autre statut sélectionné
                 }`}
                 disabled={isLoading}
                 title={currentUserStatus === 'going' ? 'Vous participez déjà' : 'Participer à cet événement'}
@@ -174,9 +186,11 @@ export default function AdaptiveEventCard({
               <button
                 onClick={() => handleEventResponse('maybe')}
                 className={`font-medium rounded flex items-center justify-center h-6 text-xs leading-none flex-shrink-0 transition-colors ${
-                  currentUserStatus === 'maybe' 
-                    ? 'bg-amber-700 text-white ring-2 ring-amber-300' 
-                    : 'bg-amber-600 hover:bg-amber-700 text-white'
+                  currentUserStatus === 'maybe'
+                    ? 'bg-amber-700 text-white ring-2 ring-amber-300' // Sélectionné
+                    : currentUserStatus === null || currentUserStatus === undefined
+                      ? 'bg-amber-600 hover:bg-amber-700 text-white' // Aucun statut
+                      : 'bg-gray-600 hover:bg-gray-500 text-gray-300' // Autre statut sélectionné
                 }`}
                 disabled={isLoading}
                 title={currentUserStatus === 'maybe' ? 'Votre réponse actuelle' : 'Peut-être participer à cet événement'}
@@ -187,9 +201,11 @@ export default function AdaptiveEventCard({
               <button
                 onClick={() => handleEventResponse('not_going')}
                 className={`font-medium rounded flex items-center justify-center h-6 text-xs leading-none flex-shrink-0 transition-colors ${
-                  currentUserStatus === 'not_going' 
-                    ? 'bg-red-700 text-white ring-2 ring-red-300' 
-                    : 'bg-red-600 hover:bg-red-700 text-white'
+                  currentUserStatus === 'not_going'
+                    ? 'bg-red-700 text-white ring-2 ring-red-300' // Sélectionné
+                    : currentUserStatus === null || currentUserStatus === undefined
+                      ? 'bg-red-600 hover:bg-red-700 text-white' // Aucun statut
+                      : 'bg-gray-600 hover:bg-gray-500 text-gray-300' // Autre statut sélectionné
                 }`}
                 disabled={isLoading}
                 title={currentUserStatus === 'not_going' ? 'Vous ne participez pas' : 'Ne pas participer à cet événement'}
@@ -220,7 +236,7 @@ export default function AdaptiveEventCard({
             {/* Créateur (état étendu uniquement) */}
             {adaptiveConfig.state === 'extended' && (
               <span className="opacity-70">
-                Créé par {event.creator_username}
+                Événement #{event.id}
               </span>
             )}
 

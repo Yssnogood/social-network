@@ -204,32 +204,6 @@ export default function EventMembersPanel({
                     </div>
                 </div>
 
-                {/* Statut de l'utilisateur actuel */}
-                {currentUser && (
-                    <div className="mb-3 bg-gray-700 rounded-lg p-3 border border-gray-600">
-                        <div className="flex items-center justify-between">
-                            <span className="text-white text-sm font-medium">Votre participation :</span>
-                            <span className={`text-sm flex items-center gap-2 ${
-                                currentUserStatus ? getStatusColor(currentUserStatus) : 'text-gray-400'
-                            }`}>
-                                {currentUserStatus ? getStatusIcon(currentUserStatus) : '⚪'}
-                                {currentUserStatus ? (
-                                    currentUserStatus === 'going' ? 'Participe' :
-                                    currentUserStatus === 'maybe' ? 'Peut-être' :
-                                    'Ne participe pas'
-                                ) : 'Pas de réponse'}
-                            </span>
-                        </div>
-                        <div className="mt-2">
-                            <EventResponseButtons
-                                eventId={eventId}
-                                currentUserStatus={currentUserStatus}
-                                onResponseChange={handleEventResponse}
-                                compact={true}
-                            />
-                        </div>
-                    </div>
-                )}
                 
                 {/* Onglets de filtrage */}
                 <div className="flex border-b border-gray-600 mb-3">
