@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useOnePage } from '../../contexts/OnePageContext';
 import AdaptiveVerticalPanelSystem from './AdaptiveVerticalPanelSystem';
-import { Group, Event, GroupPost, GroupComment, GroupMessage, User, GroupMember } from '../../types/group';
+import { Group, Event, GroupPost, GroupComment, GroupMessage, EventMessage, ContextualMessage, User, GroupMember, DiscussionContext } from '../../types/group';
 import { getCurrentUserClient } from '@/services/user';
+import { ContextualMessageService } from '@/services/contextualMessages';
+import { useContextualWebSocket } from '../../hooks/useContextualWebSocket';
 import { 
     getGroupPosts, 
     getGroupMessages, 
@@ -32,7 +34,7 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
     
     // Data states
     const [posts, setPosts] = useState<GroupPost[]>([]);
-    const [messages, setMessages] = useState<GroupMessage[]>([]);
+    const [messages, setMessages] = useState<ContextualMessage[]>([]);
     const [events, setEvents] = useState<Event[]>([]);
     const [members, setMembers] = useState<GroupMember[]>([]);
     
@@ -50,7 +52,16 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
     // Error states
     const [error, setError] = useState<string | null>(null);
 
-    // Get the groupId - for groups it's the selectedItem.id, for events it's the group_id
+    // 🎯 NOUVELLE LOGIQUE CONTEXTUELLE - distingue groupe vs événement
+    const discussionContext: DiscussionContext = ContextualMessageService.getDiscussionContext(type, selectedItem);
+    
+    // 🔌 WebSocket contextuel pour les messages temps réel
+    useContextualWebSocket({ 
+        context: discussionContext, 
+        setMessages 
+    });
+    
+    // Pour les posts et membres, on utilise toujours le groupe (même pour les événements)
     const groupId = type === 'group' ? selectedItem.id : (selectedItem as Event).group_id;
 
     useEffect(() => {
@@ -99,10 +110,16 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
     const loadMessages = async () => {
         try {
             setIsLoadingMessages(true);
-            const groupMessages = await getGroupMessages(groupId);
-            setMessages(groupMessages);
+            // 🎯 UTILISE LE SERVICE CONTEXTUEL - charge les bons messages selon le contexte !
+            const contextualMessages = await ContextualMessageService.getMessages(discussionContext);
+            setMessages(contextualMessages);
+            
+            console.log(`📨 Messages chargés pour ${discussionContext.type} ID:${discussionContext.id}`, {
+                count: contextualMessages.length,
+                context: discussionContext
+            });
         } catch (error) {
-            console.error('Error loading messages:', error);
+            console.error('Error loading contextual messages:', error);
         } finally {
             setIsLoadingMessages(false);
         }
@@ -238,11 +255,19 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
 
     const handleSendMessage = async (content: string) => {
         try {
-            await sendGroupMessage(groupId, content);
-            await loadMessages(); // Refresh messages after sending
+            // 🎯 UTILISE LE SERVICE CONTEXTUEL - envoie vers la bonne discussion !
+            await ContextualMessageService.sendMessage(discussionContext, content);
+            
+            console.log(`📤 Message envoyé vers ${discussionContext.type} ID:${discussionContext.id}`, {
+                content: content.substring(0, 50),
+                context: discussionContext
+            });
+            
+            // Les WebSocket se chargeront de mettre à jour les messages en temps réel
+            // Plus besoin de loadMessages() ici
         } catch (error) {
-            console.error('Error sending message:', error);
-            setError('Erreur lors de l\'envoi du message');
+            console.error('Error sending contextual message:', error);
+            setError(`Erreur lors de l'envoi du message vers ${discussionContext.type === 'group' ? 'le groupe' : 'l\'événement'}`);
         }
     };
 

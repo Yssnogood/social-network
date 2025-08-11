@@ -3,7 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useCookies } from "next-client-cookies";
 import { useOnePage } from '../contexts/OnePageContext';
-import { Event } from '../types/group';
+import { Event, EventMessage } from '../types/group';
+import { useEventWebSocket } from '../hooks/useEventWebSocket';
+import MessageInput from './groupComponent/MessageInput';
+import MessageItem from './groupComponent/MessageItem';
 
 interface EventViewProps {
     event: Event;
@@ -25,6 +28,11 @@ export default function EventView({ event }: EventViewProps) {
     const [group, setGroup] = useState<any>(null);
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [messages, setMessages] = useState<EventMessage[]>([]);
+    const [newMessage, setNewMessage] = useState('');
+
+    // WebSocket pour les messages en temps réel
+    useEventWebSocket(event.id.toString(), setMessages);
 
     useEffect(() => {
         const loadEventData = async () => {
@@ -66,6 +74,16 @@ export default function EventView({ event }: EventViewProps) {
                         const currentUserResponse = responsesData.find((r: any) => r.user_id === currentUser.id);
                         setUserResponse(currentUserResponse?.status || null);
                     }
+                }
+
+                // Charger les messages de l'événement
+                const messagesRes = await fetch(`http://localhost:8090/api/events/${event.id}/messages`, {
+                    credentials: "include",
+                });
+                
+                if (messagesRes.ok) {
+                    const messagesData = await messagesRes.json();
+                    setMessages(Array.isArray(messagesData) ? messagesData : []);
                 }
 
             } catch (error) {
@@ -117,6 +135,29 @@ export default function EventView({ event }: EventViewProps) {
         } catch (err: any) {
             console.error("Error responding to event:", err.message);
             alert("Erreur lors de la réponse à l'événement");
+        }
+    };
+
+    const sendMessage = async () => {
+        if (!newMessage.trim()) return;
+        
+        try {
+            const res = await fetch(`http://localhost:8090/api/events/${event.id}/messages`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ content: newMessage }),
+            });
+            
+            if (!res.ok) throw new Error(await res.text());
+            
+            // Vider l'input après envoi réussi
+            setNewMessage('');
+            
+            // Le message sera ajouté via WebSocket
+        } catch (err: any) {
+            console.error("Error sending event message:", err.message);
+            alert("Erreur lors de l'envoi du message");
         }
     };
 
@@ -297,6 +338,37 @@ export default function EventView({ event }: EventViewProps) {
                             <p className="text-sm mt-1">Soyez le premier à répondre !</p>
                         </div>
                     )}
+
+                    {/* Section des messages */}
+                    <div className="mt-8">
+                        <h3 className="text-lg font-semibold text-white mb-4">Discussion</h3>
+                        
+                        {/* Input pour écrire un message */}
+                        <div className="mb-4">
+                            <MessageInput
+                                value={newMessage}
+                                onChange={setNewMessage}
+                                onSend={sendMessage}
+                            />
+                        </div>
+
+                        {/* Liste des messages */}
+                        <div className="bg-gray-700 rounded-lg p-4 max-h-96 overflow-y-auto">
+                            {messages.length === 0 ? (
+                                <div className="text-center py-8 text-gray-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                    <p>Aucun message pour le moment</p>
+                                    <p className="text-sm mt-1">Soyez le premier à écrire !</p>
+                                </div>
+                            ) : (
+                                messages.map(msg => (
+                                    <MessageItem key={msg.id} message={msg} />
+                                ))
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

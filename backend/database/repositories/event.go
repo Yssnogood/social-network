@@ -98,3 +98,63 @@ func ( r * EventRepository) DeleteEvent(eventID int64) error {
 	`, eventID)
 	return err
 }
+
+// Create a new event message in the database
+func (r *EventRepository) CreateEventMessage(eventMessage *models.EventMessage) (int64, error) {
+	stmt, err := r.db.Prepare(`
+		INSERT INTO event_messages (event_id, user_id, username, content, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`)
+	if err != nil {
+		return 0, err
+	}
+	defer stmt.Close()
+	
+	result, err := stmt.Exec(
+		eventMessage.EventID,
+		eventMessage.UserID,
+		eventMessage.Username,
+		eventMessage.Content,
+		eventMessage.CreatedAt,
+		eventMessage.UpdatedAt,
+	)
+	if err != nil {
+		return 0, err
+	}
+	
+	return result.LastInsertId()
+}
+
+// Get all messages for a specific event
+func (r *EventRepository) GetMessagesByEventID(eventID int64) ([]models.EventMessage, error) {
+	rows, err := r.db.Query(`
+		SELECT id, event_id, user_id, username, content, created_at, updated_at
+		FROM event_messages
+		WHERE event_id = ?
+		ORDER BY created_at ASC
+	`, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	
+	var messages []models.EventMessage
+	for rows.Next() {
+		var message models.EventMessage
+		err := rows.Scan(
+			&message.ID,
+			&message.EventID,
+			&message.UserID,
+			&message.Username,
+			&message.Content,
+			&message.CreatedAt,
+			&message.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, message)
+	}
+	
+	return messages, nil
+}

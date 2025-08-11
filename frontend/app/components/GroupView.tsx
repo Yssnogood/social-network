@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useCookies } from "next-client-cookies";
 import { useOnePage } from '../contexts/OnePageContext';
 import { Group, GroupMember, GroupMessage, GroupPost, Event } from '../types/group';
+import { useGroupWebSocket } from '../hooks/useGroupWebSocket';
 
 // Réutilisation des composants existants
 import GroupHeader from './groupComponent/GroupHeader';
@@ -31,6 +32,10 @@ export default function GroupView({ groupId }: GroupViewProps) {
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'messages' | 'posts'>('messages');
     const [currentUser, setCurrentUser] = useState<any>(null);
+    const [newMessage, setNewMessage] = useState('');
+
+    // WebSocket pour les messages en temps réel
+    useGroupWebSocket(groupId.toString(), setMessages);
 
     // Charger les données du groupe
     useEffect(() => {
@@ -117,16 +122,21 @@ export default function GroupView({ groupId }: GroupViewProps) {
     };
 
     // Actions
-    const sendMessage = async (content: string) => {
+    const sendMessage = async () => {
+        if (!newMessage.trim()) return;
+        
         try {
             const res = await fetch(`http://localhost:8090/api/groups/${groupId}/messages`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ content }),
+                body: JSON.stringify({ content: newMessage }),
             });
             
             if (!res.ok) throw new Error(await res.text());
+            
+            // Vider l'input après envoi réussi
+            setNewMessage('');
             
             // Le message sera ajouté via WebSocket
         } catch (err: any) {
@@ -301,9 +311,9 @@ export default function GroupView({ groupId }: GroupViewProps) {
                         <>
                             <div className="mb-4">
                                 <MessageInput
-                                    value=""
-                                    onChange={() => {}}
-                                    onSend={(content) => sendMessage(content)}
+                                    value={newMessage}
+                                    onChange={setNewMessage}
+                                    onSend={sendMessage}
                                 />
                             </div>
                             <MessagesList messages={messages} />

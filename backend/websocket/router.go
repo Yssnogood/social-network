@@ -15,14 +15,16 @@ func SetupWebSocketRoutes(
 	conversationRepo repository.ConversationRepositoryInterface,
 	conversationMembersRepo repository.ConversationMemberRepositoryInterface,
 	groupRepo repository.GroupRepositoryInterface,
+	eventRepo repository.EventRepositoryInterface,
 	userRepo repository.UserRepositoryInterface,
 ) {
 	// Create WebSocket handler
-	wsHandler := NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo, groupRepo, userRepo)
+	wsHandler := NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo, groupRepo, eventRepo, userRepo)
 
 	// WebSocket endpoints
 	router.Handle("/ws", middlewares.JWTMiddleware(http.HandlerFunc(wsHandler.HandleWebSocket))).Methods("GET")
 	router.Handle("/ws/groups", middlewares.JWTMiddleware(http.HandlerFunc(wsHandler.HandleGroupWebSocket))).Methods("GET")
+	router.Handle("/ws/events", middlewares.JWTMiddleware(http.HandlerFunc(wsHandler.HandleEventWebSocket))).Methods("GET")
 
 	apiRouter := router.PathPrefix("/api/messages").Subrouter()
 

@@ -75,6 +75,38 @@ export interface EventWithResponse extends Event {
 	response_status?: "going" | "not_going" | null;
 }
 
+export type EventMessage = {
+	id: number;
+	event_id: number;
+	user_id: number;
+	username: string;
+	content: string;
+	created_at: string;
+	updated_at: string;
+};
+
+// Interface unifiée pour tous les types de messages
+export interface UniversalMessage {
+	id: number;
+	user_id: number;
+	username: string;
+	content: string;
+	created_at: string;
+	updated_at: string;
+	context_type: 'group' | 'event';
+	context_id: number; // group_id pour groupe, event_id pour événement
+}
+
+// Type union pour les messages contextuels
+export type ContextualMessage = GroupMessage | EventMessage;
+
+// Contexte de discussion pour identifier le type de conversation
+export interface DiscussionContext {
+	type: 'group' | 'event';
+	id: number; // ID du groupe ou de l'événement
+	parentId?: number; // ID du groupe parent si c'est un événement
+}
+
 export type User = {
 	id: number;
 	username: string;

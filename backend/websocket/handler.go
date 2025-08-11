@@ -17,6 +17,7 @@ type WebSocketHandler struct {
 	conversationRepo        repository.ConversationRepositoryInterface
 	conversationMembersRepo repository.ConversationMemberRepositoryInterface
 	groupRepo              repository.GroupRepositoryInterface
+	eventRepo              repository.EventRepositoryInterface
 	userRepo               repository.UserRepositoryInterface
 }
 
@@ -26,9 +27,10 @@ func NewWebSocketHandler(
 	conversationRepo repository.ConversationRepositoryInterface,
 	conversationMembersRepo repository.ConversationMemberRepositoryInterface,
 	groupRepo repository.GroupRepositoryInterface,
+	eventRepo repository.EventRepositoryInterface,
 	userRepo repository.UserRepositoryInterface,
 ) *WebSocketHandler {
-	hub := NewHub(messageRepo, conversationRepo, conversationMembersRepo, groupRepo, userRepo)
+	hub := NewHub(messageRepo, conversationRepo, conversationMembersRepo, groupRepo, eventRepo, userRepo)
 	go hub.Run()
 
 	return &WebSocketHandler{
@@ -37,6 +39,7 @@ func NewWebSocketHandler(
 		conversationRepo:        conversationRepo,
 		conversationMembersRepo: conversationMembersRepo,
 		groupRepo:              groupRepo,
+		eventRepo:              eventRepo,
 		userRepo:               userRepo,
 	}
 }
@@ -70,6 +73,24 @@ func (h *WebSocketHandler) HandleGroupWebSocket(w http.ResponseWriter, r *http.R
 
 	// Create WebSocket connection
 	ServeGroupWS(h.hub, w, r, userID, groupID)
+}
+
+// HandleEventWebSocket handles WebSocket connection requests for events
+func (h *WebSocketHandler) HandleEventWebSocket(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middlewares.GetUserID(r)
+	if !ok {
+		http.Error(w, "Non autorisé", http.StatusUnauthorized)
+		return
+	}
+	// Get eventID from query parameter
+	eventIDStr := r.URL.Query().Get("eventId")
+	eventID, err := strconv.ParseInt(eventIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid event ID", http.StatusBadRequest)
+		return
+	}
+	// Create WebSocket connection
+	ServeEventWS(h.hub, w, r, userID, eventID)
 }
 
 // HandleGetConversation handles HTTP requests to get or create conversation between two users

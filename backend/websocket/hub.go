@@ -19,6 +19,9 @@ type Hub struct {
 
 	// Clients by group ID for group messaging
 	groupClients map[int64]map[*Client]bool
+	
+	// Clients by event ID for event messaging
+	eventClients map[int64]map[*Client]bool
 
 	// Inbound messages from the clients
 	broadcast chan []byte
@@ -34,6 +37,7 @@ type Hub struct {
 	conversationRepo        repository.ConversationRepositoryInterface
 	conversationMembersRepo repository.ConversationMemberRepositoryInterface
 	groupRepo              repository.GroupRepositoryInterface
+	eventRepo              repository.EventRepositoryInterface
 	userRepo               repository.UserRepositoryInterface
 
 	// Mutex for thread-safe operations
@@ -45,6 +49,7 @@ type WSMessage struct {
 	Type           string    `json:"type"`
 	ConversationID int64     `json:"conversation_id,omitempty"`
 	GroupID        int64     `json:"group_id,omitempty"`
+	EventID        int64     `json:"event_id,omitempty"`
 	Content        string    `json:"content,omitempty"`
 	SenderID       int64     `json:"sender_id,omitempty"`
 	ReceiverID     int64     `json:"receiver_id,omitempty"`
@@ -60,12 +65,14 @@ func NewHub(
 	conversationRepo repository.ConversationRepositoryInterface,
 	conversationMembersRepo repository.ConversationMemberRepositoryInterface,
 	groupRepo repository.GroupRepositoryInterface,
+	eventRepo repository.EventRepositoryInterface,
 	userRepo repository.UserRepositoryInterface,
 ) *Hub {
 	return &Hub{
 		clients:                 make(map[*Client]bool),
 		userClients:             make(map[int64]*Client),
 		groupClients:            make(map[int64]map[*Client]bool),
+		eventClients:            make(map[int64]map[*Client]bool),
 		broadcast:               make(chan []byte),
 		register:                make(chan *Client),
 		unregister:              make(chan *Client),
@@ -73,6 +80,7 @@ func NewHub(
 		conversationRepo:        conversationRepo,
 		conversationMembersRepo: conversationMembersRepo,
 		groupRepo:              groupRepo,
+		eventRepo:              eventRepo,
 		userRepo:               userRepo,
 	}
 }
@@ -131,6 +139,17 @@ func (h *Hub) unregisterClient(client *Client) {
 			}
 		}
 		
+		// Remove client from all events
+		for eventID, eventClients := range h.eventClients {
+			if _, exists := eventClients[client]; exists {
+				delete(eventClients, client)
+				// If no more clients in the event, remove the event
+				if len(eventClients) == 0 {
+					delete(h.eventClients, eventID)
+				}
+			}
+		}
+		
 		close(client.send)
 
 		log.Printf("Client unregistered: UserID %d", client.UserID)
@@ -156,6 +175,12 @@ func (h *Hub) handleBroadcast(message []byte) {
 		h.handleGroupJoin(wsMsg)
 	case "group_leave":
 		h.handleGroupLeave(wsMsg)
+	case "event_message":
+		h.handleEventMessage(wsMsg)
+	case "event_join":
+		h.handleEventJoin(wsMsg)
+	case "event_leave":
+		h.handleEventLeave(wsMsg)
 	default:
 		log.Printf("Unknown message type: %s", wsMsg.Type)
 	}
@@ -388,5 +413,123 @@ func (h *Hub) getUsernameByID(userID int64) (string, error) {
 		return "", err
 	}
 	return user.Username, nil
+}
+
+// handleEventMessage processes event message sending
+func (h *Hub) handleEventMessage(wsMsg WSMessage) {
+	// Get username from the database
+	username, err := h.getUsernameByID(wsMsg.SenderID)
+	if err != nil {
+		log.Printf("Error getting username: %v", err)
+		return
+	}
+
+	// Create event message in database
+	eventMessage := &models.EventMessage{
+		EventID:   wsMsg.EventID,
+		UserID:    wsMsg.SenderID,
+		Username:  username,
+		Content:   wsMsg.Content,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	messageID, err := h.eventRepo.CreateEventMessage(eventMessage)
+	if err != nil {
+		log.Printf("Error creating event message: %v", err)
+		return
+	}
+
+	// Prepare response message
+	response := WSMessage{
+		Type:      "event_message_received",
+		EventID:   wsMsg.EventID,
+		Content:   wsMsg.Content,
+		SenderID:  wsMsg.SenderID,
+		Username:  username,
+		MessageID: messageID,
+		Timestamp: eventMessage.CreatedAt,
+	}
+
+	// Broadcast to all clients in the event
+	h.broadcastToEvent(wsMsg.EventID, response)
+}
+
+// handleEventJoin processes a client joining an event
+func (h *Hub) handleEventJoin(wsMsg WSMessage) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
+	client, exists := h.userClients[wsMsg.SenderID]
+	if !exists {
+		log.Printf("User %d not connected", wsMsg.SenderID)
+		return
+	}
+
+	// Initialize event if it doesn't exist
+	if h.eventClients[wsMsg.EventID] == nil {
+		h.eventClients[wsMsg.EventID] = make(map[*Client]bool)
+	}
+
+	// Add client to event
+	h.eventClients[wsMsg.EventID][client] = true
+
+	log.Printf("User %d joined event %d", wsMsg.SenderID, wsMsg.EventID)
+
+	// Send confirmation
+	response := WSMessage{
+		Type:      "event_join_success",
+		EventID:   wsMsg.EventID,
+		Timestamp: time.Now(),
+	}
+	h.sendToClient(client, response)
+}
+
+// handleEventLeave processes a client leaving an event
+func (h *Hub) handleEventLeave(wsMsg WSMessage) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
+	client, exists := h.userClients[wsMsg.SenderID]
+	if !exists {
+		log.Printf("User %d not connected", wsMsg.SenderID)
+		return
+	}
+
+	// Remove client from event
+	if eventClients, eventExists := h.eventClients[wsMsg.EventID]; eventExists {
+		delete(eventClients, client)
+		
+		// If no more clients in the event, remove the event
+		if len(eventClients) == 0 {
+			delete(h.eventClients, wsMsg.EventID)
+		}
+	}
+
+	log.Printf("User %d left event %d", wsMsg.SenderID, wsMsg.EventID)
+
+	// Send confirmation
+	response := WSMessage{
+		Type:      "event_leave_success",
+		EventID:   wsMsg.EventID,
+		Timestamp: time.Now(),
+	}
+	h.sendToClient(client, response)
+}
+
+// broadcastToEvent sends a message to all clients in an event
+func (h *Hub) broadcastToEvent(eventID int64, message WSMessage) {
+	h.mutex.RLock()
+	eventClients, exists := h.eventClients[eventID]
+	h.mutex.RUnlock()
+
+	if !exists {
+		log.Printf("No clients in event %d", eventID)
+		return
+	}
+
+	for client := range eventClients {
+		h.sendToClient(client, message)
+	}
 }
 

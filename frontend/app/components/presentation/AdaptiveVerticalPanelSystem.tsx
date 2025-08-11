@@ -5,7 +5,7 @@ import VerticalPanelSystem from './VerticalPanelSystem';
 import PresentationContentPanel from './PresentationContentPanel';
 import ContentPanel from './ContentPanel';
 import { useVerticalDrawerProportions } from '../../hooks/useVerticalDrawerProportions';
-import { Group, Event, GroupPost, GroupComment, GroupMessage, User, GroupMember } from '../../types/group';
+import { Group, Event, GroupPost, GroupComment, ContextualMessage, User, GroupMember } from '../../types/group';
 import '../../styles/drawer-animations.css';
 
 interface AdaptiveVerticalPanelSystemProps {
@@ -25,7 +25,7 @@ interface AdaptiveVerticalPanelSystemProps {
     
     // Données pour le panneau communication
     posts: GroupPost[];
-    messages: GroupMessage[];
+    messages: ContextualMessage[]; // 🎯 Messages contextuels (groupe OU événement)
     events: Event[];
     
     // Props pour les posts

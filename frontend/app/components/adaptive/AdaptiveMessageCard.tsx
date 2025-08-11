@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { GroupMessage } from '../../types/group';
+import { ContextualMessage } from '../../types/group';
 import { useMessageVignette, getCombinedVignetteClasses, getVignetteStyles } from '../../hooks/useAdaptiveVignette';
 import '../../styles/adaptive-vignettes.css';
 
 interface AdaptiveMessageCardProps {
-  message: GroupMessage;
+  message: ContextualMessage; // 🎯 Messages contextuels (groupe OU événement)
   drawerPercentage: number;
   currentUserId?: number;
   isConsecutive?: boolean; // Message consécutif du même auteur
@@ -34,7 +34,7 @@ export default function AdaptiveMessageCard({
   const cardStyles = getVignetteStyles(adaptiveConfig);
 
   // Déterminer si c'est un message de l'utilisateur actuel
-  const isOwnMessage = currentUserId === message.sender_id;
+  const isOwnMessage = currentUserId === message.user_id;
 
   // Formater l'heure selon l'état
   const formatTime = (dateString: string): string => {
@@ -90,7 +90,7 @@ export default function AdaptiveMessageCard({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       role="article"
-      aria-label={`Message de ${message.sender_username}`}
+      aria-label={`Message de ${message.username}`}
     >
       <div className={`${messageColor} rounded-lg border`}>
         {/* Header du message (masqué si consécutif en mode compact) */}
@@ -101,7 +101,7 @@ export default function AdaptiveMessageCard({
                 {/* Avatar (visible selon l'état et si pas consécutif) */}
                 {!isConsecutive && adaptiveConfig.state !== 'compact' && (
                   <div className="vignette-avatar bg-amber-600 text-white flex items-center justify-center font-semibold">
-                    {message.sender_username.charAt(0).toUpperCase()}
+                    {message.username.charAt(0).toUpperCase()}
                   </div>
                 )}
                 
@@ -112,8 +112,8 @@ export default function AdaptiveMessageCard({
                       isOwnMessage ? 'text-amber-400' : 'text-blue-400'
                     }`}>
                       {adaptiveConfig.state === 'compact' 
-                        ? message.sender_username.slice(0, 8) 
-                        : message.sender_username}
+                        ? message.username.slice(0, 8) 
+                        : message.username}
                     </h3>
                     
                     {/* Badge "Vous" pour les messages propres */}
@@ -196,7 +196,7 @@ export default function AdaptiveMessageCard({
  * Composant conteneur pour une liste de messages adaptatifs
  */
 interface AdaptiveMessageListProps {
-  messages: GroupMessage[];
+  messages: ContextualMessage[]; // 🎯 Messages contextuels (groupe OU événement)
   drawerPercentage: number;
   currentUserId?: number;
 }
@@ -239,7 +239,7 @@ export function AdaptiveMessageList({
     <div className={`space-y-${adaptiveConfig.state === 'compact' ? '1' : '3'} flex flex-col h-full overflow-hidden`}>
       {messages.map((message, index) => {
         const previousMessage = index > 0 ? messages[index - 1] : null;
-        const isConsecutive = previousMessage?.sender_id === message.sender_id;
+        const isConsecutive = previousMessage?.user_id === message.user_id;
         
         // En mode compact, grouper les messages consécutifs plus agressivement
         const shouldShowTimeStamp = adaptiveConfig.state === 'extended' || 

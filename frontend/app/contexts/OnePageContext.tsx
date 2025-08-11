@@ -44,6 +44,14 @@ interface OnePageContextType {
   openChatDrawer: (contact: ChatContact) => void;
   closeChatDrawer: () => void;
   
+  // SlideDrawer states
+  isSlideDrawerOpen: boolean;
+  slideDrawerContent: 'private-chat' | 'event-details' | null;
+  slideDrawerDirection: 'left' | 'right';
+  slideDrawerProps: any;
+  openSlideDrawer: (content: 'private-chat' | 'event-details', direction: 'left' | 'right', props?: any) => void;
+  closeSlideDrawer: () => void;
+  
   // Navigation helpers
   navigateToGroup: (group: SelectedGroup) => void;
   navigateToEvent: (event: SelectedEvent) => void;
@@ -70,6 +78,12 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
   const [selectedChatContact, setSelectedChatContact] = useState<ChatContact | null>(null);
   const [onConversationCreated, setOnConversationCreated] = useState<((contact: ChatContact) => void) | null>(null);
+  
+  // SlideDrawer states
+  const [isSlideDrawerOpen, setIsSlideDrawerOpen] = useState(false);
+  const [slideDrawerContent, setSlideDrawerContent] = useState<'private-chat' | 'event-details' | null>(null);
+  const [slideDrawerDirection, setSlideDrawerDirection] = useState<'left' | 'right'>('left');
+  const [slideDrawerProps, setSlideDrawerProps] = useState<any>(null);
 
   const openChatDrawer = useCallback((contact: ChatContact) => {
     setSelectedChatContact(contact);
@@ -79,6 +93,24 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
   const closeChatDrawer = useCallback(() => {
     setIsChatDrawerOpen(false);
     setSelectedChatContact(null);
+  }, []);
+
+  // SlideDrawer methods
+  const openSlideDrawer = useCallback((
+    content: 'private-chat' | 'event-details', 
+    direction: 'left' | 'right', 
+    props?: any
+  ) => {
+    setSlideDrawerContent(content);
+    setSlideDrawerDirection(direction);
+    setSlideDrawerProps(props || null);
+    setIsSlideDrawerOpen(true);
+  }, []);
+
+  const closeSlideDrawer = useCallback(() => {
+    setIsSlideDrawerOpen(false);
+    setSlideDrawerContent(null);
+    setSlideDrawerProps(null);
   }, []);
 
   const navigateToGroup = useCallback((group: SelectedGroup) => {
@@ -113,26 +145,19 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
         isNewConversation = true;
       }
 
-      setSelectedChatContact(contact);
-      setSelectedGroup(null);
-      setSelectedEvent(null);
-      setCentralView('chat');
+      // Ouvrir le SlideDrawer au lieu du panneau central
+      openSlideDrawer('private-chat', 'left', { contact });
       
       // Notifier le ChatPanel qu'une nouvelle conversation a été créée
       if (onConversationCreated && isNewConversation) {
-        // Si c'était une nouvelle conversation, passer le contact
         onConversationCreated(contact);
       }
     } catch (error) {
       console.error('Error navigating to chat:', error);
-      // Même en cas d'erreur, on peut essayer d'ouvrir le chat sans conversationId
-      // L'utilisateur verra un message d'erreur approprié
-      setSelectedChatContact(contact);
-      setSelectedGroup(null);
-      setSelectedEvent(null);
-      setCentralView('chat');
+      // Même en cas d'erreur, ouvrir le SlideDrawer
+      openSlideDrawer('private-chat', 'left', { contact });
     }
-  }, []);
+  }, [openSlideDrawer, onConversationCreated]);
 
   const navigateToGroupEditor = useCallback(() => {
     setSelectedGroup(null);
@@ -174,6 +199,14 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
     isChatDrawerOpen,
     openChatDrawer,
     closeChatDrawer,
+    // SlideDrawer
+    isSlideDrawerOpen,
+    slideDrawerContent,
+    slideDrawerDirection,
+    slideDrawerProps,
+    openSlideDrawer,
+    closeSlideDrawer,
+    // Navigation
     navigateToGroup,
     navigateToEvent,
     navigateToFeed,

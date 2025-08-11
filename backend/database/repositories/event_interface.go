@@ -14,4 +14,8 @@ type EventRepositoryInterface interface {
 	
 	// Delete an event by ID
 	DeleteEvent(eventID int64) error
+	
+	// Message management
+	CreateEventMessage(eventMessage *models.EventMessage) (int64, error)
+	GetMessagesByEventID(eventID int64) ([]models.EventMessage, error)
 }

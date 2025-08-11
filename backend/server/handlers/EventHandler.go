@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -16,12 +17,14 @@ import (
 // EventHandler handles HTTP requests related to events.
 type EventHandler struct {
 	EventRepository *repository.EventRepository
+	UserRepository  repository.UserRepositoryInterface
 }
 
 // NewEventHandler creates a new EventHandler.
-func NewEventHandler(er *repository.EventRepository) *EventHandler {
+func NewEventHandler(er *repository.EventRepository, ur repository.UserRepositoryInterface) *EventHandler {
 	return &EventHandler{
 		EventRepository: er,
+		UserRepository:  ur,
 	}
 }
 
@@ -141,4 +144,78 @@ func (h *EventHandler) DeleteEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// Message handlers
+
+// CreateEventMessage handles the creation of a new event message
+func (h *EventHandler) CreateEventMessage(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	eventIDStr := vars["eventID"]
+	eventID, err := strconv.ParseInt(eventIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid event ID", http.StatusBadRequest)
+		return
+	}
+
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+	userName, err := h.getUsernameByID(userID)
+	if err != nil {
+		http.Error(w, "Failed to get user information: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var message models.EventMessage
+	if err := json.NewDecoder(r.Body).Decode(&message); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	message.EventID = eventID
+	message.UserID = userID
+	message.Username = userName
+	message.CreatedAt = time.Now()
+	message.UpdatedAt = time.Now()
+
+	id, err := h.EventRepository.CreateEventMessage(&message)
+	if err != nil {
+		http.Error(w, "Failed to create event message: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	message.ID = id
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(message)
+}
+
+// GetEventMessages retrieves all messages for a specific event
+func (h *EventHandler) GetEventMessages(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	eventIDStr := vars["eventID"]
+	eventID, err := strconv.ParseInt(eventIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid event ID", http.StatusBadRequest)
+		return
+	}
+
+	messages, err := h.EventRepository.GetMessagesByEventID(eventID)
+	if err != nil {
+		http.Error(w, "Failed to get messages: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(messages)
+}
+
+// getUsernameByID retrieves username from user ID
+func (h *EventHandler) getUsernameByID(userID int64) (string, error) {
+	user, err := h.UserRepository.GetByID(userID)
+	if err != nil {
+		return "", err
+	}
+	if user == nil {
+		return "", fmt.Errorf("user not found")
+	}
+	return user.Username, nil
 }

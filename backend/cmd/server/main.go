@@ -91,7 +91,7 @@ func main() {
 	followerHandler := appHandlers.NewFollowerHandler(followerRepo, notificationRepo)
 	messageHandler := appHandlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
 	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo, followerRepo, groupRepo)
-	eventHandler := appHandlers.NewEventHandler(eventRepo)
+	eventHandler := appHandlers.NewEventHandler(eventRepo, userRepo)
 	uploadHandler := appHandlers.NewUploadHandler("./uploads")
 
 	groupHandler := appHandlers.NewGroupHandler(groupRepo, sessionRepo, userRepo, notificationRepo)
@@ -110,7 +110,7 @@ func main() {
 	routes.UploadRoutes(r, uploadHandler)
 
 	// WebSocket routes - unified system
-	websocket.SetupWebSocketRoutes(r, messageRepo, conversationRepo, conversationMembersRepo, groupRepo, userRepo)
+	websocket.SetupWebSocketRoutes(r, messageRepo, conversationRepo, conversationMembersRepo, groupRepo, eventRepo, userRepo)
 
 	// Lancement du serveur HTTP
 	port := os.Getenv("PORT")

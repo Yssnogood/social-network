@@ -7,26 +7,26 @@ import ChatPanel from './ChatPanel';
 import UsersListPanel from './UsersListPanel';
 import GroupsPanel from './GroupsPanel';
 import EventsPanel from './EventsPanel';
-import ChatDrawer from './ChatDrawer';
 import UniversalPostsList from './universal/UniversalPostsList';
 import GroupView from './GroupView';
 import EventView from './EventView';
-import ChatView from './ChatView';
 import EditorPanel from './editor/EditorPanel';
 import PresentationPanel from './presentation/PresentationPanel';
+import SlideDrawer from './SlideDrawer';
+import PrivateChatContent from './slideDrawerContents/PrivateChatContent';
 
 interface OnePageLayoutProps {
   children?: React.ReactNode;
   username?: string;
-  notifications: any[];
+  notifications: unknown[];
   showNotifications: boolean;
   onToggleNotifications: () => void;
   // Props pour le feed
-  posts: any[];
+  posts: unknown[];
   isLoading: boolean;
   // Props pour la création de posts
-  onCreatePost: (postData: any) => Promise<void>;
-  currentUser?: any;
+  onCreatePost: (postData: unknown) => Promise<void>;
+  currentUser?: unknown;
 }
 
 export default function OnePageLayout({
@@ -42,14 +42,39 @@ export default function OnePageLayout({
   const { 
     centralView, 
     selectedGroup, 
-    selectedEvent, 
-    selectedChatContact,
-    setCentralView,
-    setSelectedGroup,
-    setSelectedEvent,
-    setSelectedChatContact,
-    navigateToFeed
+    selectedEvent,
+    navigateToFeed,
+    // SlideDrawer
+    isSlideDrawerOpen,
+    slideDrawerContent,
+    slideDrawerDirection,
+    slideDrawerProps,
+    closeSlideDrawer
   } = useOnePage();
+
+  const renderSlideDrawerContent = () => {
+    switch (slideDrawerContent) {
+      case 'private-chat':
+        return slideDrawerProps?.contact ? (
+          <PrivateChatContent contact={slideDrawerProps.contact} />
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-400">
+            Erreur: Contact non trouvé
+          </div>
+        );
+      
+      case 'event-details':
+        // À implémenter plus tard pour les événements
+        return (
+          <div className="flex items-center justify-center h-full text-gray-400">
+            Détails de l'événement - À venir
+          </div>
+        );
+      
+      default:
+        return null;
+    }
+  };
 
   const renderCentralView = () => {
     switch (centralView) {
@@ -71,14 +96,6 @@ export default function OnePageLayout({
           </div>
         );
       
-      case 'chat':
-        return selectedChatContact ? (
-          <ChatView contact={selectedChatContact} />
-        ) : (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            Sélectionnez un contact pour démarrer une conversation
-          </div>
-        );
         
       case 'group-editor':
         return (
@@ -233,8 +250,22 @@ export default function OnePageLayout({
         </div>
       </div>
 
-      {/* Chat Drawer */}
-      <ChatDrawer />
+
+      {/* SlideDrawer */}
+      <SlideDrawer
+        isOpen={isSlideDrawerOpen}
+        onClose={closeSlideDrawer}
+        direction={slideDrawerDirection}
+        width="400px"
+        title={slideDrawerContent === 'private-chat' && slideDrawerProps?.contact 
+          ? `Chat avec ${slideDrawerProps.contact.username}` 
+          : slideDrawerContent === 'event-details' 
+            ? 'Détails de l&apos;événement' 
+            : 'SlideDrawer'
+        }
+      >
+        {renderSlideDrawerContent()}
+      </SlideDrawer>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import UniversalPostsList from '../universal/UniversalPostsList';
 import { AdaptiveMessageList } from '../adaptive/AdaptiveMessageCard';
 import AdaptiveEventsList from '../adaptive/AdaptiveEventsList';
 import MessageInput from '../groupComponent/MessageInput';
-import { GroupPost, GroupComment, GroupMessage, Event, User } from '../../types/group';
+import { GroupPost, GroupComment, ContextualMessage, Event, User } from '../../types/group';
 import { useCommunicationDrawers } from '../../hooks/useUnifiedDrawerProportions';
 import type { CommunicationDrawerType } from '../../hooks/useUnifiedDrawerProportions';
 import '../../styles/drawer-animations.css';
@@ -19,7 +19,7 @@ interface ContentPanelProps {
     
     // Data props
     posts: GroupPost[];
-    messages: GroupMessage[];
+    messages: ContextualMessage[]; // 🎯 Messages contextuels (groupe OU événement)
     events: Event[];
     
     // Posts props
@@ -85,9 +85,9 @@ export default function ContentPanel({
     
     const [messageInput, setMessageInput] = useState('');
 
-    const handleMessageSend = async (content: string) => {
-        if (onSendMessage) {
-            await onSendMessage(content);
+    const handleMessageSend = async () => {
+        if (onSendMessage && messageInput.trim()) {
+            await onSendMessage(messageInput);
             setMessageInput('');
         }
     };

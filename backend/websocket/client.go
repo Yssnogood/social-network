@@ -203,3 +203,37 @@ func ServeGroupWS(hub *Hub, w http.ResponseWriter, r *http.Request, userID int64
 	go client.readPump()
 }
 
+// ServeEventWS handles WebSocket requests from clients for event connections
+func ServeEventWS(hub *Hub, w http.ResponseWriter, r *http.Request, userID int64, eventID int64) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("Erreur WebSocket upgrade (event) :", err)
+		return
+	}
+
+	client := &Client{
+		hub:    hub,
+		conn:   conn,
+		send:   make(chan []byte, 256),
+		UserID: userID,
+	}
+
+	hub.register <- client
+
+	// Automatically join the event
+	eventJoinMsg := WSMessage{
+		Type:      "event_join",
+		EventID:   eventID,
+		SenderID:  userID,
+		Timestamp: time.Now(),
+	}
+
+	// Send the event join message to the hub
+	if msgBytes, err := json.Marshal(eventJoinMsg); err == nil {
+		hub.broadcast <- msgBytes
+	}
+
+	go client.writePump()
+	go client.readPump()
+}
+
