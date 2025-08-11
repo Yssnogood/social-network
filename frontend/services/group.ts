@@ -1,6 +1,6 @@
 // Group service - API calls for group-related operations
 
-import { GroupPost, GroupMessage, GroupComment, Event, GroupMember } from '../app/types/group';
+import { GroupPost, GroupMessage, GroupComment, Event, GroupMember, EventResponse } from '../app/types/group';
 
 const API_BASE_URL = "http://localhost:8090/api";
 
@@ -124,9 +124,8 @@ export async function sendGroupMessage(groupId: number, content: string): Promis
     }
 }
 
-export async function respondToEvent(eventId: number, status: 'going' | 'not_going'): Promise<void> {
+export async function respondToEvent(eventId: number, status: 'going' | 'not_going' | 'maybe'): Promise<void> {
     try {
-        // Note: API only supports 'going' and 'not_going', not 'maybe'
         const response = await fetch(`${API_BASE_URL}/events/${eventId}/response`, {
             method: "POST",
             headers: {
@@ -141,6 +140,28 @@ export async function respondToEvent(eventId: number, status: 'going' | 'not_goi
         }
     } catch (error) {
         console.error('Error responding to event:', error);
+        throw error;
+    }
+}
+
+export async function getEventResponses(eventId: number): Promise<EventResponse[]> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/events/${eventId}/responses`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include"
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Failed to get event responses: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data || [];
+    } catch (error) {
+        console.error('Error getting event responses:', error);
         throw error;
     }
 }

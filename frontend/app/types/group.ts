@@ -17,6 +17,14 @@ export type GroupMember = {
 	createdAt: string;
 };
 
+export type EventResponse = {
+	event_id: number;
+	user_id: number;
+	username: string;
+	status: 'going' | 'not_going' | 'maybe';
+	created_at: string;
+};
+
 export interface Follower {
 	follower_id: number;
 	followed_id: number;

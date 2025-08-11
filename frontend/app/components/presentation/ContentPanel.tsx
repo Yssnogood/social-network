@@ -29,6 +29,9 @@ interface ContentPanelProps {
     newCommentByPost?: Record<number, string>;
     loadingComments?: Record<number, boolean>;
     
+    // Current user event status
+    currentUserStatus?: 'going' | 'not_going' | 'maybe' | null;
+    
     // Callbacks
     onCreatePost?: (content: string) => Promise<void>;
     onToggleComments?: (postId: number) => Promise<void>;
@@ -52,6 +55,7 @@ export default function ContentPanel({
     showCommentsForPost = {},
     newCommentByPost = {},
     loadingComments = {},
+    currentUserStatus,
     onCreatePost,
     onToggleComments,
     onCommentChange,
@@ -318,6 +322,7 @@ export default function ContentPanel({
                                     events={events}
                                     drawerPercentage={drawerConfig.events}
                                     currentUser={currentUser}
+                                    currentUserStatus={currentUserStatus}
                                     onEventResponse={onEventResponse || (async () => {})}
                                     onDeleteEvent={onDeleteEvent || (async () => {})}
                                     onCreateEvent={onCreateEvent || (async () => {})}

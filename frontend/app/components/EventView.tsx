@@ -7,6 +7,7 @@ import { Event, EventMessage } from '../types/group';
 import { useEventWebSocket } from '../hooks/useEventWebSocket';
 import MessageInput from './groupComponent/MessageInput';
 import { AdaptiveMessageList } from './adaptive/AdaptiveMessageCard';
+import { useToast } from '../hooks/useToast';
 
 interface EventViewProps {
     event: Event;
@@ -16,12 +17,12 @@ interface EventResponse {
     id: number;
     user_id: number;
     username: string;
-    status: 'going' | 'not_going';
+    status: 'going' | 'not_going' | 'maybe';
 }
 
 export default function EventView({ event }: EventViewProps) {
-    const cookies = useCookies();
     const { navigateToFeed, navigateToGroup } = useOnePage();
+    const { success, error } = useToast();
     
     const [responses, setResponses] = useState<EventResponse[]>([]);
     const [userResponse, setUserResponse] = useState<string | null>(null);
@@ -110,7 +111,7 @@ export default function EventView({ event }: EventViewProps) {
         }
     }, [event, currentUser?.id]);
 
-    const handleResponse = async (status: 'going' | 'not_going') => {
+    const handleResponse = async (status: 'going' | 'not_going' | 'maybe') => {
         try {
             const res = await fetch(`http://localhost:8090/api/events/${event.id}/response`, {
                 method: "POST",
@@ -144,9 +145,18 @@ export default function EventView({ event }: EventViewProps) {
                 }
             });
 
+            // Notification de succès
+            if (status === 'going') {
+                success('Participation confirmée', 'Vous avez confirmé votre participation à cet événement.');
+            } else if (status === 'maybe') {
+                success('Réponse enregistrée', 'Vous avez indiqué que vous participerez peut-être à cet événement.');
+            } else {
+                success('Réponse enregistrée', 'Vous avez indiqué que vous ne participez pas à cet événement.');
+            }
+
         } catch (err: any) {
             console.error("Error responding to event:", err.message);
-            alert("Erreur lors de la réponse à l'événement");
+            error('Erreur de participation', 'Impossible d\'enregistrer votre réponse. Veuillez réessayer.');
         }
     };
 
@@ -169,7 +179,7 @@ export default function EventView({ event }: EventViewProps) {
             // Le message sera ajouté via WebSocket
         } catch (err: any) {
             console.error("Error sending event message:", err.message);
-            alert("Erreur lors de l'envoi du message");
+            error('Erreur d\'envoi', 'Impossible d\'envoyer le message. Veuillez réessayer.');
         }
     };
 
@@ -190,6 +200,7 @@ export default function EventView({ event }: EventViewProps) {
 
     const goingCount = responses.filter(r => r.status === 'going').length;
     const notGoingCount = responses.filter(r => r.status === 'not_going').length;
+    const maybeCount = responses.filter(r => r.status === 'maybe').length;
     const eventPassed = isEventPassed(event.event_date);
 
     if (isLoading) {
@@ -287,6 +298,16 @@ export default function EventView({ event }: EventViewProps) {
                                     ✅ Je participe
                                 </button>
                                 <button
+                                    onClick={() => handleResponse('maybe')}
+                                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                                        userResponse === 'maybe'
+                                            ? 'bg-amber-600 text-white'
+                                            : 'bg-gray-700 text-gray-300 hover:bg-amber-600 hover:text-white'
+                                    }`}
+                                >
+                                    ❓ Peut-être
+                                </button>
+                                <button
                                     onClick={() => handleResponse('not_going')}
                                     className={`px-6 py-2 rounded-lg font-medium transition-colors ${
                                         userResponse === 'not_going'
@@ -303,10 +324,14 @@ export default function EventView({ event }: EventViewProps) {
                     {/* Statistiques des réponses */}
                     <div className="mb-6">
                         <h3 className="text-lg font-semibold text-white mb-3">Participants</h3>
-                        <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="grid grid-cols-3 gap-4 mb-4">
                             <div className="bg-green-900 rounded-lg p-4 text-center">
                                 <div className="text-2xl font-bold text-green-300">{goingCount}</div>
                                 <div className="text-green-400 text-sm">Participants</div>
+                            </div>
+                            <div className="bg-amber-900 rounded-lg p-4 text-center">
+                                <div className="text-2xl font-bold text-amber-300">{maybeCount}</div>
+                                <div className="text-amber-400 text-sm">Peut-être</div>
                             </div>
                             <div className="bg-red-900 rounded-lg p-4 text-center">
                                 <div className="text-2xl font-bold text-red-300">{notGoingCount}</div>
@@ -331,9 +356,11 @@ export default function EventView({ event }: EventViewProps) {
                                         <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                                             response.status === 'going'
                                                 ? 'bg-green-600 text-white'
+                                                : response.status === 'maybe'
+                                                ? 'bg-amber-600 text-white'
                                                 : 'bg-red-600 text-white'
                                         }`}>
-                                            {response.status === 'going' ? 'Participe' : 'Ne participe pas'}
+                                            {response.status === 'going' ? 'Participe' : response.status === 'maybe' ? 'Peut-être' : 'Ne participe pas'}
                                         </div>
                                     </div>
                                 ))}

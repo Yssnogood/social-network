@@ -4,7 +4,10 @@ import { useState } from 'react';
 import GroupHeader from '../groupComponent/GroupHeader';
 import MembersList from '../groupComponent/MembersList';
 import { UnifiedTabSystem, TabConfig } from '../universal/UnifiedTabSystem';
-import { Group, Event, GroupMember } from '../../types/group';
+import { Group, Event, GroupMember, User } from '../../types/group';
+import EventParticipantsPanel from './EventParticipantsPanel';
+import EventResponseButtons from './EventResponseButtons';
+import { respondToEvent } from '@/services/group';
 
 interface ShowcasePanelProps {
     type: 'group' | 'event';
@@ -13,6 +16,9 @@ interface ShowcasePanelProps {
     backgroundImage?: string;
     photoGallery?: string[];
     onToggleProportions?: () => void;
+    currentUser?: User | null;
+    currentUserStatus?: 'going' | 'not_going' | 'maybe' | null;
+    onEventResponse?: (eventId: number, status: 'going' | 'not_going' | 'maybe') => Promise<void>;
 }
 
 export default function ShowcasePanel({
@@ -21,15 +27,34 @@ export default function ShowcasePanel({
     members = [],
     backgroundImage,
     photoGallery = [],
-    onToggleProportions
+    onToggleProportions,
+    currentUser,
+    currentUserStatus,
+    onEventResponse
 }: ShowcasePanelProps) {
     const [showFullGallery, setShowFullGallery] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const isEvent = type === 'event';
     const eventData = isEvent ? (data as Event) : null;
+    const isEventPassed = eventData ? new Date(eventData.event_date) < new Date() : false;
+
+    // Handler pour les réponses aux événements
+    const handleEventResponse = async (status: 'going' | 'not_going' | 'maybe') => {
+        if (!eventData || !onEventResponse) return;
+        
+        try {
+            await onEventResponse(eventData.id, status);
+            // Déclencher un refresh des participants
+            setRefreshTrigger(prev => prev + 1);
+        } catch (error) {
+            console.error('Error in event response:', error);
+            throw error; // Laisser EventResponseButtons gérer l'erreur
+        }
+    };
 
     // Types pour les onglets du showcase
-    type ShowcaseTabType = 'info' | 'gallery';
+    type ShowcaseTabType = 'info' | 'participants' | 'gallery';
 
     // Configuration des onglets
     const tabsConfig: TabConfig<ShowcaseTabType>[] = [
@@ -68,12 +93,20 @@ export default function ShowcasePanel({
                         </div>
                     </div>
                     
-                    {/* Membres récents */}
-                    {members.length > 0 && (
+                    {/* Boutons de participation pour les événements */}
+                    {isEvent && eventData && currentUser && (
+                        <EventResponseButtons
+                            eventId={eventData.id}
+                            currentUserStatus={currentUserStatus}
+                            isEventPassed={isEventPassed}
+                            onResponseChange={handleEventResponse}
+                        />
+                    )}
+                    
+                    {/* Membres récents (pour les groupes seulement) */}
+                    {!isEvent && members.length > 0 && (
                         <div className="bg-gray-800 rounded-lg p-4">
-                            <h3 className="font-semibold text-white text-sm mb-3">
-                                {type === 'event' ? 'Participants récents' : 'Membres récents'}
-                            </h3>
+                            <h3 className="font-semibold text-white text-sm mb-3">Membres récents</h3>
                             <MembersList 
                                 members={members.slice(0, 3)} 
                                 maxVisible={3}
@@ -85,6 +118,25 @@ export default function ShowcasePanel({
                 </div>
             )
         },
+        // Onglet participants (visible seulement pour les événements)
+        ...(isEvent && eventData ? [{
+            id: 'participants' as ShowcaseTabType,
+            label: type === 'event' ? 'Participants' : 'Membres',
+            icon: (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+            ),
+            content: (
+                <div className="space-y-4">
+                    <EventParticipantsPanel 
+                        key={`event-participants-${eventData.id}-${refreshTrigger}`} // Use refreshTrigger as a key to force refresh
+                        eventId={eventData.id}
+                        currentUser={currentUser}
+                    />
+                </div>
+            )
+        }] : []),
         {
             id: 'gallery',
             label: 'Galerie',

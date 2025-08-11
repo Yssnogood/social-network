@@ -10,6 +10,7 @@ interface AdaptiveEventsListProps {
   isLoading?: boolean;
   drawerPercentage: number;
   currentUser?: User | null;
+  currentUserStatus?: 'going' | 'not_going' | 'maybe' | null;
   onEventResponse?: (eventId: number, status: string) => Promise<void>;
   onDeleteEvent?: (eventId: number) => Promise<void>;
   onCreateEvent?: (title: string, description: string, eventDate: string) => Promise<void>;
@@ -20,6 +21,7 @@ export default function AdaptiveEventsList({
   isLoading = false,
   drawerPercentage,
   currentUser,
+  currentUserStatus,
   onEventResponse,
   onDeleteEvent,
   onCreateEvent,
@@ -151,6 +153,7 @@ export default function AdaptiveEventsList({
                     event={event}
                     drawerPercentage={drawerPercentage}
                     currentUserId={currentUser?.id}
+                    currentUserStatus={currentUserStatus}
                     onEventResponse={onEventResponse}
                     onDeleteEvent={onDeleteEvent}
                   />
@@ -176,6 +179,7 @@ export default function AdaptiveEventsList({
                     event={event}
                     drawerPercentage={drawerPercentage}
                     currentUserId={currentUser?.id}
+                    currentUserStatus={currentUserStatus}
                     onEventResponse={onEventResponse}
                     onDeleteEvent={onDeleteEvent}
                   />

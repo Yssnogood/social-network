@@ -27,21 +27,29 @@ export default function GroupsPanelWithInvitations() {
     const { pendingReceivedCount } = useInvitations({ autoRefresh: true });
 
     // Infinite scroll pour les groupes
-    const { infiniteScrollRef } = useInfiniteScroll({
+    const loadMoreGroups = async () => {
+        if (allGroups.length === 0 || displayedGroups.length >= allGroups.length) return;
+        
+        setIsLoadingMore(true);
+        const nextItems = allGroups.slice(displayedGroups.length, displayedGroups.length + ITEMS_PER_PAGE);
+        
+        setTimeout(() => {
+            setDisplayedGroups(prev => [...prev, ...nextItems]);
+            setHasMore(displayedGroups.length + nextItems.length < allGroups.length);
+            setIsLoadingMore(false);
+        }, 500);
+    };
+
+    const infiniteScrollRef = useInfiniteScroll(
+        loadMoreGroups,
         hasMore,
-        onLoadMore: async () => {
-            if (allGroups.length === 0 || displayedGroups.length >= allGroups.length) return;
-            
-            setIsLoadingMore(true);
-            const nextItems = allGroups.slice(displayedGroups.length, displayedGroups.length + ITEMS_PER_PAGE);
-            
-            setTimeout(() => {
-                setDisplayedGroups(prev => [...prev, ...nextItems]);
-                setHasMore(displayedGroups.length + nextItems.length < allGroups.length);
-                setIsLoadingMore(false);
-            }, 500);
+        isLoadingMore,
+        {
+            threshold: 0.1,
+            debounceMs: 300,
+            rootMargin: '50px'
         }
-    });
+    );
 
     // Charger les groupes
     useEffect(() => {

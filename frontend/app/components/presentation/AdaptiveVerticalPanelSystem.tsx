@@ -45,6 +45,9 @@ interface AdaptiveVerticalPanelSystemProps {
     onDeleteEvent?: (eventId: number) => Promise<void>;
     onCreateEvent?: (title: string, description: string, eventDate: string) => Promise<void>;
     
+    // État de l'utilisateur pour les événements
+    currentUserStatus?: 'going' | 'not_going' | 'maybe' | null;
+    
     // Callbacks optionnels
     onConfigChange?: (config: any) => void;
 }
@@ -85,6 +88,7 @@ export default function AdaptiveVerticalPanelSystem({
     onEventResponse,
     onDeleteEvent,
     onCreateEvent,
+    currentUserStatus,
     onConfigChange
 }: AdaptiveVerticalPanelSystemProps) {
     
@@ -169,6 +173,8 @@ export default function AdaptiveVerticalPanelSystem({
                     onInviteGroups={onInviteGroups}
                     backgroundImage={backgroundImage}
                     photoGallery={photoGallery}
+                    currentUserStatus={currentUserStatus}
+                    onEventResponse={onEventResponse}
                 />
                 
                 {/* Overlay d'adaptation avec animation fade-in si nécessaire */}
@@ -208,6 +214,7 @@ export default function AdaptiveVerticalPanelSystem({
                     showCommentsForPost={showCommentsForPost}
                     newCommentByPost={newCommentByPost}
                     loadingComments={loadingComments}
+                    currentUserStatus={currentUserStatus}
                     onCreatePost={onCreatePost}
                     onToggleComments={onToggleComments}
                     onCommentChange={onCommentChange}

@@ -212,6 +212,7 @@ type Event struct {
 type EventResponse struct {
 	EventID   int64     `json:"event_id"`
 	UserID    int64     `json:"user_id"`
+	Username  string    `json:"username"`
 	Status    string    `json:"status"`
 	CreatedAt time.Time `json:"created_at"`
 }

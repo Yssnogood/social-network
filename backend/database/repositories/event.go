@@ -55,6 +55,39 @@ func (r *EventRepository) SetEventResponse(eventID, userID int64, status string)
 	return err
 }
 
+// Get all responses for a specific event
+func (r *EventRepository) GetEventResponses(eventID int64) ([]models.EventResponse, error) {
+	rows, err := r.db.Query(`
+		SELECT er.event_id, er.user_id, er.status, er.created_at, u.username
+		FROM event_responses er
+		JOIN users u ON er.user_id = u.id
+		WHERE er.event_id = ?
+		ORDER BY er.created_at ASC
+	`, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var responses []models.EventResponse
+	for rows.Next() {
+		var response models.EventResponse
+		err := rows.Scan(
+			&response.EventID,
+			&response.UserID,
+			&response.Status,
+			&response.CreatedAt,
+			&response.Username,
+		)
+		if err != nil {
+			return nil, err
+		}
+		responses = append(responses, response)
+	}
+
+	return responses, nil
+}
+
 func (r *EventRepository) GetEventsByGroupID(groupID int64) ([]*models.Event, error) {
 	rows, err := r.db.Query(`
 		SELECT id, group_id, creator_id, title, description, event_date, location, image_path, created_at, updated_at

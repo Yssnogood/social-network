@@ -46,7 +46,16 @@ type createEventRequest struct {
 type setEventResponseRequest struct {
 	EventID int64  `json:"event_id"`
 	UserID  int64  `json:"user_id"`
-	Status  string `json:"status"` // "going" or "not_going"
+	Status  string `json:"status"` // "going", "not_going", or "maybe"
+}
+
+// Response DTOs
+type EventResponseWithUserinfo struct {
+	EventID   int64  `json:"event_id"`
+	UserID    int64  `json:"user_id"`
+	Username  string `json:"username"`
+	Status    string `json:"status"`
+	CreatedAt string `json:"created_at"`
 }
 
 // Handlers
@@ -99,7 +108,7 @@ func (h *EventHandler) SetEventResponse(w http.ResponseWriter, r *http.Request) 
 	var payload struct {
 		Status string `json:"status"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil || (payload.Status != "going" && payload.Status != "not_going") {
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil || (payload.Status != "going" && payload.Status != "not_going" && payload.Status != "maybe") {
 		http.Error(w, "Invalid status", http.StatusBadRequest)
 		return
 	}
@@ -111,6 +120,31 @@ func (h *EventHandler) SetEventResponse(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// GetEventResponses returns all responses for a specific event
+func (h *EventHandler) GetEventResponses(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	eventIDStr, ok := vars["eventID"]
+	if !ok {
+		http.Error(w, "Missing event ID in path", http.StatusBadRequest)
+		return
+	}
+
+	eventID, err := strconv.ParseInt(eventIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid event ID", http.StatusBadRequest)
+		return
+	}
+
+	responses, err := h.EventRepository.GetEventResponses(eventID)
+	if err != nil {
+		http.Error(w, "Failed to retrieve event responses: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(responses)
 }
 
 func (h *EventHandler) GetEventsByGroupID(w http.ResponseWriter, r *http.Request) {

@@ -9,6 +9,7 @@ interface AdaptiveEventCardProps {
   event: Event;
   drawerPercentage: number;
   currentUserId?: number;
+  currentUserStatus?: 'going' | 'not_going' | 'maybe' | null;
   onEventResponse?: (eventId: number, status: string) => Promise<void>;
   onDeleteEvent?: (eventId: number) => Promise<void>;
 }
@@ -17,6 +18,7 @@ export default function AdaptiveEventCard({
   event,
   drawerPercentage,
   currentUserId,
+  currentUserStatus,
   onEventResponse,
   onDeleteEvent,
 }: AdaptiveEventCardProps) {
@@ -128,13 +130,27 @@ export default function AdaptiveEventCard({
             <h3 className="vignette-title text-emerald-400 font-semibold truncate">
               {event.title}
             </h3>
-            <time 
-              className="text-xs opacity-70 flex items-center gap-1"
-              dateTime={event.event_date}
-            >
-              <span>📅</span>
-              <span>{formatEventDate(event.event_date)}</span>
-            </time>
+            <div className="flex items-center justify-between">
+              <time 
+                className="text-xs opacity-70 flex items-center gap-1"
+                dateTime={event.event_date}
+              >
+                <span>📅</span>
+                <span>{formatEventDate(event.event_date)}</span>
+              </time>
+              {/* Indicateur de statut utilisateur */}
+              {currentUserStatus && !isPastEvent && adaptiveConfig.state !== 'compact' && (
+                <span className={`text-xs px-1 py-0.5 rounded flex items-center gap-1 ${
+                  currentUserStatus === 'going' ? 'bg-green-600/20 text-green-400' :
+                  currentUserStatus === 'maybe' ? 'bg-amber-600/20 text-amber-400' :
+                  'bg-red-600/20 text-red-400'
+                }`}>
+                  {currentUserStatus === 'going' ? '✅ Participe' :
+                   currentUserStatus === 'maybe' ? '❓ Peut-être' :
+                   '❌ Ne participe pas'}
+                </span>
+              )}
+            </div>
           </header>
         </div>
 
@@ -144,29 +160,41 @@ export default function AdaptiveEventCard({
             <>
               <button
                 onClick={() => handleEventResponse('going')}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded flex items-center justify-center h-6 text-xs leading-none flex-shrink-0"
+                className={`font-medium rounded flex items-center justify-center h-6 text-xs leading-none flex-shrink-0 transition-colors ${
+                  currentUserStatus === 'going' 
+                    ? 'bg-emerald-700 text-white ring-2 ring-emerald-300' 
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                }`}
                 disabled={isLoading}
-                title="Participer à cet événement"
+                title={currentUserStatus === 'going' ? 'Vous participez déjà' : 'Participer à cet événement'}
               >
                 {adaptiveConfig.state === 'compact' ? '✓' : 'Participe'}
               </button>
               
               <button
-                onClick={() => handleEventResponse('not_going')}
-                className="bg-red-600 hover:bg-red-700 text-white font-medium rounded flex items-center justify-center h-6 text-xs leading-none flex-shrink-0"
+                onClick={() => handleEventResponse('maybe')}
+                className={`font-medium rounded flex items-center justify-center h-6 text-xs leading-none flex-shrink-0 transition-colors ${
+                  currentUserStatus === 'maybe' 
+                    ? 'bg-amber-700 text-white ring-2 ring-amber-300' 
+                    : 'bg-amber-600 hover:bg-amber-700 text-white'
+                }`}
                 disabled={isLoading}
-                title="Ne pas participer à cet événement"
+                title={currentUserStatus === 'maybe' ? 'Votre réponse actuelle' : 'Peut-être participer à cet événement'}
               >
-                {adaptiveConfig.state === 'compact' ? '✗' : 'Non'}
+                {adaptiveConfig.state === 'compact' ? '?' : 'Peut-être'}
               </button>
 
               <button
-                onClick={() => handleEventResponse('maybe')}
-                className="bg-amber-600 hover:bg-amber-700 text-white font-medium rounded flex items-center justify-center h-6 text-xs leading-none flex-shrink-0"
+                onClick={() => handleEventResponse('not_going')}
+                className={`font-medium rounded flex items-center justify-center h-6 text-xs leading-none flex-shrink-0 transition-colors ${
+                  currentUserStatus === 'not_going' 
+                    ? 'bg-red-700 text-white ring-2 ring-red-300' 
+                    : 'bg-red-600 hover:bg-red-700 text-white'
+                }`}
                 disabled={isLoading}
-                title="Peut-être participer à cet événement"
+                title={currentUserStatus === 'not_going' ? 'Vous ne participez pas' : 'Ne pas participer à cet événement'}
               >
-                {adaptiveConfig.state === 'compact' ? '?' : 'Peut-être'}
+                {adaptiveConfig.state === 'compact' ? '✗' : 'Non'}
               </button>
             </>
           )}

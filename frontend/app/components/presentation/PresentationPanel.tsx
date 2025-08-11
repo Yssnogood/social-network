@@ -20,7 +20,8 @@ import {
     createGroupPostComment,
     inviteUsersToGroup,
     inviteGroupsToGroup,
-    createEvent
+    createEvent,
+    getEventResponses
 } from '@/services/group';
 
 interface PresentationPanelProps {
@@ -51,6 +52,9 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
     
     // Error states
     const [error, setError] = useState<string | null>(null);
+    
+    // Event response state for the current user
+    const [currentUserStatus, setCurrentUserStatus] = useState<'going' | 'not_going' | 'maybe' | null>(null);
 
     // 🎯 NOUVELLE LOGIQUE CONTEXTUELLE - distingue groupe vs événement
     const discussionContext: DiscussionContext = ContextualMessageService.getDiscussionContext(type, selectedItem);
@@ -78,7 +82,7 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
         try {
             setError(null);
             
-            // Load current user data
+            // Load current user data first
             const userData = await getCurrentUserClient();
             // Map UserProfile to simpler User type expected by components
             const user: User = {
@@ -87,13 +91,17 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
             };
             setCurrentUser(user);
             
-            // Load all data in parallel
+            // Load all other data in parallel
             await Promise.all([
                 loadPosts(),
                 loadMessages(),
                 loadEvents(),
                 loadMembers()
             ]);
+            
+            // Load current user's event status (depends on currentUser, so call after setCurrentUser)
+            // We need to call this after setCurrentUser, but since useState is async, we pass the user directly
+            await loadCurrentUserEventStatusWithUser(user);
             
         } catch (error) {
             console.error('Error initializing presentation data:', error);
@@ -158,6 +166,36 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
         } catch (error) {
             console.error('Error loading members:', error);
         }
+    };
+
+    const loadCurrentUserEventStatusWithUser = async (user: User | null = currentUser) => {
+        // Only load status if we're dealing with an event and have a current user
+        if (type !== 'event' || !user) {
+            setCurrentUserStatus(null);
+            return;
+        }
+        
+        try {
+            const eventId = (selectedItem as Event).id;
+            const responses = await getEventResponses(eventId);
+            
+            // Find current user's response
+            const userResponse = responses.find(r => r.user_id === user.id);
+            setCurrentUserStatus(userResponse?.status || null);
+            
+            console.log('🎯 Current user event status loaded:', {
+                eventId,
+                userId: user.id,
+                status: userResponse?.status || 'no response'
+            });
+        } catch (error) {
+            console.error('Error loading current user event status:', error);
+            setCurrentUserStatus(null);
+        }
+    };
+
+    const loadCurrentUserEventStatus = async () => {
+        await loadCurrentUserEventStatusWithUser();
     };
 
     // Real API handlers connected to services
@@ -282,15 +320,33 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
     const handleEventResponse = async (eventId: number, status: string) => {
         try {
             // Ensure status is valid for API
-            if (status !== 'going' && status !== 'not_going') {
+            if (status !== 'going' && status !== 'not_going' && status !== 'maybe') {
                 console.warn('Invalid status, defaulting to not_going:', status);
                 status = 'not_going';
             }
-            await respondToEvent(eventId, status as 'going' | 'not_going');
-            await loadEvents(); // Refresh events after response
+            
+            const validStatus = status as 'going' | 'not_going' | 'maybe';
+            await respondToEvent(eventId, validStatus);
+            
+            // Update current user's status immediately (optimistic update)
+            setCurrentUserStatus(validStatus);
+            
+            // Refresh data after response
+            await Promise.all([
+                loadEvents(), // Refresh events after response
+                loadCurrentUserEventStatus() // Refresh user's status to ensure consistency
+            ]);
+            
+            console.log('🎯 Event response updated:', {
+                eventId,
+                status: validStatus,
+                userId: currentUser?.id
+            });
         } catch (error) {
             console.error('Error responding to event:', error);
             setError('Erreur lors de la réponse à l\'événement');
+            // Reload status to revert optimistic update on error
+            await loadCurrentUserEventStatus();
         }
     };
 
@@ -406,6 +462,9 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
                 onEventResponse={handleEventResponse}
                 onDeleteEvent={handleDeleteEvent}
                 onCreateEvent={handleCreateEvent}
+                
+                // Current user event status
+                currentUserStatus={currentUserStatus}
                 
                 // Callback de changement de configuration
                 onConfigChange={(config) => {

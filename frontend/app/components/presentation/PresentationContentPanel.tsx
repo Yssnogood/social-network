@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import ShowcasePanel from './ShowcasePanel';
 import MembersPanel from './MembersPanel';
+import EventMembersPanel from './EventMembersPanel';
 import InvitationsPanel from './InvitationsPanel';
 import { Group, Event, GroupMember, User } from '../../types/group';
 import { usePresentationDrawers } from '../../hooks/useUnifiedDrawerProportions';
@@ -21,6 +22,8 @@ interface PresentationContentPanelProps {
     onInviteGroups?: (groupIds: number[]) => Promise<void>;
     backgroundImage?: string;
     photoGallery?: string[];
+    currentUserStatus?: 'going' | 'not_going' | 'maybe' | null;
+    onEventResponse?: (eventId: number, status: 'going' | 'not_going' | 'maybe') => Promise<void>;
 }
 
 export default function PresentationContentPanel({
@@ -33,7 +36,9 @@ export default function PresentationContentPanel({
     onInviteUsers,
     onInviteGroups,
     backgroundImage,
-    photoGallery = []
+    photoGallery = [],
+    currentUserStatus,
+    onEventResponse
 }: PresentationContentPanelProps) {
     const {
         drawerConfig,
@@ -214,6 +219,9 @@ export default function PresentationContentPanel({
                                     members={members}
                                     backgroundImage={backgroundImage}
                                     photoGallery={photoGallery}
+                                    currentUser={currentUser}
+                                    currentUserStatus={currentUserStatus}
+                                    onEventResponse={onEventResponse}
                                 />
                             </div>
                         </>
@@ -241,13 +249,22 @@ export default function PresentationContentPanel({
                             
                             {/* Contenu scrollable */}
                             <div className="flex-1 unified-drawer-scroll">
-                                <MembersPanel
-                                    members={members}
-                                    memberGroups={memberGroups}
-                                    currentUserId={currentUser?.id}
-                                    groupCreatorId={groupCreatorId}
-                                    type={type}
-                                />
+                                {type === 'event' ? (
+                                    <EventMembersPanel
+                                        eventId={selectedItem.id}
+                                        currentUser={currentUser}
+                                        currentUserStatus={currentUserStatus}
+                                        onEventResponse={onEventResponse}
+                                    />
+                                ) : (
+                                    <MembersPanel
+                                        members={members}
+                                        memberGroups={memberGroups}
+                                        currentUserId={currentUser?.id}
+                                        groupCreatorId={groupCreatorId}
+                                        type={type}
+                                    />
+                                )}
                             </div>
                         </>
                     )}
