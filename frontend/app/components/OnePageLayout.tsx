@@ -10,6 +10,7 @@ import EventsPanel from './EventsPanel';
 import UniversalPostsList from './universal/UniversalPostsList';
 import GroupView from './GroupView';
 import EventView from './EventView';
+import ProfileView from './ProfileView';
 import EditorPanel from './editor/EditorPanel';
 import PresentationPanel from './presentation/PresentationPanel';
 import SlideDrawer from './SlideDrawer';
@@ -43,6 +44,7 @@ export default function OnePageLayout({
     centralView, 
     selectedGroup, 
     selectedEvent,
+    selectedProfile,
     navigateToFeed,
     // SlideDrawer
     isSlideDrawerOpen,
@@ -134,6 +136,18 @@ export default function OnePageLayout({
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">
             Événement non trouvé
+          </div>
+        );
+      
+      case 'profile':
+        return selectedProfile ? (
+          <ProfileView 
+            username={selectedProfile.username}
+            userId={selectedProfile.userId}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            Profil non trouvé
           </div>
         );
       

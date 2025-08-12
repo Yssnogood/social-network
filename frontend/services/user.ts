@@ -191,3 +191,35 @@ export async function getCurrentUserClient(): Promise<UserProfile> {
         throw error;
     }
 }
+
+// Client-side version of getUserProfile
+export async function getUserProfileClient(userName: string): Promise<UserProfile> {
+    try {
+        const url = `http://localhost:8090/api/users/${userName}`;
+        
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include" // This will send cookies automatically
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch user profile: ${response.status} ${response.statusText}`);
+        }
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            console.error('Expected JSON response but got:', contentType);
+            const text = await response.text();
+            console.error('Response text:', text);
+            throw new Error('Invalid response format');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching user profile (client):', error);
+        throw error;
+    }
+}

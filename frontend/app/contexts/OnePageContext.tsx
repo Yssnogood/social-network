@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Group, Event } from '../types/group';
 import { createOrGetPrivateConversation } from '../../services/message';
 
-export type CentralViewType = 'feed' | 'group' | 'event' | 'chat' | 'group-editor' | 'event-editor' | 'group-presentation' | 'event-presentation';
+export type CentralViewType = 'feed' | 'group' | 'event' | 'chat' | 'group-editor' | 'event-editor' | 'group-presentation' | 'event-presentation' | 'profile';
 
 export interface SelectedGroup extends Group {
   // Ajout de propriétés spécifiques si nécessaire
@@ -12,6 +12,11 @@ export interface SelectedGroup extends Group {
 
 export interface SelectedEvent extends Event {
   // Ajout de propriétés spécifiques si nécessaire
+}
+
+export interface SelectedProfile {
+  username: string;
+  userId: number;
 }
 
 export interface ChatContact {
@@ -35,6 +40,10 @@ interface OnePageContextType {
   selectedEvent: SelectedEvent | null;
   setSelectedEvent: (event: SelectedEvent | null) => void;
   
+  // Profil sélectionné
+  selectedProfile: SelectedProfile | null;
+  setSelectedProfile: (profile: SelectedProfile | null) => void;
+  
   // Chat dans panneau central
   selectedChatContact: ChatContact | null;
   setSelectedChatContact: (contact: ChatContact | null) => void;
@@ -57,6 +66,7 @@ interface OnePageContextType {
   navigateToEvent: (event: SelectedEvent) => void;
   navigateToFeed: () => void;
   navigateToChat: (contact: ChatContact) => void;
+  navigateToProfile: (profile: SelectedProfile) => void;
   
   // Navigation vers les éditeurs et présentations
   navigateToGroupEditor: () => void;
@@ -75,6 +85,7 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
   const [centralView, setCentralView] = useState<CentralViewType>('feed');
   const [selectedGroup, setSelectedGroup] = useState<SelectedGroup | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<SelectedEvent | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<SelectedProfile | null>(null);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
   const [selectedChatContact, setSelectedChatContact] = useState<ChatContact | null>(null);
   const [onConversationCreated, setOnConversationCreated] = useState<((contact: ChatContact) => void) | null>(null);
@@ -159,6 +170,14 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
     }
   }, [openSlideDrawer, onConversationCreated]);
 
+  const navigateToProfile = useCallback((profile: SelectedProfile) => {
+    setSelectedProfile(profile);
+    setSelectedGroup(null);
+    setSelectedEvent(null);
+    setSelectedChatContact(null);
+    setCentralView('profile');
+  }, []);
+
   const navigateToGroupEditor = useCallback(() => {
     setSelectedGroup(null);
     setSelectedEvent(null);
@@ -194,6 +213,8 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
     setSelectedGroup,
     selectedEvent,
     setSelectedEvent,
+    selectedProfile,
+    setSelectedProfile,
     selectedChatContact,
     setSelectedChatContact,
     isChatDrawerOpen,
@@ -211,6 +232,7 @@ export function OnePageProvider({ children }: { children: React.ReactNode }) {
     navigateToEvent,
     navigateToFeed,
     navigateToChat,
+    navigateToProfile,
     navigateToGroupEditor,
     navigateToEventEditor,
     navigateToGroupPresentation,

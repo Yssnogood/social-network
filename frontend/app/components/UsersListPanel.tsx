@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useOnePage } from '../contexts/OnePageContext';
 import { fetchFriends, fetchFollowing, fetchAllUsersWithStatus, fetchOnlineUsers } from '../../services/contact';
 import { followUser, unfollowUser } from '../../services/follow';
@@ -26,8 +25,7 @@ interface UserWithStatus extends BaseUser {
 }
 
 export default function UsersListPanel() {
-    const { navigateToChat } = useOnePage();
-    const router = useRouter();
+    const { navigateToChat, navigateToProfile } = useOnePage();
     
     // State pour les onglets
     const [activeTab, setActiveTab] = useState<TabType>('contacts');
@@ -212,7 +210,10 @@ export default function UsersListPanel() {
     // Actions
     const handleUserClick = (user: BaseUser | UserWithStatus) => {
         // Navigation vers le profil
-        router.push(`/profile/${user.username}`);
+        navigateToProfile({
+            username: user.username,
+            userId: user.id
+        });
     };
 
     const handleMessageClick = (user: BaseUser | UserWithStatus, e: React.MouseEvent) => {
