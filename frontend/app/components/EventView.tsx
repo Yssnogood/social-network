@@ -6,6 +6,7 @@ import { Event, EventMessage } from '../types/group';
 import { useEventWebSocket } from '../hooks/useEventWebSocket';
 import UnifiedMessagePanel, { type UnifiedMessage } from './unified/UnifiedMessagePanel';
 import UnifiedInvitationSystem from './unified/UnifiedInvitationSystem';
+import ParticipantsTabs from './ParticipantsTabs';
 import { useToast } from '../hooks/useToast';
 import { createNotification } from '../../services/notifications';
 
@@ -17,7 +18,15 @@ interface EventResponse {
     id: number;
     user_id: number;
     username: string;
-    status: 'going' | 'not_going' | 'maybe';
+    status: 'going' | 'not_going' | 'maybe' | 'invited';
+}
+
+interface GroupMemberRaw {
+    user_id: number;
+    username: string;
+    first_name?: string;
+    last_name?: string;
+    accepted: boolean;
 }
 
 export default function EventView({ event }: EventViewProps) {
@@ -74,8 +83,8 @@ export default function EventView({ event }: EventViewProps) {
                     if (membersRes.status === 'fulfilled' && membersRes.value.ok) {
                         const membersData = await membersRes.value.json();
                         // Convertir les membres en format utilisateur pour l'invitation
-                        const formattedMembers = membersData.filter((member: any) => member.accepted && member.user_id !== currentUser?.id)
-                            .map((member: any) => ({
+                        const formattedMembers = membersData.filter((member: GroupMemberRaw) => member.accepted && member.user_id !== currentUser?.id)
+                            .map((member: GroupMemberRaw) => ({
                                 id: member.user_id,
                                 username: member.username,
                                 first_name: member.first_name,
@@ -97,7 +106,7 @@ export default function EventView({ event }: EventViewProps) {
                     
                     // Trouver la réponse de l'utilisateur actuel
                     if (currentUser) {
-                        const currentUserResponse = responsesData.find((r: any) => r.user_id === currentUser.id);
+                        const currentUserResponse = responsesData.find((r: EventResponse) => r.user_id === currentUser.id);
                         setUserResponse(currentUserResponse?.status || null);
                     }
                 }
@@ -435,43 +444,13 @@ export default function EventView({ event }: EventViewProps) {
                         </div>
                     )}
 
-                    {/* Liste des réponses */}
-                    {responses.length > 0 && (
-                        <div>
-                            <h3 className="text-lg font-semibold text-white mb-3">Réponses des membres</h3>
-                            <div className="space-y-2">
-                                {responses.map((response) => (
-                                    <div key={`${response.user_id}-${response.status}`} className="flex items-center justify-between bg-gray-700 rounded-lg p-3">
-                                        <div className="flex items-center">
-                                            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-semibold mr-3">
-                                                {response.username.charAt(0).toUpperCase()}
-                                            </div>
-                                            <span className="text-white font-medium">{response.username}</span>
-                                        </div>
-                                        <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                            response.status === 'going'
-                                                ? 'bg-green-600 text-white'
-                                                : response.status === 'maybe'
-                                                ? 'bg-amber-600 text-white'
-                                                : 'bg-red-600 text-white'
-                                        }`}>
-                                            {response.status === 'going' ? 'Participe' : response.status === 'maybe' ? 'Peut-être' : 'Ne participe pas'}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {responses.length === 0 && (
-                        <div className="text-center py-8 text-gray-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-3 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                            <p>Aucune réponse pour le moment</p>
-                            <p className="text-sm mt-1">Soyez le premier à répondre !</p>
-                        </div>
-                    )}
+                    {/* ✅ NOUVEAU: Système d'onglets pour participants avec "Invités en attente" */}
+                    <div className="mb-6">
+                        <ParticipantsTabs 
+                            mode="event"
+                            responses={responses}
+                        />
+                    </div>
 
                     {/* Section des messages */}
                     <div className="mt-8">

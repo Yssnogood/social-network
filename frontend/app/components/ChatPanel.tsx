@@ -2,14 +2,12 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { useCookies } from "next-client-cookies";
 import { fetchUserConversation } from '../../services/contact';
-import { fetchUserConversations, ConversationResponse } from '../../services/message';
+import { ConversationResponse } from '../../services/message';
 import { useOnePage, ChatContact } from '../contexts/OnePageContext';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
 export default function ChatPanel() {
-    const cookies = useCookies();
     const { navigateToChat, setOnConversationCreated } = useOnePage();
     
     const [allConversations, setAllConversations] = useState<ConversationResponse[]>([]);

@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useCookies } from "next-client-cookies";
+import { useState, useEffect } from 'react';
 import { useOnePage } from '../contexts/OnePageContext';
 import { Event } from '../types/group';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { useToast } from '../hooks/useToast';
 
 export default function EventsPanel() {
-    const cookies = useCookies();
     const { navigateToEvent, navigateToEventEditor } = useOnePage();
     const { success, error } = useToast();
     
@@ -114,7 +112,7 @@ export default function EventsPanel() {
         };
 
         fetchAllEvents();
-    }, [cookies]);
+    }, []);
     
     // Fonction pour charger plus d'événements
     const loadMoreEvents = () => {

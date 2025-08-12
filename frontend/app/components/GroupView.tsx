@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useCookies } from "next-client-cookies";
 import { useOnePage } from '../contexts/OnePageContext';
-import { Group, GroupMember, GroupMessage, GroupPost, Event } from '../types/group';
+import { Group, GroupMember, GroupMessage, GroupPost, Event, User } from '../types/group';
 import { useGroupWebSocket } from '../hooks/useGroupWebSocket';
 
 // Réutilisation des composants existants
@@ -12,14 +11,12 @@ import MembersList from './groupComponent/MembersList';
 import MessagesList from './groupComponent/MessagesList';
 import UniversalPostsList from './universal/UniversalPostsList';
 import EventsList from './groupComponent/EventsList';
-import TabNavigation from './groupComponent/TabNavigation';
 
 interface GroupViewProps {
     groupId: number;
 }
 
 export default function GroupView({ groupId }: GroupViewProps) {
-    const cookies = useCookies();
     const { navigateToFeed } = useOnePage();
     
     const [group, setGroup] = useState<Group | null>(null);
@@ -30,7 +27,7 @@ export default function GroupView({ groupId }: GroupViewProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'messages' | 'posts'>('messages');
-    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
 
     // WebSocket pour les messages en temps réel
     useGroupWebSocket(groupId.toString(), setMessages);

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import GroupHeader from "../../components/groupComponent/GroupHeader";
 import MembersList from "../../components/groupComponent/MembersList";
+import ParticipantsTabs from "../../components/ParticipantsTabs";
 import UnifiedInvitationSystem from "../../components/unified/UnifiedInvitationSystem";
 import MessagesList from "../../components/groupComponent/MessagesList";
 import EventCreationModal from "../../components/creation/modals/EventCreationModal";
@@ -318,7 +319,14 @@ export default function GroupPage() {
 	return (
 		<div className="max-w-xl mx-auto mt-8 p-4 border rounded-xl shadow bg-white">
 			<GroupHeader group={group} />
-			<MembersList members={members} />
+			
+			{/* ✅ NOUVEAU: Système d'onglets pour membres avec "Invités en attente" */}
+			<div className="mb-6">
+				<ParticipantsTabs 
+					mode="group"
+					members={members}
+				/>
+			</div>
 			
 			{/* Système d'invitation unifié avec checkboxes persistantes */}
 			<div className="mt-6">

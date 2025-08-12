@@ -420,7 +420,7 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
     // Déterminer les permissions d'invitation
     const canInvite = currentUser && (
         type === 'group' 
-            ? (selectedItem as Group).creator_id === currentUser.id
+            ? (selectedItem as Group).creatorId === currentUser.id
             : (selectedItem as Event).creator_id === currentUser.id
     );
 

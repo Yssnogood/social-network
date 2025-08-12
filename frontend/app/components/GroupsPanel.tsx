@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useCookies } from "next-client-cookies";
 import { useOnePage } from '../contexts/OnePageContext';
 import { Group } from '../types/group';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
 export default function GroupsPanel() {
-    const cookies = useCookies();
     const { navigateToGroup, navigateToGroupEditor } = useOnePage();
     
     const [allGroups, setAllGroups] = useState<Group[]>([]);
@@ -53,7 +51,7 @@ export default function GroupsPanel() {
         };
 
         fetchGroups();
-    }, [cookies]);
+    }, []);
     
     // Fonction pour charger plus de groupes
     const loadMoreGroups = () => {
