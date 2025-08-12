@@ -13,6 +13,7 @@ import (
 	"social-network/backend/database/models"
 	repository "social-network/backend/database/repositories"
 	"social-network/backend/server/middlewares"
+	"github.com/gorilla/mux"
 )
 
 // UserHandler is a handler for managing users.
@@ -431,6 +432,33 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "User updated successfully",
 	})
+}
+
+// GetUserByUsername retrieves a user by username using JWT middleware for authentication
+func (h *UserHandler) GetUserByUsername(w http.ResponseWriter, r *http.Request) {
+	_, ok := middlewares.GetUserID(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Get username from URL path
+	vars := mux.Vars(r)
+	username := vars["username"]
+	
+	if username == "" {
+		http.Error(w, "Username is required", http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.UserRepository.GetByUserName(username)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
 }
 
 // DeleteUser deletes a user by ID from JSON body.

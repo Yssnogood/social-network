@@ -105,7 +105,7 @@ export default function Home(): JSX.Element {
         >
             <OnePageProvider>
                 <OnePageLayout
-                    username={cookies.get("user")}
+                    username={currentUser?.username}
                     notifications={notifications}
                     showNotifications={showNotifications}
                     onToggleNotifications={handleToggleNotifications}

@@ -27,4 +27,6 @@ func UserRoutes(r *mux.Router, userHandler *handlers.UserHandler) {
 	r.Handle("/api/users/all-with-status", middlewares.JWTMiddleware(http.HandlerFunc(userHandler.GetAllUsersWithStatus))).Methods("GET", "OPTIONS")
 	// get user by JWT
 	r.Handle("/api/users/me", middlewares.JWTMiddleware(http.HandlerFunc(userHandler.GetCurrentUser))).Methods("GET")
+	// get user profile by username with JWT
+	r.Handle("/api/users/{username}", middlewares.JWTMiddleware(http.HandlerFunc(userHandler.GetUserByUsername))).Methods("GET")
 }

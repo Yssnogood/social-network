@@ -22,7 +22,6 @@ export interface UserProfile {
 }
 
 export async function getUserProfile(userName?: string, useMockData: boolean = false): Promise<UserProfile> {
-    const cookies = await getCookies()
     // If useMockData is true, return mock data
     if (useMockData) {
         return {
@@ -60,16 +59,31 @@ export async function getUserProfile(userName?: string, useMockData: boolean = f
         };
     }
 
-    // Will be changed for the real API endpoint
     try {
-        const response = await fetch(`http://localhost:8090/api/user/${userName || 'current'}`,{
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                jwt: cookies.get("jwt")
-            })
+        const cookies = await getCookies();
+        const url = userName ? 
+            `http://localhost:8090/api/users/${userName}` : 
+            'http://localhost:8090/api/users/me';
+        
+        // Prepare headers - for Server Components, we need to pass cookies explicitly
+        const headers: Record<string, string> = {
+            "Content-Type": "application/json"
+        };
+        
+        const jwt = cookies.get("jwt");
+        console.log('Debug - JWT found:', jwt ? 'YES' : 'NO');
+        if (jwt) {
+            // Pass JWT as cookie header for server-side requests
+            headers["Cookie"] = `jwt=${jwt}`;
+            console.log('Debug - Cookie header set');
+        } else {
+            console.log('Debug - No JWT cookie found, user not authenticated');
+        }
+            
+        const response = await fetch(url, {
+            method: "GET",
+            headers,
+            credentials: "include" // This will send cookies automatically for client-side
         });
         
         if (!response.ok) {
@@ -88,22 +102,33 @@ export async function getUserProfile(userName?: string, useMockData: boolean = f
         return await response.json();
     } catch (error) {
         console.error('Error fetching user profile:', error);
-        // Fallback to mock data if the API call fails
         notFound()
     }
 }
 
 export async function getCurrentUser(): Promise<UserProfile> {
-    const cookies = await getCookies();
     try {
-        const response = await fetch("http://localhost:8090/api/user", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                jwt: cookies.get("jwt")
-            })
+        const cookies = await getCookies();
+        
+        // Prepare headers - for Server Components, we need to pass cookies explicitly
+        const headers: Record<string, string> = {
+            "Content-Type": "application/json"
+        };
+        
+        const jwt = cookies.get("jwt");
+        console.log('Debug - JWT found:', jwt ? 'YES' : 'NO');
+        if (jwt) {
+            // Pass JWT as cookie header for server-side requests
+            headers["Cookie"] = `jwt=${jwt}`;
+            console.log('Debug - Cookie header set');
+        } else {
+            console.log('Debug - No JWT cookie found, user not authenticated');
+        }
+        
+        const response = await fetch("http://localhost:8090/api/users/me", {
+            method: "GET",
+            headers,
+            credentials: "include" // This will send cookies automatically for client-side
         });
         
         if (!response.ok) {
