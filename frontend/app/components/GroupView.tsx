@@ -9,7 +9,6 @@ import { useGroupWebSocket } from '../hooks/useGroupWebSocket';
 // Réutilisation des composants existants
 import GroupHeader from './groupComponent/GroupHeader';
 import MembersList from './groupComponent/MembersList';
-import MessageInput from './groupComponent/MessageInput';
 import MessagesList from './groupComponent/MessagesList';
 import UniversalPostsList from './universal/UniversalPostsList';
 import EventsList from './groupComponent/EventsList';
@@ -32,7 +31,6 @@ export default function GroupView({ groupId }: GroupViewProps) {
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'messages' | 'posts'>('messages');
     const [currentUser, setCurrentUser] = useState<any>(null);
-    const [newMessage, setNewMessage] = useState('');
 
     // WebSocket pour les messages en temps réel
     useGroupWebSocket(groupId.toString(), setMessages);
@@ -122,25 +120,23 @@ export default function GroupView({ groupId }: GroupViewProps) {
     };
 
     // Actions
-    const sendMessage = async () => {
-        if (!newMessage.trim()) return;
+    const handleSendMessage = async (content: string) => {
+        if (!content.trim()) return;
         
         try {
             const res = await fetch(`http://localhost:8090/api/groups/${groupId}/messages`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ content: newMessage }),
+                body: JSON.stringify({ content }),
             });
             
             if (!res.ok) throw new Error(await res.text());
             
-            // Vider l'input après envoi réussi
-            setNewMessage('');
-            
             // Le message sera ajouté via WebSocket
         } catch (err: any) {
             console.error("Error sending message:", err.message);
+            throw err; // Re-throw pour que le composant unifié gère l'état d'erreur
         }
     };
 
@@ -309,14 +305,11 @@ export default function GroupView({ groupId }: GroupViewProps) {
                     {/* Contenu selon l'onglet */}
                     {activeTab === 'messages' && (
                         <>
-                            <div className="mb-4">
-                                <MessageInput
-                                    value={newMessage}
-                                    onChange={setNewMessage}
-                                    onSend={sendMessage}
-                                />
-                            </div>
-                            <MessagesList messages={messages} />
+                            <MessagesList 
+                                messages={messages} 
+                                onSendMessage={handleSendMessage}
+                                isLoading={isLoading}
+                            />
                         </>
                     )}
 

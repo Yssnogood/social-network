@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import GroupHeader from "../../components/groupComponent/GroupHeader";
 import MembersList from "../../components/groupComponent/MembersList";
-import UserInvitation from "../../components/groupComponent/UserInvitation";
-import MessageInput from "../../components/groupComponent/MessageInput";
+import UnifiedInvitationSystem from "../../components/unified/UnifiedInvitationSystem";
 import MessagesList from "../../components/groupComponent/MessagesList";
 import EventCreationModal from "../../components/creation/modals/EventCreationModal";
 import EventsList from "../../components/groupComponent/EventsList";
@@ -17,7 +16,6 @@ import { createNotification } from "../../../services/notifications";
 import {
 	Group,
 	GroupMember,
-	Follower,
 	GroupMessage,
 	GroupPost,
 	GroupComment,
@@ -32,12 +30,14 @@ export default function GroupPage() {
 	// États principaux
 	const [group, setGroup] = useState<Group | null>(null);
 	const [members, setMembers] = useState<GroupMember[]>([]);
-	const [followers, setFollowers] = useState<Follower[]>([]);
 	const [error, setError] = useState<string | null>(null);
+	
+	// États pour les invitations avec persistance
+	const [selectedInviteUserIds, setSelectedInviteUserIds] = useState<number[]>([]);
+	const [invitedUserIds, setInvitedUserIds] = useState<number[]>([]);
 
 	// États pour les messages
 	const [messages, setMessages] = useState<GroupMessage[]>([]);
-	const [newMessage, setNewMessage] = useState("");
 
 	// États pour les posts
 	const [posts, setPosts] = useState<GroupPost[]>([]);
@@ -58,7 +58,6 @@ export default function GroupPage() {
 	const {
 		fetchGroup,
 		fetchMembers,
-		fetchFollowers,
 		fetchMessages,
 		fetchPosts,
 		fetchEvents,
@@ -66,7 +65,6 @@ export default function GroupPage() {
 	} = useGroupData(id as string, {
 		setGroup,
 		setMembers,
-		setFollowers,
 		setMessages,
 		setPosts,
 		setEvents,
@@ -104,7 +102,6 @@ export default function GroupPage() {
 		const initialize = async () => {
 			await fetchGroup();
 			await fetchMembers();
-			await fetchFollowers();
 			await fetchMessages();
 			await fetchEvents();
 		};
@@ -112,60 +109,58 @@ export default function GroupPage() {
 		initialize();
 	}, [id]);
 
-	// Actions pour les messages
-	const sendMessage = async () => {
-		if (!newMessage.trim()) return;
+	// Action pour inviter plusieurs utilisateurs (batch)
+	const handleInviteUsers = async (userIds: number[]) => {
+		if (!group || !currentUser || userIds.length === 0) return;
 
 		try {
-			const res = await fetch(`http://localhost:8090/api/groups/${id}/messages`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				credentials: "include",
-				body: JSON.stringify({ content: newMessage }),
-			});
-			if (!res.ok) throw new Error(await res.text());
-			setNewMessage("");
-			if (!currentUser) return;
-			try {
-				createNotification({
-					userId: currentUser?.id,
-					type: "group_message",
-					content: `Nouveau message dans le groupe "${group?.title}".`,
-					referenceId: group?.id,
-					referenceType: "group",
+			// Inviter chaque utilisateur sélectionné
+			const invitationPromises = userIds.map(async (userIdToInvite) => {
+				const res = await fetch(`http://localhost:8090/api/groups/${id}/members`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					credentials: "include",
+					body: JSON.stringify({ 
+						user_id: userIdToInvite, 
+						current_user_id: currentUser.id, 
+						current_user_name: currentUser.username 
+					}),
 				});
-			} catch (err: any) {
-				alert(`Erreur lors de la création de la notification : ${err.message}`);
-			}
-		} catch (err: any) {
-			console.error("Error send message:", err.message);
-		}
-	};
+				
+				if (!res.ok) throw new Error(`Erreur pour l'utilisateur ${userIdToInvite}: ${await res.text()}`);
 
-	// Actions pour les invitations
-	const inviteUser = async (userIdToInvite: number) => {
-		try {
-			const res = await fetch(`http://localhost:8090/api/groups/${id}/members`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				credentials: "include",
-				body: JSON.stringify({ user_id: userIdToInvite, current_user_id: currentUser?.id, current_user_name: currentUser?.username }),
+				// Créer notification pour cet utilisateur
+				try {
+					await createNotification({
+						userId: userIdToInvite,
+						type: "group_invitation",
+						content: `Vous avez été invité à rejoindre le groupe "${group.title}" par ${currentUser.username}.`,
+						referenceId: group.id,
+						referenceType: "group",
+					});
+				} catch (err: any) {
+					console.warn(`Erreur notification pour utilisateur ${userIdToInvite}:`, err.message);
+				}
+				
+				return userIdToInvite;
 			});
-			if (!res.ok) throw new Error(await res.text());
-			alert(`Invitation envoyée à l'utilisateur #${userIdToInvite} !`);
-			try {
-				createNotification({
-					userId: userIdToInvite,
-					type: "group_invitation",
-					content: `Vous avez été invité à rejoindre le groupe "${group?.title}" par ${currentUser?.username}.`,
-					referenceId: group?.id,
-					referenceType: "group",
-				});
-			} catch (err: any) {
-				alert(`Erreur lors de la création de la notification : ${err.message}`);
+
+			const results = await Promise.allSettled(invitationPromises);
+			const successful = results.filter(r => r.status === 'fulfilled').length;
+			const failed = results.filter(r => r.status === 'rejected');
+
+			if (successful > 0) {
+				alert(`${successful} invitation${successful > 1 ? 's' : ''} envoyée${successful > 1 ? 's' : ''} avec succès !`);
 			}
+
+			if (failed.length > 0) {
+				const failedReasons = failed.map((f: any) => f.reason?.message || 'Erreur inconnue').join(', ');
+				alert(`${failed.length} invitation${failed.length > 1 ? 's' : ''} a échoué : ${failedReasons}`);
+			}
+
 		} catch (err: any) {
-			alert(`Erreur lors de l'invitation : ${err.message}`);
+			console.error('Error inviting users:', err);
+			alert(`Erreur lors des invitations : ${err.message}`);
 		}
 	};
 
@@ -318,7 +313,23 @@ export default function GroupPage() {
 		<div className="max-w-xl mx-auto mt-8 p-4 border rounded-xl shadow bg-white">
 			<GroupHeader group={group} />
 			<MembersList members={members} />
-			<UserInvitation followers={followers} onInvite={inviteUser} />
+			
+			{/* Système d'invitation unifié avec checkboxes persistantes */}
+			<div className="mt-6">
+				<UnifiedInvitationSystem
+					mode="group"
+					selectedUserIds={selectedInviteUserIds}
+					onSelectionChange={setSelectedInviteUserIds}
+					invitedUserIds={invitedUserIds}
+					onInvitedUsersChange={setInvitedUserIds}
+					onInviteUsers={handleInviteUsers}
+					title="Inviter des membres au groupe"
+					description="Sélectionnez les utilisateurs que vous souhaitez inviter à rejoindre ce groupe"
+					showSearchBar={true}
+					showInviteButton={true}
+					className="bg-gray-800 border-gray-700"
+				/>
+			</div>
 
 			{/* Bouton pour créer un événement */}
 			<div className="mb-4">
@@ -348,14 +359,29 @@ export default function GroupPage() {
 			<TabNavigation showPosts={showPosts} onTogglePosts={togglePosts} />
 
 			{!showPosts && (
-				<>
-					<MessageInput
-						value={newMessage}
-						onChange={setNewMessage}
-						onSend={sendMessage}
-					/>
-					<MessagesList messages={messages} />
-				</>
+				<MessagesList 
+					messages={messages} 
+					onSendMessage={async (content: string) => {
+						// Utiliser la même logique que sendMessage mais adaptée
+						if (!content.trim()) return;
+						
+						try {
+							const res = await fetch(`http://localhost:8090/api/groups/${id}/messages`, {
+								method: "POST",
+								headers: { "Content-Type": "application/json" },
+								credentials: "include",
+								body: JSON.stringify({ content }),
+							});
+							
+							if (!res.ok) throw new Error(await res.text());
+							// Le message sera ajouté via WebSocket
+						} catch (err: any) {
+							console.error("Error sending group message:", err.message);
+							throw err;
+						}
+					}}
+					isLoading={false}
+				/>
 			)}
 
 			{showPosts && (

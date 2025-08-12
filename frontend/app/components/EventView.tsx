@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { useCookies } from "next-client-cookies";
+import { useEffect, useState } from 'react';
 import { useOnePage } from '../contexts/OnePageContext';
 import { Event, EventMessage } from '../types/group';
 import { useEventWebSocket } from '../hooks/useEventWebSocket';
-import MessageInput from './groupComponent/MessageInput';
-import { AdaptiveMessageList } from './adaptive/AdaptiveMessageCard';
+import UnifiedMessagePanel, { type UnifiedMessage } from './unified/UnifiedMessagePanel';
+import UnifiedInvitationSystem from './unified/UnifiedInvitationSystem';
 import { useToast } from '../hooks/useToast';
+import { createNotification } from '../../services/notifications';
 
 interface EventViewProps {
     event: Event;
@@ -30,19 +30,12 @@ export default function EventView({ event }: EventViewProps) {
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [messages, setMessages] = useState<EventMessage[]>([]);
-    const [newMessage, setNewMessage] = useState('');
+    const [messageSending, setMessageSending] = useState(false);
     
-    // 🎯 OPTIMISATION ESPACE : Calcul responsive du pourcentage selon largeur écran  
-    const responsiveDrawerPercentage = useMemo(() => {
-        if (typeof window !== 'undefined') {
-            const screenWidth = window.innerWidth;
-            if (screenWidth < 768) return 100; // Mobile : pleine largeur
-            if (screenWidth < 1024) return 80;  // Tablet : 80%
-            if (screenWidth < 1440) return 70;  // Desktop small : 70%
-            return 60; // Desktop large : 60% pour optimiser l'espace
-        }
-        return 70; // Valeur par défaut SSR
-    }, []);
+    // États pour les invitations avec persistance
+    const [selectedInviteUserIds, setSelectedInviteUserIds] = useState<number[]>([]);
+    const [invitedUserIds, setInvitedUserIds] = useState<number[]>([]);
+    const [availableUsers, setAvailableUsers] = useState<any[]>([]);
 
     // WebSocket pour les messages en temps réel
     useEventWebSocket(event.id.toString(), setMessages);
@@ -62,14 +55,34 @@ export default function EventView({ event }: EventViewProps) {
                     setCurrentUser(userData);
                 }
 
-                // Charger les informations du groupe
+                // Charger les informations du groupe et ses membres
                 if (event.group_id) {
-                    const groupRes = await fetch(`http://localhost:8090/api/groups/${event.group_id}`, {
-                        credentials: "include",
-                    });
-                    if (groupRes.ok) {
-                        const groupData = await groupRes.json();
+                    const [groupRes, membersRes] = await Promise.allSettled([
+                        fetch(`http://localhost:8090/api/groups/${event.group_id}`, {
+                            credentials: "include",
+                        }),
+                        fetch(`http://localhost:8090/api/groups/${event.group_id}/members`, {
+                            credentials: "include",
+                        })
+                    ]);
+                    
+                    if (groupRes.status === 'fulfilled' && groupRes.value.ok) {
+                        const groupData = await groupRes.value.json();
                         setGroup(groupData);
+                    }
+                    
+                    if (membersRes.status === 'fulfilled' && membersRes.value.ok) {
+                        const membersData = await membersRes.value.json();
+                        // Convertir les membres en format utilisateur pour l'invitation
+                        const formattedMembers = membersData.filter((member: any) => member.accepted && member.user_id !== currentUser?.id)
+                            .map((member: any) => ({
+                                id: member.user_id,
+                                username: member.username,
+                                first_name: member.first_name,
+                                last_name: member.last_name,
+                                is_member: true
+                            }));
+                        setAvailableUsers(formattedMembers);
                     }
                 }
 
@@ -109,7 +122,7 @@ export default function EventView({ event }: EventViewProps) {
         if (event) {
             loadEventData();
         }
-    }, [event, currentUser?.id]);
+    }, [event]);
 
     const handleResponse = async (status: 'going' | 'not_going' | 'maybe') => {
         try {
@@ -160,26 +173,81 @@ export default function EventView({ event }: EventViewProps) {
         }
     };
 
-    const sendMessage = async () => {
-        if (!newMessage.trim()) return;
+    const handleSendMessage = async (content: string) => {
+        if (!content.trim()) return;
         
         try {
+            setMessageSending(true);
             const res = await fetch(`http://localhost:8090/api/events/${event.id}/messages`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ content: newMessage }),
+                body: JSON.stringify({ content }),
             });
             
             if (!res.ok) throw new Error(await res.text());
-            
-            // Vider l'input après envoi réussi
-            setNewMessage('');
             
             // Le message sera ajouté via WebSocket
         } catch (err: any) {
             console.error("Error sending event message:", err.message);
             error('Erreur d\'envoi', 'Impossible d\'envoyer le message. Veuillez réessayer.');
+            throw err; // Re-throw pour que le composant unifié gère l'état d'erreur
+        } finally {
+            setMessageSending(false);
+        }
+    };
+
+    // Gestion des invitations batch pour les événements
+    const handleInviteUsers = async (userIds: number[]) => {
+        if (!event || !group || !currentUser || userIds.length === 0) return;
+
+        try {
+            // Inviter chaque utilisateur sélectionné à l'événement
+            const invitationPromises = userIds.map(async (userIdToInvite) => {
+                const res = await fetch(`http://localhost:8090/api/events/${event.id}/response`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ 
+                        user_id: userIdToInvite,
+                        status: 'invited' // Statut spécial pour les invitations
+                    }),
+                });
+                
+                if (!res.ok) throw new Error(`Erreur pour l'utilisateur ${userIdToInvite}: ${await res.text()}`);
+
+                // Créer notification pour cet utilisateur
+                try {
+                    await createNotification({
+                        userId: userIdToInvite,
+                        type: "event_invitation",
+                        content: `Vous avez été invité à l'événement "${event.title}" du groupe "${group.title}" par ${currentUser.username}.`,
+                        referenceId: event.id,
+                        referenceType: "event",
+                    });
+                } catch (err: any) {
+                    console.warn(`Erreur notification pour utilisateur ${userIdToInvite}:`, err.message);
+                }
+                
+                return userIdToInvite;
+            });
+
+            const results = await Promise.allSettled(invitationPromises);
+            const successful = results.filter(r => r.status === 'fulfilled').length;
+            const failed = results.filter(r => r.status === 'rejected');
+
+            if (successful > 0) {
+                success('Invitations envoyées', `${successful} invitation${successful > 1 ? 's' : ''} envoyée${successful > 1 ? 's' : ''} avec succès !`);
+            }
+
+            if (failed.length > 0) {
+                const failedReasons = failed.map((f: any) => f.reason?.message || 'Erreur inconnue').join(', ');
+                error('Erreur d\'invitations', `${failed.length} invitation${failed.length > 1 ? 's' : ''} a échoué : ${failedReasons}`);
+            }
+
+        } catch (err: any) {
+            console.error('Error inviting users to event:', err);
+            error('Erreur d\'invitations', `Erreur lors des invitations : ${err.message}`);
         }
     };
 
@@ -340,6 +408,27 @@ export default function EventView({ event }: EventViewProps) {
                         </div>
                     </div>
 
+                    {/* Système d'invitation unifié pour les événements */}
+                    {group && !eventPassed && (
+                        <div className="mb-6">
+                            <UnifiedInvitationSystem
+                                mode="event"
+                                availableUsers={availableUsers}
+                                restrictToAvailable={true}
+                                selectedUserIds={selectedInviteUserIds}
+                                onSelectionChange={setSelectedInviteUserIds}
+                                invitedUserIds={invitedUserIds}
+                                onInvitedUsersChange={setInvitedUserIds}
+                                onInviteUsers={handleInviteUsers}
+                                title="Inviter des participants"
+                                description="Sélectionnez les membres du groupe à inviter à cet événement"
+                                showSearchBar={true}
+                                showInviteButton={true}
+                                className="bg-gray-700 border-gray-600"
+                            />
+                        </div>
+                    )}
+
                     {/* Liste des réponses */}
                     {responses.length > 0 && (
                         <div>
@@ -380,25 +469,28 @@ export default function EventView({ event }: EventViewProps) {
 
                     {/* Section des messages */}
                     <div className="mt-8">
-                        <h3 className="text-lg font-semibold text-white mb-4">Discussion</h3>
-                        
-                        {/* Input pour écrire un message */}
-                        <div className="mb-4">
-                            <MessageInput
-                                value={newMessage}
-                                onChange={setNewMessage}
-                                onSend={sendMessage}
-                            />
-                        </div>
-
-                        {/* Liste des messages avec optimisation d'espace responsive */}
-                        <div className="bg-gray-700 rounded-lg p-4 max-h-96 overflow-y-auto">
-                            <AdaptiveMessageList 
-                                messages={messages}
-                                drawerPercentage={responsiveDrawerPercentage}
-                                currentUserId={currentUser?.id}
-                            />
-                        </div>
+                        <UnifiedMessagePanel
+                            messages={(messages || []).map((msg): UnifiedMessage => ({
+                                id: msg.id,
+                                content: msg.content,
+                                created_at: msg.created_at,
+                                user_id: msg.user_id,
+                                username: msg.username,
+                                event_id: msg.event_id
+                            }))}
+                            onSendMessage={handleSendMessage}
+                            placeholder="Écrivez un message pour cet événement..."
+                            headerConfig={{
+                                type: 'simple',
+                                title: 'Discussion'
+                            }}
+                            heightConfig={{
+                                mode: 'fixed',
+                                fixedHeight: 'h-96'
+                            }}
+                            isLoading={messageSending}
+                            className="bg-gray-700 rounded-lg"
+                        />
                     </div>
                 </div>
             </div>

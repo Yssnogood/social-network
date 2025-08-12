@@ -421,7 +421,7 @@ export default function PresentationPanel({ type, selectedItem }: PresentationPa
     const canInvite = currentUser && (
         type === 'group' 
             ? (selectedItem as Group).creator_id === currentUser.id
-            : (selectedItem as Event).created_by === currentUser.id
+            : (selectedItem as Event).creator_id === currentUser.id
     );
 
     return (

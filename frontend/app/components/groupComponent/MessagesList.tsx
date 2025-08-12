@@ -1,4 +1,4 @@
-import MessageItem from './MessageItem'
+import UnifiedMessagePanel, { type UnifiedMessage, type HeaderConfig, type HeightConfig } from '../unified/UnifiedMessagePanel';
 
 type GroupMessage = {
 	id: number
@@ -12,23 +12,35 @@ type GroupMessage = {
 
 interface MessagesListProps {
 	messages: GroupMessage[]
+	onSendMessage: (content: string) => Promise<void>
+	isLoading?: boolean
 }
 
-export default function MessagesList({ messages }: MessagesListProps) {
+export default function MessagesList({ messages, onSendMessage, isLoading = false }: MessagesListProps) {
 	return (
 		<div className="mt-6 border-t border-gray-700 pt-4">
-			<h2 className="text-xl font-semibold mb-2 text-white">Messages</h2>
-			<div className="max-h-96 overflow-y-auto bg-gray-900 p-3 rounded">
-				{!messages || !Array.isArray(messages) ? (
-					<p className="text-gray-400 text-center">Chargement des messages...</p>
-				) : messages.length === 0 ? (
-					<p className="text-gray-400 text-center">Aucun message pour le moment</p>
-				) : (
-					messages.map(msg => (
-						<MessageItem key={msg.id} message={msg} />
-					))
-				)}
-			</div>
+			<UnifiedMessagePanel
+				messages={(messages || []).map((msg): UnifiedMessage => ({
+					id: msg.id,
+					content: msg.content,
+					created_at: msg.created_at,
+					user_id: msg.user_id,
+					username: msg.username,
+					group_id: msg.group_id
+				}))}
+				onSendMessage={onSendMessage}
+				placeholder="Écrivez un message au groupe..."
+				headerConfig={{
+					type: 'simple',
+					title: 'Messages'
+				}}
+				heightConfig={{
+					mode: 'fixed',
+					fixedHeight: 'h-96'
+				}}
+				isLoading={isLoading}
+				className="bg-gray-900 rounded"
+			/>
 		</div>
 	)
 }
