@@ -8,12 +8,12 @@ import (
 )
 
 func FollowersRoutes(r *mux.Router, followerHandler *handlers.FollowerHandler) {
-	r.HandleFunc("/api/followers", followerHandler.CreateFollower).Methods("POST")
+	r.Handle("/api/followers", middlewares.JWTMiddleware(http.HandlerFunc(followerHandler.CreateFollower))).Methods("POST", "OPTIONS")
 	r.Handle("/api/followers", middlewares.JWTMiddleware(http.HandlerFunc(followerHandler.GetFollowers))).Methods("GET", "OPTIONS")
-	r.HandleFunc("/api/followers/{id}", followerHandler.DeleteFollower).Methods("DELETE")
-	r.HandleFunc("/api/followers/check", followerHandler.CheckIfFollowing).Methods("POST")
+	r.Handle("/api/followers/{id}", middlewares.JWTMiddleware(http.HandlerFunc(followerHandler.DeleteFollower))).Methods("DELETE", "OPTIONS")
+	r.Handle("/api/followers/check", middlewares.JWTMiddleware(http.HandlerFunc(followerHandler.CheckIfFollowing))).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/followersDetails", followerHandler.GetFollowersHandler).Methods("GET")
-	r.HandleFunc("/api/followers/accept", followerHandler.AcceptFollower).Methods("POST")
-	r.HandleFunc("/api/followers/decline", followerHandler.DeclineFollower).Methods("POST")
+	r.Handle("/api/followers/accept", middlewares.JWTMiddleware(http.HandlerFunc(followerHandler.AcceptFollower))).Methods("POST", "OPTIONS")
+	r.Handle("/api/followers/decline", middlewares.JWTMiddleware(http.HandlerFunc(followerHandler.DeclineFollower))).Methods("POST", "OPTIONS")
 
 }

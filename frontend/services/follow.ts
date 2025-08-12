@@ -12,29 +12,29 @@ export interface FollowerUser {
 }
 
 
-export async function followUser(followerId: number, followedId: number, is_public: boolean) {
-  console.log("Following user:", followerId, followedId, is_public);
+export async function followUser(_followerId: number, followedId: number, _is_public: boolean) {
+  console.log("Following user:", _followerId, followedId, _is_public);
   const res = await fetch("http://localhost:8090/api/followers", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    
-    body: JSON.stringify({ follower_id: followerId, followed_id: followedId, private: is_public == true ? 1 : 0 }),
+    credentials: "include", // Important pour envoyer les cookies JWT
+    body: JSON.stringify({ followed_id: followedId }), // follower_id maintenant récupéré du JWT
   });
   
-  console.log("test")
-  console.log(res.ok)
+  console.log("Follow response OK:", res.ok)
   if (!res.ok) throw new Error("Erreur lors du follow");
 }
 
-export async function unfollowUser(followerId: number, followedId: number) {
+export async function unfollowUser(_followerId: number, followedId: number) {
   const res = await fetch(`http://localhost:8090/api/followers/${followedId}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ follower_id: followerId, followed_id: followedId }),
+    credentials: "include", // Important pour envoyer les cookies JWT
+    body: JSON.stringify({ followed_id: followedId }), // follower_id maintenant récupéré du JWT
   });
 
   if (!res.ok) throw new Error("Erreur lors du unfollow");

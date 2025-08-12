@@ -15,13 +15,15 @@ import (
 type FollowerHandler struct {
 	FollowerRepository     *repository.FollowerRepository
 	NotificationRepository *repository.NotificationRepository
+	UserRepository         *repository.UserRepository
 }
 
 // NewFollowerHandler creates a new instance of FollowerHandler.
-func NewFollowerHandler(fr *repository.FollowerRepository, nr *repository.NotificationRepository) *FollowerHandler {
+func NewFollowerHandler(fr *repository.FollowerRepository, nr *repository.NotificationRepository, ur *repository.UserRepository) *FollowerHandler {
 	return &FollowerHandler{
 		FollowerRepository:     fr,
 		NotificationRepository: nr,
+		UserRepository:         ur,
 	}
 }
 
@@ -42,16 +44,35 @@ type acceptFollowerRequest struct {
 
 // CreateFollower creates a new follow request (or direct follow if accepted by default).
 func (h *FollowerHandler) CreateFollower(w http.ResponseWriter, r *http.Request) {
+	// Récupérer l'utilisateur connecté depuis le middleware JWT
+	followerUserID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
 	var req followRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
+	// Récupérer l'utilisateur à suivre pour connaître son statut public/privé
+	followedUser, err := h.UserRepository.GetByID(req.FollowedID)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	// Déterminer si le follow doit être automatiquement accepté
+	// Si l'utilisateur est public, accepter automatiquement
+	// Si l'utilisateur est privé, créer une demande en attente
+	accepted := followedUser.IsPublic
+
 	follower := &models.Follower{
-		FollowerID: req.FollowerID,
+		FollowerID: followerUserID, // Utiliser l'ID du JWT, plus sécurisé
 		FollowedID: req.FollowedID,
-		Accepted:   req.Private,
+		Accepted:   accepted,
 		FollowedAt: time.Now(),
 	}
 
@@ -60,8 +81,13 @@ func (h *FollowerHandler) CreateFollower(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	message := "Follow request sent"
+	if accepted {
+		message = "User followed successfully"
+	}
+
 	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Follow request sent",
+		"message": message,
 	})
 }
 
@@ -205,6 +231,10 @@ func (h *FollowerHandler) AcceptFollower(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Follow request accepted",
+	})
 }
 
 func (h *FollowerHandler) DeclineFollower(w http.ResponseWriter, r *http.Request) {

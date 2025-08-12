@@ -1,6 +1,7 @@
 'use client';
 
 import { useProportionSystem, createDefaultPresets, type ProportionConfig, type ProportionSize } from './useProportionSystem';
+import { useContextPersistedProportions } from './usePersistedProportions';
 
 export type VerticalDrawerType = 'presentation' | 'communication';
 export type VerticalDrawerSize = ProportionSize;
@@ -28,13 +29,31 @@ const INVERSE_DEFAULT_CONFIG: VerticalDrawerConfig = {
 export function useVerticalDrawerProportions(options: UseVerticalDrawerProportionsOptions = {}) {
     const { initialConfig = INVERSE_DEFAULT_CONFIG, onConfigChange } = options;
     
-    // Utilisation du système générique en mode vertical
+    // Intégration de la persistance pour les panneaux verticaux
+    const persistence = useContextPersistedProportions(
+        'vertical-panels', // Contexte spécifique pour les panneaux principaux
+        VERTICAL_DRAWER_KEYS,
+        initialConfig
+    );
+    
+    // Charger la configuration initiale (persistée ou par défaut)
+    const loadedConfig = persistence.loadInitialConfig() || initialConfig;
+    
+    // Wrapper pour la sauvegarde automatique
+    const handleConfigChange = (config: VerticalDrawerConfig) => {
+        persistence.persistConfig(config);
+        if (onConfigChange) {
+            onConfigChange(config);
+        }
+    };
+    
+    // Utilisation du système générique en mode vertical avec persistance
     const proportionSystem = useProportionSystem({
         direction: 'vertical',
         drawerKeys: VERTICAL_DRAWER_KEYS,
-        initialConfig,
+        initialConfig: loadedConfig,
         defaultPresets: VERTICAL_DRAWER_CONFIGS,
-        onConfigChange
+        onConfigChange: handleConfigChange
     });
 
     // Alias pour compatibilité avec l'API existante
@@ -119,6 +138,10 @@ export function useVerticalDrawerProportions(options: UseVerticalDrawerProportio
         isDrawerClosed: proportionSystem.isDrawerClosed,
         getOpenDrawersCount: proportionSystem.getOpenDrawersCount,
         getConfigStats: proportionSystem.getConfigStats,
+        
+        // Fonctions de persistance
+        clearPersistedProportions: persistence.clearContext,        // Effacer les proportions sauvegardées
+        getPersistenceStats: persistence.getStats,                  // Statistiques de stockage
         
         // Constantes
         VERTICAL_DRAWER_CONFIGS
