@@ -238,6 +238,12 @@ export default function EventView({ event }: EventViewProps) {
 
             if (successful > 0) {
                 success('Invitations envoyées', `${successful} invitation${successful > 1 ? 's' : ''} envoyée${successful > 1 ? 's' : ''} avec succès !`);
+                
+                // ✅ CORRECTION CRITIQUE: Mettre à jour l'état persistant des invités
+                const successfulUserIds = results
+                    .map((r, index) => r.status === 'fulfilled' ? userIds[index] : null)
+                    .filter(id => id !== null) as number[];
+                setInvitedUserIds(prev => [...prev, ...successfulUserIds]);
             }
 
             if (failed.length > 0) {

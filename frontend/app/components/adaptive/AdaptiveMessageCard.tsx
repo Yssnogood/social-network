@@ -183,6 +183,12 @@ export function AdaptiveMessageList({
   currentUserId,
 }: AdaptiveMessageListProps) {
   const adaptiveConfig = useMessageVignette(drawerPercentage);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+
+  // ✅ Auto-scroll vers le bas quand de nouveaux messages arrivent
+  React.useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // Vérification de sécurité pour les messages
   if (!messages || !Array.isArray(messages)) {
@@ -242,6 +248,8 @@ export function AdaptiveMessageList({
             />
           );
         })}
+        {/* ✅ Référence pour l'auto-scroll */}
+        <div ref={messagesEndRef} />
       </div>
     </div>
   );
