@@ -4,6 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCookies } from "next-client-cookies";
+import { useOnePage } from '../contexts/OnePageContext';
+import { getCurrentUserId } from '../../services/auth';
 import Notifications from "./NotificationPanel";
 import SearchBar from "./SearchBar";
 
@@ -21,6 +23,7 @@ export default function Header({
 }: HeaderProps) {
 	const cookies = useCookies();
 	const router = useRouter();
+	const { navigateToFeed, navigateToProfile } = useOnePage();
 
 	const handleLogout = async () => {
 		const jwt = cookies.get("jwt");
@@ -47,12 +50,28 @@ export default function Header({
 		router.push("/");
 	};
 
+	const handleProfileClick = async () => {
+		if (!username) return;
+		
+		try {
+			const userId = await getCurrentUserId();
+			if (userId) {
+				navigateToProfile({ username, userId });
+			}
+		} catch (error) {
+			console.error('Error navigating to profile:', error);
+		}
+	};
+
 	return (
 		<header className="fixed top-0 left-0 right-0 h-12 bg-blue-600 shadow-sm z-50 flex items-center px-4">
 			<div className="container mx-auto flex justify-between items-center">
-				<Link href="/home" className="font-bold text-lg text-white">
+				<button 
+					onClick={navigateToFeed}
+					className="font-bold text-lg text-white hover:text-blue-200 transition-colors cursor-pointer"
+				>
 					Social Network
-				</Link>
+				</button>
 
 				<SearchBar />
 
@@ -116,9 +135,10 @@ export default function Header({
 						Logout
 					</button>
 
-					<Link
-						href={`/profile/${username}`}
-						className="flex items-center justify-center w-8 h-8 rounded-full bg-white hover:bg-blue-100"
+					<button
+						onClick={handleProfileClick}
+						className="flex items-center justify-center w-8 h-8 rounded-full bg-white hover:bg-blue-100 transition-colors"
+						disabled={!username}
 					>
 						<Image
 							src="/social-placeholder.png"
@@ -127,7 +147,7 @@ export default function Header({
 							height={24}
 							className="rounded-full"
 						/>
-					</Link>
+					</button>
 				</nav>
 			</div>
 		</header>

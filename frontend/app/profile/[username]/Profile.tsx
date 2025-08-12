@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { UserProfile } from "../../../services/user";
 import ProfileTabs from "./ProfileTabs";
 import FollowersSection from "../../components/FollowersSection";
@@ -121,29 +120,7 @@ export default function ClientProfile({
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 h-12 bg-blue-600 shadow-sm z-50 flex items-center px-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <Link href="/home" className="font-bold text-lg text-white">
-            Social Network
-          </Link>
-          <nav className="flex gap-4 items-center">
-            <Link
-              href={`/profile/${loggedInUser}`}
-              className="flex items-center justify-center w-8 h-8 rounded-full bg-white hover:bg-blue-100"
-            >
-              <Image
-                src="/social-placeholder.png"
-                alt="Profile"
-                width={24}
-                height={24}
-                className="rounded-full"
-              />
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      <main className="pt-16 px-4 mx-auto max-w-6xl">
+      <main className="px-4 mx-auto max-w-6xl">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-3 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             {!followStatusLoaded ? (
