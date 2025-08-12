@@ -91,7 +91,7 @@ func (h *InvitationHandler) GetUserReceivedInvitations(w http.ResponseWriter, r 
 	for _, invitation := range invitations {
 		// Get group details
 		group, err := h.GroupRepository.GetGroupByID(invitation.GroupID)
-		if err != nil {
+		if err != nil || group == nil {
 			continue // Skip if group not found
 		}
 
@@ -149,7 +149,7 @@ func (h *InvitationHandler) GetUserSentInvitations(w http.ResponseWriter, r *htt
 	for _, invitation := range invitations {
 		// Get group details
 		group, err := h.GroupRepository.GetGroupByID(invitation.GroupID)
-		if err != nil {
+		if err != nil || group == nil {
 			continue // Skip if group not found
 		}
 

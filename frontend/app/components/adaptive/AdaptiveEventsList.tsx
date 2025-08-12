@@ -34,7 +34,7 @@ export default function AdaptiveEventsList({
   
   // 🔧 DEBUG: Logger pour comprendre le problème de grisage
   console.log(`🔧 DEBUG AdaptiveEventsList:`, {
-    eventsCount: events.length,
+    eventsCount: events?.length || 0,
     selectedEventId,
     currentUserStatus,
     currentUserId: currentUser?.id

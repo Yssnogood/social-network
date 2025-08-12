@@ -118,4 +118,7 @@ export interface DiscussionContext {
 export type User = {
 	id: number;
 	username: string;
+	first_name?: string;
+	last_name?: string;
+	avatar_path?: string;
 };

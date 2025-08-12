@@ -54,6 +54,39 @@ func (r *GroupRepository) Create(group *models.Group) (int64, error) {
 }
 
 func (r *GroupRepository) AddMember(groupID, userID int64, Username string, accepted bool, createdAt time.Time) error {
+	// Vérifier si l'utilisateur est déjà membre du groupe
+	checkStmt, err := r.db.Prepare(`
+		SELECT COUNT(*) FROM group_members 
+		WHERE group_id = ? AND user_id = ?
+	`)
+	if err != nil {
+		return err
+	}
+	defer checkStmt.Close()
+
+	var count int
+	err = checkStmt.QueryRow(groupID, userID).Scan(&count)
+	if err != nil {
+		return err
+	}
+
+	// Si l'utilisateur est déjà membre, mettre à jour son statut
+	if count > 0 {
+		updateStmt, err := r.db.Prepare(`
+			UPDATE group_members 
+			SET accepted = ?, created_at = ? 
+			WHERE group_id = ? AND user_id = ?
+		`)
+		if err != nil {
+			return err
+		}
+		defer updateStmt.Close()
+		
+		_, err = updateStmt.Exec(accepted, createdAt, groupID, userID)
+		return err
+	}
+
+	// Sinon, insérer un nouveau membre
 	stmt, err := r.db.Prepare(`
 		INSERT INTO group_members (group_id, user_id, username, accepted, created_at)
 		VALUES (?, ?, ?, ?, ?)
@@ -383,7 +416,7 @@ func (r *GroupRepository) GetCommentsByPostID(postID int64) ([]models.GroupComme
 // GetInvitationByID retrieves a specific invitation by its ID
 func (r *GroupRepository) GetInvitationByID(invitationID int64) (*models.GroupInvitation, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT id, group_id, inviter_id, invitee_id, pending, create_at
+		SELECT id, group_id, inviter_id, invitee_id, pending, create_at as created_at
 		FROM group_invitations
 		WHERE id = ?
 	`)
@@ -414,7 +447,7 @@ func (r *GroupRepository) GetInvitationByID(invitationID int64) (*models.GroupIn
 // GetPendingInvitationsByUser retrieves all pending invitations for a specific user
 func (r *GroupRepository) GetPendingInvitationsByUser(userID int64) ([]models.GroupInvitation, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT id, group_id, inviter_id, invitee_id, pending, create_at
+		SELECT id, group_id, inviter_id, invitee_id, pending, create_at as created_at
 		FROM group_invitations
 		WHERE invitee_id = ? AND pending = 1
 		ORDER BY create_at DESC
@@ -452,7 +485,7 @@ func (r *GroupRepository) GetPendingInvitationsByUser(userID int64) ([]models.Gr
 // GetInvitationsByInviter retrieves all invitations sent by a specific user
 func (r *GroupRepository) GetInvitationsByInviter(inviterID int64) ([]models.GroupInvitation, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT id, group_id, inviter_id, invitee_id, pending, create_at
+		SELECT id, group_id, inviter_id, invitee_id, pending, create_at as created_at
 		FROM group_invitations
 		WHERE inviter_id = ?
 		ORDER BY create_at DESC

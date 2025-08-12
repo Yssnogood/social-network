@@ -177,7 +177,7 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 
 func (r *UserRepository) GetFriendsByUserID(userID int64) ([]*models.User, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT u.id, u.username, COALESCE(u.avatar_path, '/defaultPP.webp') as avatar_path
+		SELECT u.id, u.username, u.first_name, u.last_name, COALESCE(u.avatar_path, '/defaultPP.webp') as avatar_path
 		FROM users u
 		INNER JOIN followers f1 ON f1.followed_id = u.id AND f1.follower_id = ? AND f1.accepted = TRUE
 		INNER JOIN followers f2 ON f2.follower_id = u.id AND f2.followed_id = ? AND f2.accepted = TRUE
@@ -196,7 +196,7 @@ func (r *UserRepository) GetFriendsByUserID(userID int64) ([]*models.User, error
 	var users []*models.User
 	for rows.Next() {
 		user := &models.User{}
-		err := rows.Scan(&user.ID, &user.Username, &user.AvatarPath)
+		err := rows.Scan(&user.ID, &user.Username, &user.FirstName, &user.LastName, &user.AvatarPath)
 		if err != nil {
 			return nil, err
 		}
@@ -252,7 +252,7 @@ func (r *UserRepository) GetUsersForContact(currentUserID int64, query string) (
 // GetFollowingByUserID retrieves the list of users that the current user is following
 func (r *UserRepository) GetFollowingByUserID(userID int64) ([]*models.User, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT u.id, u.username, COALESCE(u.avatar_path, '/defaultPP.webp') as avatar_path
+		SELECT u.id, u.username, u.first_name, u.last_name, COALESCE(u.avatar_path, '/defaultPP.webp') as avatar_path
 		FROM users u
 		INNER JOIN followers f ON f.followed_id = u.id
 		WHERE f.follower_id = ? AND f.accepted = TRUE
@@ -272,7 +272,7 @@ func (r *UserRepository) GetFollowingByUserID(userID int64) ([]*models.User, err
 	var users []*models.User
 	for rows.Next() {
 		user := &models.User{}
-		err := rows.Scan(&user.ID, &user.Username, &user.AvatarPath)
+		err := rows.Scan(&user.ID, &user.Username, &user.FirstName, &user.LastName, &user.AvatarPath)
 		if err != nil {
 			return nil, err
 		}
