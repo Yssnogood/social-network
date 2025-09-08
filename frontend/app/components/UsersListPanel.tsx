@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useOnePage } from '../contexts/OnePageContext';
 import { fetchFriends, fetchFollowing, fetchAllUsersWithStatus, fetchOnlineUsers } from '../../services/contact';
 import { followUser, unfollowUser } from '../../services/follow';
-import { addFollowStatusListener } from '../../services/followEvents';
+import { addFollowStatusListener, dispatchFollowStatusChange } from '../../services/followEvents';
 import { getCurrentUserId } from '../../services/auth';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
@@ -48,6 +48,14 @@ export default function UsersListPanel() {
     const [page, setPage] = useState({ contacts: 1, following: 1, all: 1 });
     const [hasMore, setHasMore] = useState({ contacts: true, following: true, all: true });
     const ITEMS_PER_PAGE = 10;
+
+    // Helper function pour déterminer le statut de suivi (comme dans SearchBar)
+    const getFollowStatus = (isFollowing: boolean, isFollowedBy: boolean) => {
+        if (isFollowing && isFollowedBy) return "Mutuel";
+        if (isFollowing) return "Vous suivez";
+        if (isFollowedBy) return "Vous suit";
+        return null;
+    };
 
     // Récupérer l'ID de l'utilisateur actuel
     useEffect(() => {
@@ -159,6 +167,12 @@ export default function UsersListPanel() {
                     ? { ...u, is_following: event.isFollowing, is_pending: event.isPending }
                     : u
             ));
+
+            // Si on unfollow quelqu'un, le retirer de la liste following
+            if (!event.isFollowing && !event.isPending) {
+                setFollowing(prev => prev.filter(u => u.id !== event.userId));
+                setDisplayedFollowing(prev => prev.filter(u => u.id !== event.userId));
+            }
         });
 
         return cleanup; // Nettoyer l'événement listener
@@ -265,7 +279,8 @@ export default function UsersListPanel() {
         if (!currentUserId) return;
 
         try {
-            if (user.is_following || user.is_pending) {
+            // Dans l'onglet 'following', on sait que l'utilisateur suit déjà, donc on unfollow
+            if (activeTab === 'following' || user.is_following || user.is_pending) {
                 // Si on suit déjà ou si la demande est en attente, on unfollow/annule
                 await unfollowUser(currentUserId, user.id);
                 // Mettre à jour le state local
@@ -318,9 +333,20 @@ export default function UsersListPanel() {
                     <h3 className="font-medium text-white text-sm truncate">{user.username}</h3>
                     <p className="text-xs text-gray-400">
                         {user.isOnline ? 'En ligne' : 'Hors ligne'}
-                        {activeTab === 'following' && !userWithStatus.is_followed_by && (
-                            <span className="ml-2 text-orange-400">• Non-mutuel</span>
-                        )}
+                        {activeTab === 'following' && (() => {
+                            // Dans l'onglet following, on sait qu'on suit ces personnes (is_following = true)
+                            const followStatus = getFollowStatus(true, userWithStatus.is_followed_by || false);
+                            if (followStatus === "Mutuel") {
+                                return (
+                                    <span className="ml-2 text-green-400">• {followStatus}</span>
+                                );
+                            } else if (followStatus === "Vous suivez") {
+                                return (
+                                    <span className="ml-2 text-orange-400">• Non-mutuel</span>
+                                );
+                            }
+                            return null;
+                        })()}
                         {userWithStatus.is_friend && (
                             <span className="ml-2 text-blue-400">• Ami</span>
                         )}

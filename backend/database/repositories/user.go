@@ -251,9 +251,13 @@ func (r *UserRepository) GetUsersForContact(currentUserID int64, query string) (
 }
 
 // GetFollowingByUserID retrieves the list of users that the current user is following
-func (r *UserRepository) GetFollowingByUserID(userID int64) ([]*models.User, error) {
+func (r *UserRepository) GetFollowingByUserID(userID int64) ([]SearchResult, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT u.id, u.username, u.first_name, u.last_name, COALESCE(u.avatar_path, '/defaultPP.webp') as avatar_path
+		SELECT u.id, u.username, COALESCE(u.avatar_path, '/defaultPP.webp') as avatar_path,
+		EXISTS (
+			SELECT 1 FROM followers f2
+			WHERE f2.follower_id = u.id AND f2.followed_id = ? AND f2.accepted = 1
+		) AS is_followed_by
 		FROM users u
 		INNER JOIN followers f ON f.followed_id = u.id
 		WHERE f.follower_id = ? AND f.accepted = TRUE
@@ -264,20 +268,28 @@ func (r *UserRepository) GetFollowingByUserID(userID int64) ([]*models.User, err
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.Query(userID)
+	rows, err := stmt.Query(userID, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var users []*models.User
+	var users []SearchResult
 	for rows.Next() {
-		user := &models.User{}
-		err := rows.Scan(&user.ID, &user.Username, &user.FirstName, &user.LastName, &user.AvatarPath)
+		var res SearchResult
+		res.Type = "user"
+		var username, avatar *string
+		var isFollowedBy bool
+
+		err := rows.Scan(&res.ID, &username, &avatar, &isFollowedBy)
 		if err != nil {
 			return nil, err
 		}
-		users = append(users, user)
+
+		res.Username = username
+		res.AvatarPath = avatar
+		res.IsFollowedBy = &isFollowedBy
+		users = append(users, res)
 	}
 
 	if err = rows.Err(); err != nil {
