@@ -57,6 +57,23 @@ func (h *FollowerHandler) CreateFollower(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Vérifier que l'utilisateur ne tente pas de se suivre lui-même
+	if followerUserID == req.FollowedID {
+		http.Error(w, "Cannot follow yourself", http.StatusBadRequest)
+		return
+	}
+
+	// Vérifier si l'utilisateur suit déjà cette personne
+	isAlreadyFollowing, err := h.FollowerRepository.IsFollowing(followerUserID, req.FollowedID)
+	if err != nil {
+		http.Error(w, "Failed to check following status", http.StatusInternalServerError)
+		return
+	}
+	if isAlreadyFollowing {
+		http.Error(w, "Already following this user", http.StatusConflict)
+		return
+	}
+
 	// Récupérer l'utilisateur à suivre pour connaître son statut public/privé
 	followedUser, err := h.UserRepository.GetByID(req.FollowedID)
 	if err != nil {
@@ -77,7 +94,7 @@ func (h *FollowerHandler) CreateFollower(w http.ResponseWriter, r *http.Request)
 	}
 
 	if err := h.FollowerRepository.Create(follower); err != nil {
-		http.Error(w, "Failed to follow user", http.StatusInternalServerError)
+		http.Error(w, "Failed to follow user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -128,22 +145,32 @@ func (h *FollowerHandler) GetFollowers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(followers)
 }
 
-// UnCreateFollower removes a follower relationship.
+// DeleteFollower removes a follower relationship.
 func (h *FollowerHandler) DeleteFollower(w http.ResponseWriter, r *http.Request) {
+	// Récupérer l'utilisateur connecté depuis le middleware JWT
+	followerUserID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
 	var req followRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	if err := h.FollowerRepository.Delete(req.FollowerID, req.FollowedID); err != nil {
-		http.Error(w, "Failed to unfollow user", http.StatusInternalServerError)
+	// Utiliser l'ID du JWT pour plus de sécurité
+	if err := h.FollowerRepository.Delete(followerUserID, req.FollowedID); err != nil {
+		http.Error(w, "Failed to unfollow user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := h.NotificationRepository.DeleteFollowRequestFromUser(req.FollowedID, req.FollowerID); err != nil {
-		http.Error(w, "Failed to delete friend request", http.StatusInternalServerError)
-		return
+	// Supprimer aussi la notification de demande de follow si elle existe
+	if err := h.NotificationRepository.DeleteFollowRequestFromUser(req.FollowedID, followerUserID); err != nil {
+		// Ne pas échouer si la notification n'existe pas
+		// http.Error(w, "Failed to delete friend request", http.StatusInternalServerError)
+		// return
 	}
 
 	json.NewEncoder(w).Encode(map[string]string{

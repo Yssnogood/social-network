@@ -24,7 +24,20 @@ export async function followUser(_followerId: number, followedId: number, _is_pu
   });
   
   console.log("Follow response OK:", res.ok)
-  if (!res.ok) throw new Error("Erreur lors du follow");
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("Follow error details:", res.status, errorText);
+    
+    if (res.status === 409) {
+      throw new Error("Vous suivez déjà cet utilisateur");
+    } else if (res.status === 400) {
+      throw new Error("Impossible de se suivre soi-même");
+    } else if (res.status === 401) {
+      throw new Error("Vous devez être connecté pour suivre un utilisateur");
+    }
+    
+    throw new Error(`Erreur lors du follow: ${errorText || res.statusText}`);
+  }
 }
 
 export async function unfollowUser(_followerId: number, followedId: number) {
@@ -37,7 +50,18 @@ export async function unfollowUser(_followerId: number, followedId: number) {
     body: JSON.stringify({ followed_id: followedId }), // follower_id maintenant récupéré du JWT
   });
 
-  if (!res.ok) throw new Error("Erreur lors du unfollow");
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("Unfollow error details:", res.status, errorText);
+    
+    if (res.status === 401) {
+      throw new Error("Vous devez être connecté pour annuler un follow");
+    } else if (res.status === 404) {
+      throw new Error("Relation de follow non trouvée");
+    }
+    
+    throw new Error(`Erreur lors du unfollow: ${errorText || res.statusText}`);
+  }
 }
 
 

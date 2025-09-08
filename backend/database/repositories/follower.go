@@ -2,6 +2,8 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
+	"strings"
 
 	"social-network/backend/database/models"
 )
@@ -34,6 +36,18 @@ func (r *FollowerRepository) Create(follower *models.Follower) error {
 		follower.Accepted,
 		follower.FollowedAt,
 	)
+
+	// Gérer les erreurs de contraintes SQLite
+	if err != nil {
+		errStr := err.Error()
+		if strings.Contains(errStr, "UNIQUE constraint failed") {
+			return fmt.Errorf("already following this user")
+		}
+		if strings.Contains(errStr, "CHECK constraint failed") {
+			return fmt.Errorf("cannot follow yourself")
+		}
+	}
+
 	return err
 }
 
@@ -126,8 +140,8 @@ func (r *FollowerRepository) IsPending(followerID, followedID int64) (bool, erro
 }
 
 type FollowerInfo struct {
-	ID        int64  // User ID
-	Username string
+	ID          int64 // User ID
+	Username    string
 	Avatar_path string
 }
 
@@ -157,7 +171,6 @@ func (r *FollowerRepository) GetFollowerUsers(userID int64) ([]*FollowerInfo, er
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-
 
 	return followerUsers, nil
 }

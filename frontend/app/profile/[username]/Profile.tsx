@@ -39,6 +39,7 @@ export default function ClientProfile({
           headers : {
             "Content-Type" : "application/json",
           },
+          credentials: "include", // Ajout des credentials pour JWT
           body: JSON.stringify({
             follower_id: currentUserId,
             followed_id: profile.id,
@@ -132,12 +133,10 @@ export default function ClientProfile({
                 {isFollowPending ? (
                   <button 
                     className="mt-4 px-4 py-2 bg-yellow-300 text-gray-800 rounded"
-                    onClick={() => {
-                      unfollowUser(currentUserId, profile.id);
-                      setIsFollowPending(false);
-                    }}
+                    onClick={handleUnfollow}
+                    disabled={loading}
                   >
-                    Annuler la demande
+                    {loading ? "..." : "Annuler la demande"}
                   </button>
                 ) : (
                   <button
@@ -201,11 +200,10 @@ export default function ClientProfile({
                     ) : isFollowPending ? (
                       <button 
                         className="mt-4 px-4 py-2 bg-yellow-300 text-gray-800 rounded"
-                        onClick={() => {
-                          unfollowUser(currentUserId, profile.id);
-                        }}
+                        onClick={handleUnfollow}
+                        disabled={loading}
                       >
-                        Annuler la demande
+                        {loading ? "..." : "Annuler la demande"}
                       </button>
                     ) : (
                       <button
