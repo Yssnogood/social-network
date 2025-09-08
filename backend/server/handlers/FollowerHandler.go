@@ -98,6 +98,25 @@ func (h *FollowerHandler) CreateFollower(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Créer une notification pour la demande de follow (seulement si non acceptée automatiquement)
+	if !accepted {
+		followerUser, err := h.UserRepository.GetByID(followerUserID)
+		if err == nil && followerUser != nil {
+			referenceType := "follow_request"
+			notification := &models.Notification{
+				UserID:        req.FollowedID,
+				Type:          "follow_request",
+				Content:       followerUser.Username + " souhaite vous suivre",
+				Read:          false,
+				ReferenceID:   &followerUserID,
+				ReferenceType: &referenceType,
+				CreatedAt:     time.Now(),
+			}
+			// Ne pas faire échouer si la notification échoue
+			_, _ = h.NotificationRepository.Create(notification)
+		}
+	}
+
 	message := "Follow request sent"
 	if accepted {
 		message = "User followed successfully"

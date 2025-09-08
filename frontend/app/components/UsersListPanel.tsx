@@ -20,6 +20,7 @@ interface BaseUser {
 
 interface UserWithStatus extends BaseUser {
     is_following?: boolean;
+    is_pending?: boolean;  // Ajout du statut pending
     is_followed_by?: boolean;
     is_friend?: boolean;
 }
@@ -83,6 +84,19 @@ export default function UsersListPanel() {
 
         return () => clearInterval(interval);
     }, [currentUserId]);
+
+    // Fonction pour recharger les données "all users"
+    const reloadAllUsers = async () => {
+        try {
+            const allUsersData = await fetchAllUsersWithStatus();
+            const data = Array.isArray(allUsersData) ? allUsersData : [];
+            setAllUsers(data);
+            setDisplayedAllUsers(data.slice(0, ITEMS_PER_PAGE * page.all));
+            setHasMore(prev => ({ ...prev, all: data.length > ITEMS_PER_PAGE * page.all }));
+        } catch (error) {
+            console.error('Error reloading all users:', error);
+        }
+    };
 
     // Charger les données selon l'onglet actif
     useEffect(() => {
@@ -231,39 +245,36 @@ export default function UsersListPanel() {
         if (!currentUserId) return;
 
         try {
-            if (user.is_following) {
+            if (user.is_following || user.is_pending) {
+                // Si on suit déjà ou si la demande est en attente, on unfollow/annule
                 await unfollowUser(currentUserId, user.id);
                 // Mettre à jour le state local
                 if (activeTab === 'all') {
                     setAllUsers(prev => prev.map(u => 
-                        u.id === user.id ? { ...u, is_following: false, is_friend: false } : u
+                        u.id === user.id ? { ...u, is_following: false, is_pending: false, is_friend: false } : u
                     ));
                     setDisplayedAllUsers(prev => prev.map(u => 
-                        u.id === user.id ? { ...u, is_following: false, is_friend: false } : u
+                        u.id === user.id ? { ...u, is_following: false, is_pending: false, is_friend: false } : u
                     ));
                 } else if (activeTab === 'following') {
                     setFollowing(prev => prev.filter(u => u.id !== user.id));
                     setDisplayedFollowing(prev => prev.filter(u => u.id !== user.id));
                 }
             } else {
-                // Déterminer si le profil est public (assume public pour l'instant)
-                await followUser(currentUserId, user.id, true);
-                // Mettre à jour le state local
+                // Sinon, on follow - mise à jour immédiate optimiste
                 if (activeTab === 'all') {
                     setAllUsers(prev => prev.map(u => 
-                        u.id === user.id ? { 
-                            ...u, 
-                            is_following: true,
-                            is_friend: u.is_followed_by ? true : u.is_friend 
-                        } : u
+                        u.id === user.id ? { ...u, is_pending: true } : u
                     ));
                     setDisplayedAllUsers(prev => prev.map(u => 
-                        u.id === user.id ? { 
-                            ...u, 
-                            is_following: true,
-                            is_friend: u.is_followed_by ? true : u.is_friend 
-                        } : u
+                        u.id === user.id ? { ...u, is_pending: true } : u
                     ));
+                }
+                
+                await followUser(currentUserId, user.id, true);
+                // Refetch les données pour avoir le statut correct (au cas où)
+                if (activeTab === 'all') {
+                    await reloadAllUsers();
                 }
             }
         } catch (error) {
@@ -327,10 +338,17 @@ export default function UsersListPanel() {
                             className={`px-2 py-1 text-xs rounded transition-colors ${
                                 userWithStatus.is_following 
                                     ? 'bg-red-600 hover:bg-red-700 text-white' 
+                                    : userWithStatus.is_pending
+                                    ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
                                     : 'bg-blue-600 hover:bg-blue-700 text-white'
                             }`}
                         >
-                            {userWithStatus.is_following ? 'Unfollow' : 'Follow'}
+                            {userWithStatus.is_following 
+                                ? 'Unfollow' 
+                                : userWithStatus.is_pending 
+                                ? 'Annuler' 
+                                : 'Follow'
+                            }
                         </button>
                     )}
                     

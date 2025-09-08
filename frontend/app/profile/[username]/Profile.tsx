@@ -31,37 +31,51 @@ export default function ClientProfile({
   const [loading, setLoading] = useState(false);
   const [followStatusLoaded, setFollowStatusLoaded] = useState(isOwnProfile || profile.is_public);
 
+  // Fonction pour vérifier le statut de follow
+  const fetchIsFollowingStatus = async () => {
+    try {
+      const res = await fetch(`http://localhost:8090/api/followers/check`,{
+        method : "POST",
+        headers : {
+          "Content-Type" : "application/json",
+        },
+        credentials: "include", // Ajout des credentials pour JWT
+        body: JSON.stringify({
+          follower_id: currentUserId,
+          followed_id: profile.id,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Erreur lors du check follow");
+
+      const data = await res.json();
+      setIsFollowing(data.isFollowing);
+      setIsFollowPending(data.isPending);
+    } catch (error) {
+      console.error("Erreur lors de la vérification du statut de follow :", error);
+    } finally {
+      setFollowStatusLoaded(true);
+    }
+  };
+
   useEffect(() => {
-    const fetchIsFollowingStatus = async () => {
-      try {
-        const res = await fetch(`http://localhost:8090/api/followers/check`,{
-          method : "POST",
-          headers : {
-            "Content-Type" : "application/json",
-          },
-          credentials: "include", // Ajout des credentials pour JWT
-          body: JSON.stringify({
-            follower_id: currentUserId,
-            followed_id: profile.id,
-          }),
-        });
-
-        if (!res.ok) throw new Error("Erreur lors du check follow");
-
-        const data = await res.json();
-        setIsFollowing(data.isFollowing);
-        setIsFollowPending(data.isPending);
-      } catch (error) {
-        console.error("Erreur lors de la vérification du statut de follow :", error);
-      } finally {
-        setFollowStatusLoaded(true);
-      }
-    };
 
     if (!isOwnProfile && !profile.is_public) {
       fetchIsFollowingStatus();
     }
   }, [currentUserId, profile.id, isOwnProfile, profile.is_public]);
+
+  // Refetch le statut de follow quand la page regagne le focus
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !isOwnProfile && !profile.is_public) {
+        fetchIsFollowingStatus();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isOwnProfile, profile.is_public]);
 
   const handleProfileUpdate = () => {
     setIsEditingProfile(false);

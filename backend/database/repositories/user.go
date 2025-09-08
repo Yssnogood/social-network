@@ -17,16 +17,17 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 }
 
 type SearchResult struct {
-	Type        string  `json:"type"`
-	ID          int     `json:"id"`
-	Username    *string `json:"username,omitempty"`
-	AvatarPath  *string `json:"avatar,omitempty"`
-	Title       *string `json:"title,omitempty"`
-	Description *string `json:"description,omitempty"`
-	IsFollowing *bool   `json:"is_following,omitempty"`
+	Type         string  `json:"type"`
+	ID           int     `json:"id"`
+	Username     *string `json:"username,omitempty"`
+	AvatarPath   *string `json:"avatar,omitempty"`
+	Title        *string `json:"title,omitempty"`
+	Description  *string `json:"description,omitempty"`
+	IsFollowing  *bool   `json:"is_following,omitempty"`
+	IsPending    *bool   `json:"is_pending,omitempty"`
 	IsFollowedBy *bool   `json:"is_followed_by,omitempty"`
-	IsMember    *bool   `json:"is_member,omitempty"`
-	IsFriend    *bool   `json:"is_friend,omitempty"`
+	IsMember     *bool   `json:"is_member,omitempty"`
+	IsFriend     *bool   `json:"is_friend,omitempty"`
 }
 
 type SearchGroupedResult struct {
@@ -262,7 +263,7 @@ func (r *UserRepository) GetFollowingByUserID(userID int64) ([]*models.User, err
 		return nil, err
 	}
 	defer stmt.Close()
-	
+
 	rows, err := stmt.Query(userID)
 	if err != nil {
 		return nil, err
@@ -295,6 +296,10 @@ func (r *UserRepository) GetAllUsersWithStatus(currentUserID int64) ([]SearchRes
 			WHERE f.follower_id = ? AND f.followed_id = u.id AND f.accepted = 1
 		) AS is_following,
 		EXISTS (
+			SELECT 1 FROM followers f
+			WHERE f.follower_id = ? AND f.followed_id = u.id AND f.accepted = 0
+		) AS is_pending,
+		EXISTS (
 			SELECT 1 FROM followers f2
 			WHERE f2.follower_id = u.id AND f2.followed_id = ? AND f2.accepted = 1
 		) AS is_followed_by,
@@ -313,7 +318,7 @@ func (r *UserRepository) GetAllUsersWithStatus(currentUserID int64) ([]SearchRes
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.Query(currentUserID, currentUserID, currentUserID, currentUserID)
+	rows, err := stmt.Query(currentUserID, currentUserID, currentUserID, currentUserID, currentUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -324,15 +329,16 @@ func (r *UserRepository) GetAllUsersWithStatus(currentUserID int64) ([]SearchRes
 		var res SearchResult
 		res.Type = "user"
 		var username, avatar *string
-		var isFollowing, isFollowedBy, isFriend bool
+		var isFollowing, isPending, isFollowedBy, isFriend bool
 
-		if err := rows.Scan(&res.ID, &username, &avatar, &isFollowing, &isFollowedBy, &isFriend); err != nil {
+		if err := rows.Scan(&res.ID, &username, &avatar, &isFollowing, &isPending, &isFollowedBy, &isFriend); err != nil {
 			return nil, err
 		}
 
 		res.Username = username
 		res.AvatarPath = avatar
 		res.IsFollowing = &isFollowing
+		res.IsPending = &isPending
 		res.IsFollowedBy = &isFollowedBy
 		res.IsFriend = &isFriend
 		users = append(users, res)
