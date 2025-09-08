@@ -1,3 +1,5 @@
+import { dispatchFollowStatusChange } from './followEvents';
+
 export interface Follower {
   follower_id: number;
   followed_id: number;
@@ -38,6 +40,19 @@ export async function followUser(_followerId: number, followedId: number, _is_pu
     
     throw new Error(`Erreur lors du follow: ${errorText || res.statusText}`);
   }
+  
+  // Récupérer la réponse pour savoir si c'est accepté ou en attente
+  const responseData = await res.json();
+  console.log("Follow response data:", responseData);
+  
+  // Dispatcher l'événement selon la réponse du serveur
+  const isAccepted = responseData.message === "User followed successfully";
+  const isPending = responseData.message === "Follow request sent";
+  
+  dispatchFollowStatusChange(followedId, isAccepted, isPending);
+  
+  // Retourner l'info pour que le composant sache s'il faut créer une notification
+  return { isAccepted, isPending };
 }
 
 export async function unfollowUser(_followerId: number, followedId: number) {
@@ -62,6 +77,12 @@ export async function unfollowUser(_followerId: number, followedId: number) {
     
     throw new Error(`Erreur lors du unfollow: ${errorText || res.statusText}`);
   }
+  
+  // Dispatcher l'événement de changement de statut - plus de follow ni pending
+  dispatchFollowStatusChange(followedId, false, false);
+  
+  // Retourner l'info de cohérence avec followUser
+  return { isAccepted: false, isPending: false };
 }
 
 

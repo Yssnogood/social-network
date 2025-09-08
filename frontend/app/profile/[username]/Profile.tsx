@@ -7,7 +7,7 @@ import ProfileTabs from "./ProfileTabs";
 import FollowersSection from "../../components/FollowersSection";
 import EditableProfile from "./EditableProfile";
 import { followUser, unfollowUser, FollowerUser } from "../../../services/follow";
-import { createNotification } from "../../../services/notifications";
+import { addFollowStatusListener, dispatchFollowStatusChange } from "../../../services/followEvents";
 
 export default function ClientProfile({
   profile,
@@ -77,6 +77,20 @@ export default function ClientProfile({
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [isOwnProfile, profile.is_public]);
 
+  // Écouter les événements de changement de statut de follow
+  useEffect(() => {
+    const cleanup = addFollowStatusListener((event) => {
+      // Mise à jour seulement si c'est pour cet utilisateur
+      if (event.userId === profile.id) {
+        setIsFollowing(event.isFollowing);
+        setIsFollowPending(event.isPending);
+        setFollowStatusLoaded(true);
+      }
+    });
+
+    return cleanup; // Nettoyer l'événement listener
+  }, [profile.id]);
+
   const handleProfileUpdate = () => {
     setIsEditingProfile(false);
   };
@@ -95,18 +109,11 @@ export default function ClientProfile({
   const handleFollow = async () => {
     try {
       setLoading(true);
-      await followUser(currentUserId, profile.id, profile.is_public);
+      // Utiliser true comme paramètre par défaut, le serveur décidera
+      const result = await followUser(currentUserId, profile.id, true);
 
-      createNotification({
-        userId: profile.id,
-        type: "follow_request",
-        content: `${loggedInUser} vous a envoyé une demande de suivi.`,
-        referenceId: currentUserId,
-        referenceType: "user",
-      });
-
-      setIsFollowing(profile.is_public);
-      setIsFollowPending(!profile.is_public);
+      // Pas besoin de créer la notification ici, le backend s'en charge déjà
+      // Plus besoin de setState ici, l'événement se charge de la synchronisation
       await fetchFollowers();
     } catch (error: any) {
       console.error("Erreur lors du follow :", error.message);
@@ -120,8 +127,7 @@ export default function ClientProfile({
     try {
       setLoading(true);
       await unfollowUser(currentUserId, profile.id);
-      setIsFollowing(false);
-      setIsFollowPending(false);
+      // Plus besoin de setState ici, l'événement se charge de la synchronisation
       await fetchFollowers();
     } catch (error: any) {
       console.error("Erreur lors du unfollow :", error.message);

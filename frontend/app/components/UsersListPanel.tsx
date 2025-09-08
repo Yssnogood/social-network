@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useOnePage } from '../contexts/OnePageContext';
 import { fetchFriends, fetchFollowing, fetchAllUsersWithStatus, fetchOnlineUsers } from '../../services/contact';
 import { followUser, unfollowUser } from '../../services/follow';
+import { addFollowStatusListener } from '../../services/followEvents';
 import { getCurrentUserId } from '../../services/auth';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
@@ -144,6 +145,25 @@ export default function UsersListPanel() {
         loadData();
     }, [activeTab, currentUserId, contacts.length, following.length, allUsers.length]);
 
+    // Écouter les événements de changement de statut de follow
+    useEffect(() => {
+        const cleanup = addFollowStatusListener((event) => {
+            // Mettre à jour les états locaux quand le statut change
+            setAllUsers(prev => prev.map(u => 
+                u.id === event.userId 
+                    ? { ...u, is_following: event.isFollowing, is_pending: event.isPending }
+                    : u
+            ));
+            setDisplayedAllUsers(prev => prev.map(u => 
+                u.id === event.userId 
+                    ? { ...u, is_following: event.isFollowing, is_pending: event.isPending }
+                    : u
+            ));
+        });
+
+        return cleanup; // Nettoyer l'événement listener
+    }, []);
+
     // Fonction pour charger plus d'utilisateurs
     const loadMoreUsers = () => {
         const currentPage = page[activeTab];
@@ -261,21 +281,9 @@ export default function UsersListPanel() {
                     setDisplayedFollowing(prev => prev.filter(u => u.id !== user.id));
                 }
             } else {
-                // Sinon, on follow - mise à jour immédiate optimiste
-                if (activeTab === 'all') {
-                    setAllUsers(prev => prev.map(u => 
-                        u.id === user.id ? { ...u, is_pending: true } : u
-                    ));
-                    setDisplayedAllUsers(prev => prev.map(u => 
-                        u.id === user.id ? { ...u, is_pending: true } : u
-                    ));
-                }
-                
+                // Sinon, on follow - laisser l'événement se charger de la mise à jour
                 await followUser(currentUserId, user.id, true);
-                // Refetch les données pour avoir le statut correct (au cas où)
-                if (activeTab === 'all') {
-                    await reloadAllUsers();
-                }
+                // La synchronisation se fait automatiquement via l'événement
             }
         } catch (error) {
             console.error('Error toggling follow:', error);

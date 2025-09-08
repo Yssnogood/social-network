@@ -102,11 +102,14 @@ func (h *FollowerHandler) CreateFollower(w http.ResponseWriter, r *http.Request)
 	if !accepted {
 		followerUser, err := h.UserRepository.GetByID(followerUserID)
 		if err == nil && followerUser != nil {
+			// Supprimer d'abord toute notification existante pour éviter les doublons
+			_ = h.NotificationRepository.DeleteFollowRequestFromUser(req.FollowedID, followerUserID)
+
 			referenceType := "follow_request"
 			notification := &models.Notification{
 				UserID:        req.FollowedID,
 				Type:          "follow_request",
-				Content:       followerUser.Username + " souhaite vous suivre",
+				Content:       followerUser.Username + " vous a envoyé une demande de suivi.",
 				Read:          false,
 				ReferenceID:   &followerUserID,
 				ReferenceType: &referenceType,
