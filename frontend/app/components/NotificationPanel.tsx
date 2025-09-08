@@ -1,6 +1,34 @@
 import { acceptFollowRequestNotif, declineFollowRequestNotif, acceptGroupJoinRequest, declineGroupJoinRequest } from "../../services/notifications";
 
-export default function Notifications({ notifications }: { notifications: any[] }) {
+export default function Notifications({ notifications, onNotificationUpdate }: { notifications: any[], onNotificationUpdate?: (updatedNotifications: any[]) => void }) {
+    const handleAcceptFollow = async (notif: any) => {
+        try {
+            await acceptFollowRequestNotif(notif.id, notif.user_id, notif.reference_id);
+            
+            // Supprimer la notification de l'état local immédiatement
+            if (onNotificationUpdate) {
+                const updatedNotifications = notifications.filter(n => n.id !== notif.id);
+                onNotificationUpdate(updatedNotifications);
+            }
+        } catch (error) {
+            console.error('Erreur lors de l\'acceptation:', error);
+        }
+    };
+
+    const handleDeclineFollow = async (notif: any) => {
+        try {
+            await declineFollowRequestNotif(notif.id, notif.user_id, notif.reference_id);
+            
+            // Supprimer la notification de l'état local immédiatement
+            if (onNotificationUpdate) {
+                const updatedNotifications = notifications.filter(n => n.id !== notif.id);
+                onNotificationUpdate(updatedNotifications);
+            }
+        } catch (error) {
+            console.error('Erreur lors du refus:', error);
+        }
+    };
+
     return (
         <div className="absolute top-10 right-0 mt-2 w-72 bg-white shadow-lg rounded-lg z-50">
             <ul className="divide-y divide-gray-200 text-sm text-gray-800">
@@ -13,13 +41,13 @@ export default function Notifications({ notifications }: { notifications: any[] 
                             {notif.type === "follow_request" && (
                                 <div className="mt-2 flex gap-2">
                                     <button
-                                        onClick={() => acceptFollowRequestNotif(notif.id, notif.user_id, notif.reference_id)}
+                                        onClick={() => handleAcceptFollow(notif)}
                                         className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
                                     >
                                         Accepter
                                     </button>
                                     <button
-                                        onClick={() => declineFollowRequestNotif(notif.id, notif.user_id, notif.reference_id)}
+                                        onClick={() => handleDeclineFollow(notif)}
                                         className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
                                     >
                                         Refuser

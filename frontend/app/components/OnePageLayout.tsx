@@ -19,9 +19,10 @@ import PrivateChatContent from './slideDrawerContents/PrivateChatContent';
 interface OnePageLayoutProps {
   children?: React.ReactNode;
   username?: string;
-  notifications: unknown[];
+  notifications: any[];
   showNotifications: boolean;
   onToggleNotifications: () => void;
+  onNotificationUpdate?: (updatedNotifications: any[]) => void;
   // Props pour le feed
   posts: unknown[];
   isLoading: boolean;
@@ -35,6 +36,7 @@ export default function OnePageLayout({
   notifications,
   showNotifications,
   onToggleNotifications,
+  onNotificationUpdate,
   posts,
   isLoading,
   onCreatePost,
@@ -174,6 +176,7 @@ export default function OnePageLayout({
         notifications={notifications}
         showNotifications={showNotifications}
         onToggleNotifications={onToggleNotifications}
+        onNotificationUpdate={onNotificationUpdate}
       />
       
       {/* Layout 5 colonnes - Responsive avec hauteur calculée */}

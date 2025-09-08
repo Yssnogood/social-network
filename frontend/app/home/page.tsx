@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { getPosts, createPost, Post } from "../../services/post";
 import { useCookies } from "next-client-cookies";
 import { getCurrentUser, getCurrentUserId } from "../../services/auth";
@@ -50,6 +50,43 @@ export default function Home(): JSX.Element {
         getNotifAndUser();
     }, [cookies]);
 
+    // Écouter les nouvelles notifications via WebSocket
+    useEffect(() => {
+        const handleNewNotification = (event: CustomEvent) => {
+            // Ajouter la nouvelle notification à la liste existante
+            setNotifications(prev => [event.detail, ...prev]);
+        };
+
+        const handleRemoveNotification = (event: CustomEvent) => {
+            // Supprimer les notifications correspondantes de la liste
+            setNotifications(prev => {
+                const filtered = prev.filter(notif => {
+                    // Supprimer les notifications qui correspondent au type et reference_id
+                    const shouldRemove = notif.type === event.detail.type && 
+                        notif.reference_id === event.detail.reference_id &&
+                        notif.reference_type === event.detail.reference_type;
+                    
+                    if (shouldRemove) {
+                        console.log('Suppression de la notification:', notif);
+                    }
+                    
+                    return !shouldRemove; // Inverser la logique : garder si shouldRemove est false
+                });
+                return filtered;
+            });
+        };
+
+        // Ajouter les écouteurs d'événements
+        window.addEventListener('new-notification', handleNewNotification as EventListener);
+        window.addEventListener('remove-notification', handleRemoveNotification as EventListener);
+
+        // Nettoyer les écouteurs lors du démontage
+        return () => {
+            window.removeEventListener('new-notification', handleNewNotification as EventListener);
+            window.removeEventListener('remove-notification', handleRemoveNotification as EventListener);
+        };
+    }, []);
+
     // Charger les posts
     useEffect(() => {
         async function loadPosts() {
@@ -71,6 +108,10 @@ export default function Home(): JSX.Element {
     // Handlers
     const handleToggleNotifications = () => {
         setShowNotifications(!showNotifications);
+    };
+
+    const handleNotificationUpdate = (updatedNotifications: any[]) => {
+        setNotifications(updatedNotifications);
     };
 
     // Handler pour créer un post avec le nouveau système
@@ -109,6 +150,7 @@ export default function Home(): JSX.Element {
                     notifications={notifications}
                     showNotifications={showNotifications}
                     onToggleNotifications={handleToggleNotifications}
+                    onNotificationUpdate={handleNotificationUpdate}
                     posts={posts}
                     isLoading={isLoading}
                     onCreatePost={handleCreatePost}

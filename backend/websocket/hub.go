@@ -57,6 +57,12 @@ type WSMessage struct {
 	Username       string    `json:"username,omitempty"`
 	Timestamp      time.Time `json:"timestamp,omitempty"`
 	Error          string    `json:"error,omitempty"`
+	// Champs spécifiques aux notifications
+	NotificationID   *int64  `json:"notification_id,omitempty"`
+	NotificationType *string `json:"notification_type,omitempty"`
+	Read             *bool   `json:"read,omitempty"`
+	ReferenceID      *int64  `json:"reference_id,omitempty"`
+	ReferenceType    *string `json:"reference_type,omitempty"`
 }
 
 // NewHub creates a new WebSocket hub
@@ -235,7 +241,6 @@ func (h *Hub) handleMessageSend(wsMsg WSMessage) {
 	h.sendToUser(wsMsg.SenderID, response)
 	h.sendToUser(wsMsg.ReceiverID, response)
 }
-
 
 // sendToUser sends a message to a specific user
 func (h *Hub) sendToUser(userID int64, message WSMessage) {
@@ -538,3 +543,7 @@ func (h *Hub) BroadcastToEvent(eventID int64, message WSMessage) {
 	h.broadcastToEvent(eventID, message)
 }
 
+// SendToUser sends a message to a specific user (public method for handlers)
+func (h *Hub) SendToUser(userID int64, message WSMessage) {
+	h.sendToUser(userID, message)
+}

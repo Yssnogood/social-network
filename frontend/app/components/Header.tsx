@@ -11,15 +11,17 @@ import SearchBar from "./SearchBar";
 
 export interface HeaderProps {
 	username: string | undefined;
-	notifications: string[];
+	notifications: any[];
 	showNotifications: boolean;
 	onToggleNotifications: () => void;
+	onNotificationUpdate?: (updatedNotifications: any[]) => void;
 }
 export default function Header({
 	username,
 	notifications,
 	showNotifications,
 	onToggleNotifications,
+	onNotificationUpdate,
 }: HeaderProps) {
 	const cookies = useCookies();
 	const router = useRouter();
@@ -123,7 +125,10 @@ export default function Header({
 
 						{showNotifications && (
 							<div className="absolute right-0 top-6 z-50">
-								<Notifications notifications={notifications} />
+								<Notifications 
+									notifications={notifications} 
+									onNotificationUpdate={onNotificationUpdate}
+								/>
 							</div>
 						)}
 					</button>

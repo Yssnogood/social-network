@@ -9,6 +9,7 @@ import (
 	"social-network/backend/database/models"
 	repository "social-network/backend/database/repositories"
 	"social-network/backend/server/middlewares"
+	"social-network/backend/websocket"
 )
 
 // FollowerHandler handles HTTP requests related to followers.
@@ -16,14 +17,21 @@ type FollowerHandler struct {
 	FollowerRepository     *repository.FollowerRepository
 	NotificationRepository *repository.NotificationRepository
 	UserRepository         *repository.UserRepository
+	WebSocketHub           WebSocketHubInterface
+}
+
+// WebSocketHubInterface définit les méthodes nécessaires pour les notifications temps réel
+type WebSocketHubInterface interface {
+	SendToUser(userID int64, message websocket.WSMessage)
 }
 
 // NewFollowerHandler creates a new instance of FollowerHandler.
-func NewFollowerHandler(fr *repository.FollowerRepository, nr *repository.NotificationRepository, ur *repository.UserRepository) *FollowerHandler {
+func NewFollowerHandler(fr *repository.FollowerRepository, nr *repository.NotificationRepository, ur *repository.UserRepository, hub WebSocketHubInterface) *FollowerHandler {
 	return &FollowerHandler{
 		FollowerRepository:     fr,
 		NotificationRepository: nr,
 		UserRepository:         ur,
+		WebSocketHub:           hub,
 	}
 }
 
@@ -116,7 +124,14 @@ func (h *FollowerHandler) CreateFollower(w http.ResponseWriter, r *http.Request)
 				CreatedAt:     time.Now(),
 			}
 			// Ne pas faire échouer si la notification échoue
-			_, _ = h.NotificationRepository.Create(notification)
+			notificationID, err := h.NotificationRepository.Create(notification)
+			if err == nil {
+				// Mettre à jour l'ID de la notification avec celui retourné par la DB
+				notification.ID = notificationID
+				// Envoyer la notification en temps réel via WebSocket
+				h.sendNotificationWebSocket(req.FollowedID, notification)
+			}
+			_ = notificationID
 		}
 	}
 
@@ -193,6 +208,22 @@ func (h *FollowerHandler) DeleteFollower(w http.ResponseWriter, r *http.Request)
 		// Ne pas échouer si la notification n'existe pas
 		// http.Error(w, "Failed to delete friend request", http.StatusInternalServerError)
 		// return
+	}
+
+	// Envoyer une notification WebSocket pour informer que la demande a été retirée
+	followerUser, err := h.UserRepository.GetByID(followerUserID)
+	if err == nil && followerUser != nil {
+		wsMessage := websocket.WSMessage{
+			Type:             "notification_removed",
+			Content:          followerUser.Username + " a retiré sa demande de suivi.",
+			NotificationType: func() *string { s := "follow_request"; return &s }(),
+			ReferenceID:      &followerUserID,
+			ReferenceType:    func() *string { s := "follow_request"; return &s }(),
+			Timestamp:        time.Now(),
+		}
+
+		// Envoyer via WebSocket à l'utilisateur qui était suivi
+		h.WebSocketHub.SendToUser(req.FollowedID, wsMessage)
 	}
 
 	json.NewEncoder(w).Encode(map[string]string{
@@ -280,6 +311,19 @@ func (h *FollowerHandler) AcceptFollower(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Envoyer un message WebSocket pour supprimer la notification côté client
+	followerUser, err := h.UserRepository.GetByID(req.FollowerID)
+	if err == nil && followerUser != nil {
+		wsMessage := websocket.WSMessage{
+			Type:             "notification_removed",
+			Content:          "Demande de suivi acceptée.",
+			NotificationType: func() *string { s := "follow_request"; return &s }(),
+			ReferenceID:      &req.FollowerID,
+			ReferenceType:    func() *string { s := "user"; return &s }(),
+		}
+		h.WebSocketHub.SendToUser(req.FollowedID, wsMessage)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Follow request accepted",
@@ -304,8 +348,43 @@ func (h *FollowerHandler) DeclineFollower(w http.ResponseWriter, r *http.Request
 		// return
 	}
 
+	// Envoyer un message WebSocket pour supprimer la notification côté client
+	followerUser, err := h.UserRepository.GetByID(req.FollowerID)
+	if err == nil && followerUser != nil {
+		wsMessage := websocket.WSMessage{
+			Type:             "notification_removed",
+			Content:          "Demande de suivi refusée.",
+			NotificationType: func() *string { s := "follow_request"; return &s }(),
+			ReferenceID:      &req.FollowerID,
+			ReferenceType:    func() *string { s := "user"; return &s }(),
+		}
+		h.WebSocketHub.SendToUser(req.FollowedID, wsMessage)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Follow request declined",
 	})
+}
+
+// sendNotificationWebSocket envoie une notification en temps réel via WebSocket
+func (h *FollowerHandler) sendNotificationWebSocket(userID int64, notification *models.Notification) {
+	if h.WebSocketHub == nil {
+		return
+	}
+
+	// Créer le message WebSocket pour la notification
+	wsMessage := websocket.WSMessage{
+		Type:             "notification",
+		Content:          notification.Content,
+		NotificationID:   &notification.ID,
+		NotificationType: &notification.Type,
+		Read:             &notification.Read,
+		ReferenceID:      notification.ReferenceID,
+		ReferenceType:    notification.ReferenceType,
+		Timestamp:        notification.CreatedAt,
+	}
+
+	// Envoyer via WebSocket à l'utilisateur spécifique
+	h.WebSocketHub.SendToUser(userID, wsMessage)
 }

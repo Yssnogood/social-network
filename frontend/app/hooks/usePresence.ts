@@ -45,8 +45,37 @@ export function usePresence() {
             ws.onmessage = (event) => {
                 try {
                     const message = JSON.parse(event.data);
-                    // On peut traiter les messages de présence ici si nécessaire
-                    console.log('Presence message received:', message);
+                    
+                    if (message.type === 'notification') {
+                        // Déclencher un événement personnalisé pour notifier les composants
+                        const notificationEvent = new CustomEvent('new-notification', {
+                            detail: {
+                                id: message.notification_id,
+                                user_id: userId, // Ajouter le user_id depuis le contexte local
+                                type: message.notification_type,
+                                content: message.content,
+                                read: message.read,
+                                reference_id: message.reference_id,
+                                reference_type: message.reference_type,
+                                created_at: message.timestamp
+                            }
+                        });
+                        window.dispatchEvent(notificationEvent);
+                    } else if (message.type === 'notification_removed') {
+                        // Déclencher un événement personnalisé pour supprimer la notification
+                        const removeNotificationEvent = new CustomEvent('remove-notification', {
+                            detail: {
+                                type: message.notification_type,
+                                reference_id: message.reference_id,
+                                reference_type: message.reference_type,
+                                content: message.content
+                            }
+                        });
+                        window.dispatchEvent(removeNotificationEvent);
+                    } else {
+                        // Autres messages de présence
+                        console.log('Presence message received:', message);
+                    }
                 } catch (error) {
                     console.error('Error parsing presence message:', error);
                 }

@@ -91,7 +91,7 @@ func main() {
 	userHandler := appHandlers.NewUserHandler(userService, userRepo, sessionRepo)
 	postHandler := appHandlers.NewPostHandler(postService, postRepo, sessionRepo, userRepo)
 	commentHandler := appHandlers.NewCommentHandler(commentRepo, sessionRepo, userRepo)
-	followerHandler := appHandlers.NewFollowerHandler(followerRepo, notificationRepo, userRepo)
+	followerHandler := appHandlers.NewFollowerHandler(followerRepo, notificationRepo, userRepo, wsHub)
 	messageHandler := appHandlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
 	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo, followerRepo, groupRepo)
 	eventHandler := appHandlers.NewEventHandler(eventRepo, userRepo, wsHub) // 🎯 Ajout du Hub WebSocket
