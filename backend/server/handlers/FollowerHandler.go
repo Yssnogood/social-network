@@ -272,13 +272,18 @@ func (h *FollowerHandler) DeclineFollower(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := h.FollowerRepository.Delete(req.FollowerID, req.FollowedID); err != nil {
-		http.Error(w, "Failed to decline follower", http.StatusInternalServerError)
+		http.Error(w, "Failed to decline follower: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := h.NotificationRepository.DeleteFollowRequestFromUser(req.FollowedID, req.FollowerID); err != nil {
-		http.Error(w, "Failed to delete friend request", http.StatusInternalServerError)
-		return
+		// Ne pas échouer si la notification n'existe pas
+		// http.Error(w, "Failed to delete friend request", http.StatusInternalServerError)
+		// return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Follow request declined",
+	})
 }

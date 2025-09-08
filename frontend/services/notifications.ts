@@ -31,6 +31,7 @@ export async function createNotification(notification: {
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include", // Ajout des credentials pour JWT
     body: JSON.stringify({
       user_id: notification.userId,
       type: notification.type,
@@ -55,6 +56,7 @@ export async function acceptFollowRequestNotif(notificationId: number, user_id: 
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include", // Ajout des credentials pour JWT
     body: JSON.stringify({
       notification_id: notificationId,
       followed_id: user_id,
@@ -76,6 +78,7 @@ export async function declineFollowRequestNotif(notificationId: number, user_id:
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include", // Ajout des credentials pour JWT
     body: JSON.stringify({
       notification_id: notificationId,
       followed_id: user_id,
@@ -97,6 +100,7 @@ export async function acceptGroupJoinRequest(reference_id: number, user_id: numb
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include", // Ajout des credentials pour JWT
     body: JSON.stringify({
       group_id: reference_id,
       current_user: user_id,
@@ -120,6 +124,7 @@ export async function declineGroupJoinRequest(reference_id: number, user_id: num
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include", // Ajout des credentials pour JWT
     body: JSON.stringify({
       group_id: reference_id,
       current_user: user_id,
