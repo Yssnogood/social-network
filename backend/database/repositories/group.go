@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -81,7 +82,7 @@ func (r *GroupRepository) AddMember(groupID, userID int64, Username string, acce
 			return err
 		}
 		defer updateStmt.Close()
-		
+
 		_, err = updateStmt.Exec(accepted, createdAt, groupID, userID)
 		return err
 	}
@@ -101,6 +102,15 @@ func (r *GroupRepository) AddMember(groupID, userID int64, Username string, acce
 }
 
 func (r *GroupRepository) CreateGroupInvitation(groupID, inviterID, inviteeID int64) (*models.Group, error) {
+	// Check if an invitation already exists
+	exists, err := r.CheckExistingInvitation(groupID, inviteeID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check existing invitation: %w", err)
+	}
+	if exists {
+		return nil, errors.New("invitation already exists for this user")
+	}
+
 	stmt, err := r.db.Prepare(`
 		INSERT INTO group_invitations (group_id, inviter_id, invitee_id, create_at)
 		VALUES (?, ?, ?, ?)
@@ -163,7 +173,7 @@ func (r *GroupRepository) GetGroupsByUserID(userID int64) ([]models.Group, error
 	var groups []models.Group
 	for rows.Next() {
 		var group models.Group
-		if err := rows.Scan(&group.ID, &group.CreatorID, &group.CreatorName ,&group.Title, &group.Description, &group.ImagePath, &group.CreatedAt, &group.UpdatedAt); err != nil {
+		if err := rows.Scan(&group.ID, &group.CreatorID, &group.CreatorName, &group.Title, &group.Description, &group.ImagePath, &group.CreatedAt, &group.UpdatedAt); err != nil {
 			return nil, err
 		}
 		groups = append(groups, group)
@@ -172,7 +182,7 @@ func (r *GroupRepository) GetGroupsByUserID(userID int64) ([]models.Group, error
 	return groups, nil
 }
 
-func (r* GroupRepository) GetGroupByID(groupID int64) (*models.Group, error) {
+func (r *GroupRepository) GetGroupByID(groupID int64) (*models.Group, error) {
 	stmt, err := r.db.Prepare(`
 		SELECT id, creator_id, creator_name, title, description, image_path, created_at, updated_at
 		FROM groups
@@ -269,7 +279,7 @@ func (r *GroupRepository) GetMessagesByGroupID(groupID int64) ([]models.GroupMes
 	var messages []models.GroupMessage
 	for rows.Next() {
 		var msg models.GroupMessage
-		if err := rows.Scan(&msg.ID, &msg.GroupID, &msg.UserID, &msg.Username , &msg.Content, &msg.CreatedAt, &msg.UpdatedAt); err != nil {
+		if err := rows.Scan(&msg.ID, &msg.GroupID, &msg.UserID, &msg.Username, &msg.Content, &msg.CreatedAt, &msg.UpdatedAt); err != nil {
 			return nil, err
 		}
 		messages = append(messages, msg)
@@ -518,4 +528,19 @@ func (r *GroupRepository) GetInvitationsByInviter(inviterID int64) ([]models.Gro
 	}
 
 	return invitations, nil
+}
+
+// CheckExistingInvitation checks if an invitation already exists for a user to a group
+func (r *GroupRepository) CheckExistingInvitation(groupID, inviteeID int64) (bool, error) {
+	var count int
+	query := `
+		SELECT COUNT(*) 
+		FROM group_invitations 
+		WHERE group_id = ? AND invitee_id = ? AND pending = 1
+	`
+	err := r.db.QueryRow(query, groupID, inviteeID).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }

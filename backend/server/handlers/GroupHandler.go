@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -16,18 +17,18 @@ import (
 
 // GroupHandler handles HTTP requests for groups.
 type GroupHandler struct {
-	GroupRepository   *repository.GroupRepository
-	SessionRepository *repository.SessionRepository
-	UserRepository    *repository.UserRepository
+	GroupRepository        *repository.GroupRepository
+	SessionRepository      *repository.SessionRepository
+	UserRepository         *repository.UserRepository
 	NotificationRepository *repository.NotificationRepository
 }
 
 // NewGroupHandler creates a new GroupHandler.
 func NewGroupHandler(gr *repository.GroupRepository, sr *repository.SessionRepository, ur *repository.UserRepository, nr *repository.NotificationRepository) *GroupHandler {
 	return &GroupHandler{
-		GroupRepository:   gr,
-		SessionRepository: sr,
-		UserRepository:    ur,
+		GroupRepository:        gr,
+		SessionRepository:      sr,
+		UserRepository:         ur,
 		NotificationRepository: nr,
 	}
 }
@@ -114,10 +115,10 @@ func (h *GroupHandler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	group.ID = id
 
 	response := GroupResponse{
-		ID:        group.ID,
-		CreatorID: group.CreatorID,
+		ID:          group.ID,
+		CreatorID:   group.CreatorID,
 		CreatorName: group.CreatorName,
-		Title:     group.Title,
+		Title:       group.Title,
 		Description: func() string {
 			if group.Description != nil {
 				return *group.Description
@@ -159,9 +160,9 @@ func (h *GroupHandler) GetGroupsByUserID(w http.ResponseWriter, r *http.Request)
 				}
 				return ""
 			}(),
-			ImagePath:   group.ImagePath,
-			CreatedAt:   group.CreatedAt.Format(time.RFC3339),
-			UpdatedAt:   group.UpdatedAt.Format(time.RFC3339),
+			ImagePath: group.ImagePath,
+			CreatedAt: group.CreatedAt.Format(time.RFC3339),
+			UpdatedAt: group.UpdatedAt.Format(time.RFC3339),
 		})
 	}
 
@@ -204,9 +205,9 @@ func (h *GroupHandler) GetGroupByID(w http.ResponseWriter, r *http.Request) {
 			}
 			return ""
 		}(),
-		ImagePath:   group.ImagePath,
-		CreatedAt:   group.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:   group.UpdatedAt.Format(time.RFC3339),
+		ImagePath: group.ImagePath,
+		CreatedAt: group.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: group.UpdatedAt.Format(time.RFC3339),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -263,7 +264,11 @@ func (h *GroupHandler) AddMember(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.GroupRepository.CreateGroupInvitation(groupID, payload.CurrentUserID, payload.UserID)
 	if err != nil {
-		http.Error(w, "Failed to add member: "+err.Error(), http.StatusInternalServerError)
+		if strings.Contains(err.Error(), "invitation already exists") {
+			http.Error(w, "Invitation already sent to this user", http.StatusConflict)
+		} else {
+			http.Error(w, "Failed to add member: "+err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -486,11 +491,10 @@ func (h *GroupHandler) GetCommentsByGroupPostID(w http.ResponseWriter, r *http.R
 	json.NewEncoder(w).Encode(comments)
 }
 
-
 func (h *GroupHandler) AcceptGroupInvitation(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
-		GroupID int64 `json:"group_id"`
-		UserID  int64 `json:"current_user"`
+		GroupID       int64  `json:"group_id"`
+		UserID        int64  `json:"current_user"`
 		ReferenceType string `json:"reference_type"`
 	}
 
@@ -530,8 +534,8 @@ func (h *GroupHandler) AcceptGroupInvitation(w http.ResponseWriter, r *http.Requ
 
 func (h *GroupHandler) DeclineGroupInvitation(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
-		GroupID int64 `json:"group_id"`
-		UserID  int64 `json:"current_user"`
+		GroupID       int64  `json:"group_id"`
+		UserID        int64  `json:"current_user"`
 		ReferenceType string `json:"reference_type"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -589,11 +593,20 @@ func (h *GroupHandler) InviteUsersToGroup(w http.ResponseWriter, r *http.Request
 	}
 
 	// Create invitations for each user
+	successCount := 0
+	duplicateCount := 0
 	for _, inviteeID := range payload.UserIds {
 		_, err = h.GroupRepository.CreateGroupInvitation(groupID, userID, inviteeID)
 		if err != nil {
-			// Log error but continue with other invitations
-			fmt.Printf("Failed to invite user %d to group %d: %v\n", inviteeID, groupID, err)
+			if strings.Contains(err.Error(), "invitation already exists") {
+				duplicateCount++
+				fmt.Printf("Invitation already exists for user %d to group %d\n", inviteeID, groupID)
+			} else {
+				// Log other errors but continue with other invitations
+				fmt.Printf("Failed to invite user %d to group %d: %v\n", inviteeID, groupID, err)
+			}
+		} else {
+			successCount++
 		}
 	}
 
@@ -639,12 +652,12 @@ func (h *GroupHandler) InviteGroupsToGroup(w http.ResponseWriter, r *http.Reques
 	// This is a more complex operation that would require additional repository methods
 	// For now, we'll create a placeholder that returns success but logs the limitation
 	fmt.Printf("Group-to-group invitations requested for group %d, target groups: %v\n", groupID, payload.GroupIds)
-	
+
 	// TODO: Implement actual group-to-group invitation logic
 	// This would involve:
 	// 1. Getting all members of each invited group
 	// 2. Creating individual invitations for each member
 	// 3. Possibly creating group relationship records
-	
+
 	w.WriteHeader(http.StatusNoContent)
 }
