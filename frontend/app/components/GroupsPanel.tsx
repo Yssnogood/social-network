@@ -164,7 +164,7 @@ export default function GroupsPanel() {
                                         {group.description || 'Aucune description'}
                                     </p>
                                     <p className="text-xs text-gray-500 mt-1">
-                                        Par {group.creatorName}
+                                        Par {group.creator_name}
                                     </p>
                                 </div>
                             </div>

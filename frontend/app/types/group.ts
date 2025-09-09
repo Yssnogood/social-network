@@ -1,11 +1,11 @@
 export type Group = {
 	id: number;
-	creatorId: number;
-	creatorName: string;
+	creator_id: number;
+	creator_name: string;
 	title: string;
 	description: string;
-	createdAt: string;
-	updatedAt: string;
+	created_at: string;
+	updated_at: string;
 };
 
 export type GroupMember = {
@@ -14,7 +14,7 @@ export type GroupMember = {
 	userId: number;
 	username: string;
 	accepted: boolean;
-	createdAt: string;
+	created_at: string;
 };
 
 export type EventResponse = {

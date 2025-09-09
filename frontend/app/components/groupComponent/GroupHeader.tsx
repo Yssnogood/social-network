@@ -1,11 +1,11 @@
 type Group = {
 	id: number
-	creatorId: number
-	creatorName: string
+	creator_id: number
+	creator_name: string
 	title: string
 	description: string
-	createdAt: string
-	updatedAt: string
+	created_at: string
+	updated_at: string
 }
 
 interface GroupHeaderProps {
@@ -18,9 +18,9 @@ export default function GroupHeader({ group }: GroupHeaderProps) {
 			<h1 className="text-2xl font-bold mb-2">{group.title}</h1>
 			<p className="text-gray-600 mb-4">{group.description}</p>
 			<p className="text-sm text-gray-400">
-				Créé le {new Date(group.createdAt).toLocaleDateString()}
+				Créé le {new Date(group.created_at).toLocaleDateString()}
 			</p>
-			<p className="text-sm text-gray-400">Par {group.creatorName}</p>
+			<p className="text-sm text-gray-400">Par {group.creator_name}</p>
 		</div>
 	)
 }

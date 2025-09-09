@@ -44,12 +44,12 @@ export const useGroupData = (groupId: string, setters: UseGroupDataProps) => {
 			const raw = await res.json();
 			setGroup({
 				id: raw.id,
-				creatorId: raw.creator_id,
-				creatorName: raw.creator_name,
+				creator_id: raw.creator_id,
+				creator_name: raw.creator_name,
 				title: raw.title,
 				description: raw.description,
-				createdAt: raw.created_at,
-				updatedAt: raw.updated_at,
+				created_at: raw.created_at,
+				updated_at: raw.updated_at,
 			});
 		} catch (err: any) {
 			setError(err.message);
@@ -69,7 +69,7 @@ export const useGroupData = (groupId: string, setters: UseGroupDataProps) => {
 				userId: m.user_id,
 				username: m.username,
 				accepted: m.accepted,
-				createdAt: m.created_at,
+				created_at: m.created_at,
 			}));
 			setMembers(mapped);
 		} catch (err: any) {
