@@ -6,16 +6,13 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { getPosts, createPost, Post } from "../../services/post";
 import { useCookies } from "next-client-cookies";
-import CreateGroupModal from "../components/GroupModal";
 import { getUserIdFromToken } from "../../services/user";
 
 // Nouveaux composants extraits
-import Header from "../components/Header";
-import CreatePostButton from "../components/CreatePostButton";
-import CreateGroupButton from "../components/CreateGroupButton";
-import GroupsList from "../components/GroupsList";
+import Header, { Notification } from "../components/Header";
 import CreatePostModal from "../components/CreatePostModal";
 import PostsList from "../components/PostsList";
+import CreateGroupModal from "../components/GroupModal";
 
 export default function Home() {
     const cookies = useCookies();
@@ -23,9 +20,8 @@ export default function Home() {
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
-    const [groups, setGroups] = useState([]);
     const [showNotifications, setShowNotifications] = useState(false);
-    const [notifications, setNotifications] = useState<any[]>([]);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
 
     useEffect(() => {
         const getNotif = async () => {
@@ -126,27 +122,6 @@ export default function Home() {
         }
     }
 
-    useEffect(() => {
-        async function fetchGroups() {
-            try {
-                const response = await fetch("http://localhost:8080/api/groups", {
-                    method: "GET",
-                    headers: {
-                        Authorization: `Bearer ${cookies.get("jwt")}`,
-                    },
-                });
-                if (!response.ok) throw new Error("Erreur lors de la récupération des groupes");
-                const allGroups = await response.json();
-
-                setGroups(allGroups);
-            } catch (error) {
-                console.error("Erreur de chargement des groupes:", error);
-            }
-        }
-
-        fetchGroups();
-    }, []);
-
     const handleToggleNotifications = () => {
         setShowNotifications(!showNotifications);
     };
@@ -160,19 +135,35 @@ export default function Home() {
                 onToggleNotifications={handleToggleNotifications}
             />
 
-            <CreatePostButton onClick={handleOpenModal} />
+            <div className="min-h-screen bg-zinc-950 pt-16">
+                <div className="container mx-auto px-4 py-6">
+                    {/* Sticky Create Post Section */}
+                    <div className="sticky top-20 z-40 bg-zinc-950/95 backdrop-blur pb-4 mb-6">
+                        <div className="max-w-xl mx-auto">
+                            <div 
+                                onClick={handleOpenModal}
+                                className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 cursor-pointer hover:bg-zinc-800 transition-colors"
+                            >
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                                        <span className="text-white text-sm font-bold">
+                                            {cookies.get("user")?.charAt(0).toUpperCase()}
+                                        </span>
+                                    </div>
+                                    <div className="flex-1 text-zinc-400">
+                                        What's on your mind, {cookies.get("user")}?
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-            <CreateGroupButton onClick={handleOpenGroupModal} />
-
-            <GroupsList groups={groups} />
-
-            <div className="dark:bg-background pt-16 px-4 flex justify-center">
-                <div className="w-full max-w-xl mx-auto">
+                    {/* Posts Feed */}
                     <PostsList
                         posts={posts}
                         isLoading={isLoading}
                         jwt={cookies.get("jwt")}
-                        onlineUser={cookies.get("user") }
+                        onlineUser={cookies.get("user")}
                     />
                 </div>
             </div>

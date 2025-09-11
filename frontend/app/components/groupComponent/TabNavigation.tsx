@@ -1,5 +1,8 @@
 "use client";
 
+import { Card } from "@/components/ui/card";
+import { MessageCircle, FileText } from "lucide-react";
+
 interface TabNavigationProps {
 	showPosts: boolean;
 	onTogglePosts: () => Promise<void>;
@@ -7,25 +10,29 @@ interface TabNavigationProps {
 
 export default function TabNavigation({ showPosts, onTogglePosts }: TabNavigationProps) {
 	return (
-		<div className="flex gap-4 mb-4 border-b">
-			<button
-				onClick={() => !showPosts || onTogglePosts()}
-				className={`pb-2 px-4 font-medium ${!showPosts
-					? "text-blue-600 border-b-2 border-blue-600"
-					: "text-gray-500 hover:text-gray-700"
-				}`}
-			>
-				Messages
-			</button>
-			<button
-				onClick={onTogglePosts}
-				className={`pb-2 px-4 font-medium ${showPosts
-					? "text-blue-600 border-b-2 border-blue-600"
-					: "text-gray-500 hover:text-gray-700"
-				}`}
-			>
-				Posts
-			</button>
-		</div>
+		<Card className="border-zinc-800 bg-zinc-900 p-1">
+			<div className="flex space-x-1">
+				<button
+					onClick={() => !showPosts || onTogglePosts()}
+					className={`flex items-center space-x-2 px-4 py-3 rounded-md font-medium transition-all ${!showPosts
+						? "bg-blue-600 text-white shadow-sm"
+						: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+					}`}
+				>
+					<MessageCircle size={18} />
+					<span>Messages</span>
+				</button>
+				<button
+					onClick={onTogglePosts}
+					className={`flex items-center space-x-2 px-4 py-3 rounded-md font-medium transition-all ${showPosts
+						? "bg-blue-600 text-white shadow-sm"
+						: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+					}`}
+				>
+					<FileText size={18} />
+					<span>Posts</span>
+				</button>
+			</div>
+		</Card>
 	);
 }

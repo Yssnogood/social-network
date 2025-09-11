@@ -34,16 +34,16 @@ export default function PostsList({
 			<PostCreator onCreatePost={onCreatePost} />
 
 			<div className="space-y-4">
-				<h3 className="font-semibold">Posts du groupe</h3>
+				<h3 className="font-semibold text-white">Posts du groupe</h3>
 
 				{isLoading && (
 					<div className="text-center py-4">
-						<p className="text-gray-500">Chargement des posts...</p>
+						<p className="text-zinc-400">Chargement des posts...</p>
 					</div>
 				)}
 
 				{!isLoading && Array.isArray(posts) && posts.length === 0 && (
-					<div className="text-center py-8 text-gray-500">
+					<div className="text-center py-8 text-zinc-400">
 						<p>Aucun post dans ce groupe pour le moment.</p>
 						<p className="text-sm">Soyez le premier à publier quelque chose !</p>
 					</div>

@@ -35,24 +35,24 @@ export default function PostItem({
 	};
 
 	return (
-		<div className="bg-white border rounded-lg p-4 shadow-sm">
+		<div className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 shadow-sm">
 			{/* En-tête du post */}
 			<div className="flex justify-between items-start mb-3">
 				<div className="flex items-center gap-2">
-					<span className="font-medium text-blue-600">{post.username}</span>
-					<span className="text-sm text-gray-500">
+					<span className="font-medium text-blue-400">{post.username}</span>
+					<span className="text-sm text-zinc-400">
 						{formatDate(post.created_at)}
 					</span>
 				</div>
 				{post.comments_count > 0 && (
-					<span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+					<span className="text-sm text-zinc-300 bg-zinc-700 px-2 py-1 rounded">
 						{post.comments_count} commentaire{post.comments_count > 1 ? "s" : ""}
 					</span>
 				)}
 			</div>
 
 			{/* Contenu du post */}
-			<div className="text-gray-800 whitespace-pre-wrap mb-3">
+			<div className="text-zinc-200 whitespace-pre-wrap mb-3">
 				{post.content}
 			</div>
 
@@ -68,10 +68,10 @@ export default function PostItem({
 			)}
 
 			{/* Actions du post */}
-			<div className="flex items-center gap-4 pt-2 border-t">
+			<div className="flex items-center gap-4 pt-2 border-t border-zinc-700">
 				<button
 					onClick={onToggleComments}
-					className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+					className="text-sm text-blue-400 hover:text-blue-300 font-medium"
 					disabled={loadingComments}
 				>
 					{loadingComments

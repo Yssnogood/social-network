@@ -14,10 +14,10 @@ interface MessageItemProps {
 
 export default function MessageItem({ message }: MessageItemProps) {
 	return (
-		<div className="bg-white p-2 rounded shadow">
-			<p className="text-sm font-semibold text-blue-600">{message.username}</p>
-			<p className="mt-1">{message.content}</p>
-			<p className="text-xs text-gray-500 mt-1">
+		<div className="bg-zinc-900 border border-zinc-700 p-3 rounded-lg">
+			<p className="text-sm font-semibold text-blue-400">{message.username}</p>
+			<p className="mt-2 text-zinc-100">{message.content}</p>
+			<p className="text-xs text-zinc-500 mt-2">
 				{new Date(message.created_at).toLocaleTimeString()}
 			</p>
 		</div>

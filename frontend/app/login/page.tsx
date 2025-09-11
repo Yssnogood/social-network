@@ -1,124 +1,141 @@
 "use client";
 
 import Link from "next/link";
-import Head from "next/head";
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import { redirect } from "next/navigation";
 import { useCookies } from "next-client-cookies";
-export const url = "http://localhost:8080/api"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+export const url = "http://localhost:8080/api";
+
 export default function Login() {
-    const cookies = useCookies()
+    const cookies = useCookies();
+    
     if (cookies.get('jwt') != undefined) {
-        redirect('/home')
+        redirect('/home');
     }
+    
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const resp = await fetch(url+"/login",{
-        method:"POST",
-        body:JSON.stringify({
-          email:email.toLowerCase(),
-          password:password
-        })
-      })
-      if (resp.ok) {
-        console.log("OK")
-        const r = await resp.json()
-        cookies.set('jwt',r.jwt,{
-          expires:1,
-          path: '/',
-        })
-        cookies.set('user',r.user,{
-          expires:1,
-          path: '/',
-      })
-        redirect('/home')
-      } else {
-        console.error('Invalid Credentials')
-      }
-    } catch (error) {
-      if (error) {
-      console.log("Fetch error")
-      }
-    }
-  
-  }
-  return (
-    <>
-    <Head>
-      <title>Login</title>
-    </Head>
-    <div className="flex min-h-screen flex-col items-center justify-center p-4">
-      
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError('');
         
-      <div className="w-full max-w-md space-y-8 bg-gray-800 p-8 rounded-xl shadow-md">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-white">Login</h1>
-          <p className="mt-2 text-gray-400">Sign in to your account</p>
-        </div>
+        try {
+            const resp = await fetch(url + "/login", {
+                method: "POST",
+                body: JSON.stringify({
+                    email: email.toLowerCase(),
+                    password: password
+                })
+            });
+            
+            if (resp.ok) {
+                const r = await resp.json();
+                cookies.set('jwt', r.jwt, {
+                    expires: 1,
+                    path: '/',
+                });
+                cookies.set('user', r.user, {
+                    expires: 1,
+                    path: '/',
+                });
+                redirect('/home');
+            } else {
+                setError('Invalid credentials. Please try again.');
+            }
+        } catch (error) {
+            setError('Connection error. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-                    <form onSubmit={handleLogin} className="mt-8 space-y-6">
-                        <div className="space-y-4">
-                            <div>
-                                <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-                                    Email address
-                                </label>
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    // autoComplete="email"
-                                    required
-                                    value={email}
-                                    onChange={(e) => { setEmail(e.target.value) }}
-                                    className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-white"
-                                />
-                            </div>
+    return (
+        <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+            {/* Header */}
+            <div className="absolute top-0 left-0 right-0 p-4">
+                <Link href="/" className="flex items-center space-x-2 text-xl font-bold text-white">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-sm font-bold">SN</span>
+                    </div>
+                    <span>Social Network</span>
+                </Link>
+            </div>
 
-                            <div>
-                                <label htmlFor="password" className="block text-sm font-medium text-gray-300">
-                                    Password
-                                </label>
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    // autoComplete="current-password"
-                                    value={password}
-                                    onChange={(e) => { setPassword(e.target.value) }}
-                                    required
-                                    className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-white"
-                                />
+            <Card className="w-full max-w-md border-zinc-800 bg-zinc-900">
+                <CardHeader className="text-center">
+                    <CardTitle className="text-2xl text-white">Welcome back</CardTitle>
+                    <CardDescription className="text-zinc-400">
+                        Sign in to your account to continue
+                    </CardDescription>
+                </CardHeader>
+                
+                <CardContent>
+                    <form onSubmit={handleLogin} className="space-y-4">
+                        {error && (
+                            <div className="p-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                                {error}
                             </div>
+                        )}
+                        
+                        <div className="space-y-2">
+                            <label htmlFor="email" className="block text-sm font-medium text-zinc-300">
+                                Email address
+                            </label>
+                            <Input
+                                id="email"
+                                name="email"
+                                type="email"
+                                required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="Enter your email"
+                                className="bg-zinc-800 border-zinc-700"
+                            />
                         </div>
 
-                        <div>
-                            <button
-                                type="submit"
-                                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700"
-                            >
-                                Sign in
-                            </button>
+                        <div className="space-y-2">
+                            <label htmlFor="password" className="block text-sm font-medium text-zinc-300">
+                                Password
+                            </label>
+                            <Input
+                                id="password"
+                                name="password"
+                                type="password"
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Enter your password"
+                                className="bg-zinc-800 border-zinc-700"
+                            />
                         </div>
+
+                        <Button 
+                            type="submit" 
+                            className="w-full bg-blue-600 hover:bg-blue-700"
+                            disabled={isLoading}
+                        >
+                            {isLoading ? "Signing in..." : "Sign in"}
+                        </Button>
                     </form>
 
-                    <div className="text-center mt-4">
-                        <p className="text-sm text-gray-400">
+                    <div className="mt-6 text-center">
+                        <p className="text-zinc-400 text-sm">
                             Don't have an account?{" "}
-                            <Link href="/register" className="font-medium text-indigo-400 hover:text-indigo-300">
-                                Register
+                            <Link href="/register" className="text-blue-400 hover:text-blue-300 font-medium">
+                                Create one here
                             </Link>
                         </p>
                     </div>
-                </div>
-
-                <Link href="/" className="mt-8 text-sm text-gray-400 hover:underline">
-                    ← Back to home
-                </Link>
-            </div>
-        </>
+                </CardContent>
+            </Card>
+        </div>
     );
 }

@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useCookies } from "next-client-cookies";
 import { getUserIdFromToken } from "../../services/user";
 import { fetchNotifications } from "../../services/notifications";
-import Header from "../components/Header";
+import Header, { Notification } from "../components/Header";
 import { fetchUserConversation } from '../../services/contact';
 export default function ContactPage() {
     const cookies = useCookies();
@@ -21,7 +21,7 @@ export default function ContactPage() {
     const [input,setInput] = useState("")
     const [selectedContact, setSelectedContact] = useState<any | null>(null);
     const [showNotifications, setShowNotifications] = useState(false);
-    const [notifications, setNotifications] = useState<string[]>([]);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [isNewConversationModalOpen, setIsNewConversationModalOpen] = useState(false);
@@ -109,8 +109,9 @@ export default function ContactPage() {
 
             try {
                 const fetchedNotifications = await fetchNotifications(token, userId);
-                const notifStrings = Array.isArray(fetchedNotifications) ? fetchedNotifications?.map((notif: any) => notif.content) : [];
-                setNotifications(notifStrings);
+                if (Array.isArray(fetchedNotifications)) {
+                    setNotifications(fetchedNotifications);
+                }
             } catch (error) {
                 console.error("Failed to fetch notifications:", error);
             }

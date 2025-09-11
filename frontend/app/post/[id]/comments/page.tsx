@@ -8,7 +8,7 @@ import { createNotification, fetchNotifications } from "@/services/notifications
 import { getUserIdFromToken } from "../../../../services/user";
 
 // Component imports
-import Header from "../../../components/Header";
+import Header, { Notification } from "../../../components/Header";
 import PostDetail from "../../../components/PostDetail";
 import CommentForm from "../../../components/CommentForm";
 import CommentsList from "../../../components/CommentsList";
@@ -26,7 +26,7 @@ export default function CommentsPage({
     const [comments, setComments] = useState<Comment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showNotifications, setShowNotifications] = useState(false);
-    const [notifications, setNotifications] = useState<string[]>([]);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
     const param = use(params);
@@ -54,10 +54,9 @@ export default function CommentsPage({
 
             try {
                 const fetchedNotifications = await fetchNotifications(token, userId);
-                const notifStrings = Array.isArray(fetchedNotifications)
-                    ? fetchedNotifications.map((notif: any) => notif.content)
-                    : [];
-                setNotifications(notifStrings);
+                if (Array.isArray(fetchedNotifications)) {
+                    setNotifications(fetchedNotifications);
+                }
             } catch (error) {
                 console.error("Failed to fetch notifications:", error);
             }

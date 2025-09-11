@@ -15,16 +15,16 @@ export default function UserInvitation({ followers, onInvite }: UserInvitationPr
 
 	return (
 		<div className="mt-8">
-			<h2 className="text-xl font-semibold mb-2">Invite user :</h2>
+			<h2 className="text-xl font-semibold mb-4 text-white">Invite user :</h2>
 			{safeFollowers.length === 0 ? (
-				<p className="text-gray-500">No followers</p>
+				<p className="text-zinc-400">No followers</p>
 			) : (
 				<ul className="space-y-2">
 					{safeFollowers.map((follower) => (
-						<li key={follower.follower_id} className="flex justify-between items-center">
-							<span>User #{follower.follower_id}</span>
+						<li key={follower.follower_id} className="flex justify-between items-center p-3 bg-zinc-800 rounded-lg border border-zinc-700">
+							<span className="text-zinc-100">User #{follower.follower_id}</span>
 							<button
-								className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
+								className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-medium transition-colors"
 								onClick={() => onInvite(follower.follower_id)}
 							>
 								Inviter

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Header from "../../components/Header";
 import GroupHeader from "../../components/groupComponent/GroupHeader";
 import MembersList from "../../components/groupComponent/MembersList";
 import UserInvitation from "../../components/groupComponent/UserInvitation";
@@ -338,50 +339,81 @@ export default function GroupPage() {
 	};
 
 	// Rendu conditionnel pour les erreurs et le loading
-	if (error) return <p className="text-red-500">Error: {error}</p>;
-	if (!group) return <p>Loading group...</p>;
+	if (error) return (
+		<div className="min-h-screen bg-zinc-950">
+			<Header username={currentUser?.username} notifications={[]} showNotifications={false} onToggleNotifications={() => {}} />
+			<div className="container mx-auto px-4 py-8">
+				<p className="text-red-500">Error: {error}</p>
+			</div>
+		</div>
+	);
+	
+	if (!group) return (
+		<div className="min-h-screen bg-zinc-950">
+			<Header username={currentUser?.username} notifications={[]} showNotifications={false} onToggleNotifications={() => {}} />
+			<div className="container mx-auto px-4 py-8">
+				<div className="flex justify-center items-center h-64">
+					<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+				</div>
+			</div>
+		</div>
+	);
 
 	return (
-		<div className="max-w-xl mx-auto mt-8 p-4 border rounded-xl shadow bg-white">
-			<GroupHeader group={group} />
-			<MembersList members={members} />
-			<UserInvitation followers={followers} onInvite={inviteUser} />
+		<div className="min-h-screen bg-zinc-950">
+			<Header username={currentUser?.username} notifications={[]} showNotifications={false} onToggleNotifications={() => {}} />
+			
+			<div className="container mx-auto px-4 py-6">
+				<div className="max-w-4xl mx-auto">
+					<GroupHeader group={group} />
+					
+					<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+						{/* Main Content */}
+						<div className="lg:col-span-2 space-y-6">
+							<TabNavigation showPosts={showPosts} onTogglePosts={togglePosts} />
 
-			<EventCreator onCreateEvent={createEvent} />
-			<EventsList
-				events={events}
-				currentUser={currentUser}
-				onEventResponse={handleEventResponse}
-				onDeleteEvent={deleteEvent}
-			/>
+							{!showPosts && (
+								<>
+									<MessageInput
+										value={newMessage}
+										onChange={setNewMessage}
+										onSend={sendMessage}
+									/>
+									<MessagesList messages={messages} />
+								</>
+							)}
 
-			<TabNavigation showPosts={showPosts} onTogglePosts={togglePosts} />
+							{showPosts && (
+								<PostsList
+									posts={posts}
+									isLoading={isLoadingPosts}
+									commentsByPost={commentsByPost}
+									showCommentsForPost={showCommentsForPost}
+									newCommentByPost={newCommentByPost}
+									loadingComments={loadingComments}
+									onCreatePost={createPost}
+									onToggleComments={toggleComments}
+									onCommentChange={handleCommentChange}
+									onCreateComment={createComment}
+								/>
+							)}
+						</div>
 
-			{!showPosts && (
-				<>
-					<MessageInput
-						value={newMessage}
-						onChange={setNewMessage}
-						onSend={sendMessage}
-					/>
-					<MessagesList messages={messages} />
-				</>
-			)}
-
-			{showPosts && (
-				<PostsList
-					posts={posts}
-					isLoading={isLoadingPosts}
-					commentsByPost={commentsByPost}
-					showCommentsForPost={showCommentsForPost}
-					newCommentByPost={newCommentByPost}
-					loadingComments={loadingComments}
-					onCreatePost={createPost}
-					onToggleComments={toggleComments}
-					onCommentChange={handleCommentChange}
-					onCreateComment={createComment}
-				/>
-			)}
+						{/* Sidebar */}
+						<div className="space-y-6">
+							<MembersList members={members} />
+							<UserInvitation followers={followers} onInvite={inviteUser} />
+							<EventCreator onCreateEvent={createEvent} />
+							<EventsList
+								events={events}
+								currentUser={currentUser}
+								onEventResponse={handleEventResponse}
+								onDeleteEvent={deleteEvent}
+							/>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 }
