@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useCookies } from "next-client-cookies";
 import { Button } from "@/components/ui/button";
+import SearchBar from "./SearchBar";
 import { Input } from "@/components/ui/input";
 import { Bell, MessageCircle, Search, User, Users, Home } from "lucide-react";
 import { useState } from "react";
@@ -73,8 +74,8 @@ export default function Header({
 		<header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-zinc-950/95 backdrop-blur supports-[backdrop-filter]:bg-zinc-950/90">
 			<div className="container mx-auto flex h-16 items-center justify-between px-4">
 				{/* Logo */}
-				<Link 
-					href="/home" 
+				<Link
+					href="/home"
 					className="flex items-center space-x-2 text-xl font-bold text-white hover:text-blue-400 transition-colors"
 				>
 					<div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
@@ -87,33 +88,30 @@ export default function Header({
 				<nav className="hidden md:flex items-center space-x-6">
 					<Link
 						href="/home"
-						className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${
-							isActive("/home")
+						className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${isActive("/home")
 								? "bg-blue-600 text-white"
 								: "text-zinc-300 hover:text-white hover:bg-zinc-800"
-						}`}
+							}`}
 					>
 						<Home size={18} />
 						<span>Home</span>
 					</Link>
 					<Link
 						href="/groups"
-						className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${
-							isActive("/groups") || pathname.startsWith("/groups/")
+						className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${isActive("/groups") || pathname.startsWith("/groups/")
 								? "bg-blue-600 text-white"
 								: "text-zinc-300 hover:text-white hover:bg-zinc-800"
-						}`}
+							}`}
 					>
 						<Users size={18} />
 						<span>Groups</span>
 					</Link>
 					<Link
 						href="/contact"
-						className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${
-							isActive("/contact")
+						className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${isActive("/contact")
 								? "bg-blue-600 text-white"
 								: "text-zinc-300 hover:text-white hover:bg-zinc-800"
-						}`}
+							}`}
 					>
 						<MessageCircle size={18} />
 						<span>Messages</span>
@@ -121,18 +119,10 @@ export default function Header({
 				</nav>
 
 				{/* Search */}
-				<form onSubmit={handleSearch} className="hidden sm:flex items-center space-x-2">
-					<div className="relative">
-						<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400" size={16} />
-						<Input
-							type="text"
-							placeholder="Search..."
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							className="pl-10 w-64 bg-zinc-800 border-zinc-700"
-						/>
-					</div>
-				</form>
+				<div className="hidden sm:flex items-center space-x-2 w-64">
+					<SearchBar />
+				</div>
+
 
 				{/* Right side actions */}
 				<div className="flex items-center space-x-3">
@@ -175,36 +165,32 @@ export default function Header({
 				<nav className="flex items-center justify-around py-2">
 					<Link
 						href="/home"
-						className={`flex flex-col items-center p-2 ${
-							isActive("/home") ? "text-blue-400" : "text-zinc-400"
-						}`}
+						className={`flex flex-col items-center p-2 ${isActive("/home") ? "text-blue-400" : "text-zinc-400"
+							}`}
 					>
 						<Home size={20} />
 						<span className="text-xs mt-1">Home</span>
 					</Link>
 					<Link
 						href="/groups"
-						className={`flex flex-col items-center p-2 ${
-							isActive("/groups") || pathname.startsWith("/groups/") ? "text-blue-400" : "text-zinc-400"
-						}`}
+						className={`flex flex-col items-center p-2 ${isActive("/groups") || pathname.startsWith("/groups/") ? "text-blue-400" : "text-zinc-400"
+							}`}
 					>
 						<Users size={20} />
 						<span className="text-xs mt-1">Groups</span>
 					</Link>
 					<Link
 						href="/contact"
-						className={`flex flex-col items-center p-2 ${
-							isActive("/contact") ? "text-blue-400" : "text-zinc-400"
-						}`}
+						className={`flex flex-col items-center p-2 ${isActive("/contact") ? "text-blue-400" : "text-zinc-400"
+							}`}
 					>
 						<MessageCircle size={20} />
 						<span className="text-xs mt-1">Messages</span>
 					</Link>
 					<Link
 						href={`/profile/${username}`}
-						className={`flex flex-col items-center p-2 ${
-							pathname.includes(`/profile/${username}`) ? "text-blue-400" : "text-zinc-400"
-						}`}
+						className={`flex flex-col items-center p-2 ${pathname.includes(`/profile/${username}`) ? "text-blue-400" : "text-zinc-400"
+							}`}
 					>
 						<User size={20} />
 						<span className="text-xs mt-1">Profile</span>
