@@ -10,22 +10,9 @@ import Link from "next/link";
 
 export default function FollowersSection({
 	followers = [],
-	currentUserId,
-	currentUsername,
-	isOwnProfile
 }: {
 	followers?: FollowerUser[];
-	currentUserId: number;
-	currentUsername: string;
-	isOwnProfile: boolean;
 }) {
-	const [isChatOpen, setIsChatOpen] = useState(false);
-	const [selectedFollower, setSelectedFollower] = useState<number | null>(null);
-
-	const handleCloseModal = () => {
-		setIsChatOpen(false);
-		setSelectedFollower(null);
-	};
 
 	const safeFollowers = Array.isArray(followers) ? followers : [];
 
@@ -62,18 +49,7 @@ export default function FollowersSection({
           </span>
         </div>
 
-        {/* Bouton Chat */}
-        {isOwnProfile && (
-          <button
-            className="ml-auto px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
-            onClick={() => {
-              setSelectedFollower(follower.id);
-              setIsChatOpen(true);
-            }}
-          >
-            Chat
-          </button>
-        )}
+
       </div>
     ))}
   </div>
@@ -81,14 +57,7 @@ export default function FollowersSection({
   <p className="text-gray-500">Aucun follower pour le moment.</p>
 )}
 
-			{isChatOpen && selectedFollower !== null && (
-				<ChatModal
-					currentUserId={currentUserId}
-					currentUsername={currentUsername}
-					targetUserId={selectedFollower}
-					onClose={handleCloseModal}
-				/>
-			)}
+
 		</div>
 	);
 }

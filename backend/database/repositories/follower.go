@@ -161,3 +161,32 @@ func (r *FollowerRepository) GetFollowerUsers(userID int64) ([]*FollowerInfo, er
 
 	return followerUsers, nil
 }
+
+func (r *FollowerRepository) GetFollowingUsers(userID int64) ([]*FollowerInfo, error) {
+    rows, err := r.db.Query(`
+        SELECT u.id, u.username, u.avatar_path
+        FROM followers f
+        JOIN users u ON f.followed_id = u.id
+        WHERE f.follower_id = ? AND f.accepted = 1
+    `, userID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var followingUsers []*FollowerInfo
+    for rows.Next() {
+        f := &FollowerInfo{}
+        err := rows.Scan(&f.ID, &f.Username, &f.Avatar_path)
+        if err != nil {
+            return nil, err
+        }
+        followingUsers = append(followingUsers, f)
+    }
+
+    if err = rows.Err(); err != nil {
+        return nil, err
+    }
+
+    return followingUsers, nil
+}

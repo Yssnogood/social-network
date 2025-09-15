@@ -291,26 +291,12 @@ const handleFollow = async () => {
           </CardHeader>
         </Card>
 
-        {/* Section followers */}
-        {canViewProfile && (
-          <div className="mt-6">
-            <Card className="border-zinc-800 bg-zinc-900">
-              <CardContent className="p-6">
-                <FollowersSection
-                  followers={followerList}
-                  currentUserId={currentUserId}
-                  currentUsername={profile.username}
-                  isOwnProfile={isOwnProfile}
-                />
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
         {/* Tabs de contenu */}
         {canViewProfile && (
           <div className="mt-6">
-            <ProfileTabs userId={profile.id} />
+            <ProfileTabs userId={profile.id}
+             />
+            
           </div>
         )}
       </div>

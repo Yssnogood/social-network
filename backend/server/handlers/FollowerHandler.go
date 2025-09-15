@@ -270,3 +270,35 @@ func (h *FollowerHandler) DeclineFollower(w http.ResponseWriter, r *http.Request
 	}
 
 }
+
+func (h *FollowerHandler) GetFollowingHandler(w http.ResponseWriter, r *http.Request) {
+    userIDStr := r.URL.Query().Get("userID")
+    if userIDStr == "" {
+        http.Error(w, "Missing userID", http.StatusBadRequest)
+        return
+    }
+
+    userID, err := strconv.ParseInt(userIDStr, 10, 64)
+    if err != nil {
+        http.Error(w, "Invalid userID", http.StatusBadRequest)
+        return
+    }
+
+    following, err := h.FollowerRepository.GetFollowingUsers(userID)
+    if err != nil {
+        http.Error(w, "Failed to fetch following", http.StatusInternalServerError)
+        return
+    }
+
+    response := make([]*FollowerUserResponse, 0, len(following))
+    for _, f := range following {
+        response = append(response, &FollowerUserResponse{
+            ID:          f.ID,
+            Username:    f.Username,
+            Avatar_path: f.Avatar_path,
+        })
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(response)
+}

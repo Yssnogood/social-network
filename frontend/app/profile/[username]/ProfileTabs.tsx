@@ -4,14 +4,24 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getCommentsByUserID, Comment } from "../../../services/comment";
 import { getPostsByUserID, getLikedPostsByUserID, Post } from "../../../services/post";
+import { FollowerUser } from "@/services/follow";
 import { MessageSquare, PencilLine, ThumbsUp } from "lucide-react";
 
 export default function ProfileTabs({ userId }: { userId: number }) {
   const [activeTab, setActiveTab] = useState("activities");
+
+  // Activities
   const [comments, setComments] = useState<Comment[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [likedPosts, setLikedPosts] = useState<Post[]>([]);
 
+  // Followers / Following
+  const [followers, setFollowers] = useState<FollowerUser[]>([]);
+  const [following, setFollowing] = useState<FollowerUser[]>([]);
+  const [loadingFollowers, setLoadingFollowers] = useState(false);
+  const [loadingFollowing, setLoadingFollowing] = useState(false);
+
+  // Fetch posts, comments, likes
   useEffect(() => {
     const fetchData = async () => {
       if (!userId) return;
@@ -30,6 +40,46 @@ export default function ProfileTabs({ userId }: { userId: number }) {
     fetchData();
   }, [userId]);
 
+  // Fetch followers when tab is clicked
+  useEffect(() => {
+    if (activeTab === "followers" && followers.length === 0) {
+      const fetchFollowers = async () => {
+        try {
+          setLoadingFollowers(true);
+          const res = await fetch(`http://localhost:8080/api/followersDetails?userID=${userId}`);
+          if (!res.ok) throw new Error("Failed to fetch followers");
+          const data = await res.json();
+          setFollowers(data);
+        } catch (error) {
+          console.error("Error fetching followers:", error);
+        } finally {
+          setLoadingFollowers(false);
+        }
+      };
+      fetchFollowers();
+    }
+  }, [activeTab, userId, followers.length]);
+
+  // Fetch following when tab is clicked
+  useEffect(() => {
+    if (activeTab === "following" && following.length === 0) {
+      const fetchFollowing = async () => {
+        try {
+          setLoadingFollowing(true);
+          const res = await fetch(`http://localhost:8080/api/followingDetails?userID=${userId}`);
+          if (!res.ok) throw new Error("Failed to fetch following");
+          const data = await res.json();
+          setFollowing(data);
+        } catch (error) {
+          console.error("Error fetching following:", error);
+        } finally {
+          setLoadingFollowing(false);
+        }
+      };
+      fetchFollowing();
+    }
+  }, [activeTab, userId, following.length]);
+
   const activities = [
     ...posts.map(post => ({
       type: "post" as const,
@@ -43,15 +93,16 @@ export default function ProfileTabs({ userId }: { userId: number }) {
     })),
     ...likedPosts.map(likedPost => ({
       type: "like" as const,
-      date: likedPost.createdAt, // Suppose la date de création du post liké
+      date: likedPost.createdAt,
       item: likedPost
     }))
   ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   return (
     <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+      {/* Tabs */}
       <div className="flex justify-around border-b border-gray-200 dark:border-gray-700">
-        {["activities", "posts", "likes"].map((tab) => (
+        {["activities", "posts", "likes", "followers", "following"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -61,12 +112,16 @@ export default function ProfileTabs({ userId }: { userId: number }) {
                 : "text-gray-600 hover:text-blue-600"
             }`}
           >
-            {tab === "activities" ? "Latest Activities" : tab === "posts" ? "Posts" : "Likes"}
+            {tab === "activities"
+              ? "Latest Activities"
+              : tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
         ))}
       </div>
 
+      {/* Tab Content */}
       <div className="mt-6 space-y-4">
+        {/* ACTIVITIES */}
         {activeTab === "activities" && (
           <>
             {activities.length > 0 ? (
@@ -81,7 +136,7 @@ export default function ProfileTabs({ userId }: { userId: number }) {
                   {activity.type === "like" && <ThumbsUp className="text-red-500 w-6 h-6" />}
                   <div>
                     <p className="text-gray-800 dark:text-gray-200">
-                      {activity.type === "comment" ? activity.item.content : activity.item.content}
+                      {activity.item.content}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
                       {activity.type === "post" && `New Post • ${activity.date.toLocaleString()}`}
@@ -105,6 +160,7 @@ export default function ProfileTabs({ userId }: { userId: number }) {
           </>
         )}
 
+        {/* POSTS */}
         {activeTab === "posts" && (
           <>
             {posts.length > 0 ? (
@@ -132,6 +188,7 @@ export default function ProfileTabs({ userId }: { userId: number }) {
           </>
         )}
 
+        {/* LIKES */}
         {activeTab === "likes" && (
           <>
             {likedPosts.length > 0 ? (
@@ -157,6 +214,64 @@ export default function ProfileTabs({ userId }: { userId: number }) {
               <p className="text-center text-gray-500">No liked posts found.</p>
             )}
           </>
+        )}
+
+        {/* FOLLOWERS */}
+        {activeTab === "followers" && (
+          <div>
+            {loadingFollowers ? (
+              <p className="text-center text-gray-500">Loading followers...</p>
+            ) : followers.length > 0 ? (
+              followers.map((f) => (
+                <Link
+                  key={f.id}
+                  href={`/profile/${f.username}`}
+                  className="flex items-center space-x-4 p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                >
+                  <img
+                    src={f.avatar_path || "/defaultPP.webp"}
+                    alt={f.username}
+                    className="w-12 h-12 rounded-full object-cover border border-gray-300"
+                  />
+                  <div>
+                    <p className="text-gray-800 dark:text-gray-200 font-medium">{f.username}</p>
+                    <p className="text-sm text-gray-500">@{f.username}</p>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <p className="text-center text-gray-500">No followers found.</p>
+            )}
+          </div>
+        )}
+
+        {/* FOLLOWING */}
+        {activeTab === "following" && (
+          <div>
+            {loadingFollowing ? (
+              <p className="text-center text-gray-500">Loading following...</p>
+            ) : following.length > 0 ? (
+              following.map((f) => (
+                <Link
+                  key={f.id}
+                  href={`/profile/${f.username}`}
+                  className="flex items-center space-x-4 p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                >
+                  <img
+                    src={f.avatar_path || "/defaultPP.webp"}
+                    alt={f.username}
+                    className="w-12 h-12 rounded-full object-cover border border-gray-300"
+                  />
+                  <div>
+                    <p className="text-gray-800 dark:text-gray-200 font-medium">{f.username}</p>
+                    <p className="text-sm text-gray-500">@{f.username}</p>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <p className="text-center text-gray-500">No following found.</p>
+            )}
+          </div>
         )}
       </div>
     </div>
