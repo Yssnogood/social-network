@@ -112,6 +112,35 @@ export default function ClientProfile({
       await unfollowUser(currentUserId, profile.id);
       setIsFollowing(false);
       setIsFollowPending(false);
+      
+      if (!profile.is_public) {
+        setFollowStatusLoaded(false);
+        setTimeout(async () => {
+          try {
+            const res = await fetch(`http://localhost:8080/api/followers/check`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                follower_id: currentUserId,
+                followed_id: profile.id,
+              }),
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              setIsFollowing(data.isFollowing);
+              setIsFollowPending(data.isPending);
+            }
+          } catch (error) {
+            console.error("Erreur lors de la vérification du statut après unfollow :", error);
+          } finally {
+            setFollowStatusLoaded(true);
+          }
+        }, 100);
+      }
+      
       await fetchFollowers();
     } catch (error: any) {
       console.error("Erreur lors du unfollow :", error.message);
@@ -141,14 +170,12 @@ export default function ClientProfile({
                 {isFollowPending ? (
                   <Button 
                     variant="outline"
-                    onClick={() => {
-                      unfollowUser(currentUserId, profile.id);
-                      setIsFollowPending(false);
-                    }}
+                    onClick={handleUnfollow}
+                    disabled={loading}
                     className="border-yellow-600 text-yellow-400 hover:bg-yellow-600/10"
                   >
                     <Clock size={16} className="mr-2" />
-                    Annuler la demande
+                    {loading ? "..." : "Annuler la demande"}
                   </Button>
                 ) : (
                   <Button
@@ -232,15 +259,13 @@ export default function ClientProfile({
                             </Button>
                           ) : isFollowPending ? (
                             <Button
-                              onClick={() => {
-                                unfollowUser(currentUserId, profile.id);
-                                setIsFollowPending(false);
-                              }}
+                              onClick={handleUnfollow}
+                              disabled={loading}
                               variant="outline"
                               className="border-yellow-600 text-yellow-400 hover:bg-yellow-600/10"
                             >
                               <Clock size={16} className="mr-2" />
-                              Demande envoyée
+                              {loading ? "..." : "Demande envoyée"}
                             </Button>
                           ) : (
                             <Button

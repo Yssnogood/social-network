@@ -496,7 +496,12 @@ export default function GroupPage() {
 						{/* Sidebar */}
 						<div className="space-y-6">
 							<MembersList members={members} />
-							<UserInvitation followers={followers} members={members} onInvite={inviteUser} />
+							<UserInvitation 
+								followers={followers} 
+								members={members} 
+								onInvite={inviteUser} 
+								groupId={Number(id)}
+							/>
 							<EventCreator onCreateEvent={createEvent} />
 							<EventsList
 								events={events}

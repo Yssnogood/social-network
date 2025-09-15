@@ -3,9 +3,10 @@ package routes
 import (
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"social-network/backend/server/handlers"
 	"social-network/backend/server/middlewares"
+
+	"github.com/gorilla/mux"
 )
 
 func GroupRoutes(r *mux.Router, groupHandler *handlers.GroupHandler) {
@@ -13,6 +14,7 @@ func GroupRoutes(r *mux.Router, groupHandler *handlers.GroupHandler) {
 	r.Handle("/api/groups", middlewares.JWTMiddleware(http.HandlerFunc(groupHandler.GetGroupsByUserID))).Methods("GET")
 	r.Handle("/api/groups/accept-invitation", (http.HandlerFunc(groupHandler.AcceptGroupInvitation))).Methods("POST", "OPTIONS")
 	r.Handle("/api/groups/decline-invitation", (http.HandlerFunc(groupHandler.DeclineGroupInvitation))).Methods("POST", "OPTIONS")
+	r.Handle("/api/groups/check-invitation", middlewares.JWTMiddleware(http.HandlerFunc(groupHandler.CheckInvitationStatus))).Methods("POST", "OPTIONS")
 	r.Handle("/api/groups/{id:[0-9]+}", middlewares.JWTMiddleware(http.HandlerFunc(groupHandler.GetGroupByID))).Methods("GET", "OPTIONS")
 	r.Handle("/api/groups/{id:[0-9]+}/members", middlewares.JWTMiddleware(http.HandlerFunc(groupHandler.GetMembersByGroupID))).Methods("GET", "OPTIONS")
 	r.Handle("/api/groups/{id:[0-9]+}/members", middlewares.JWTMiddleware(http.HandlerFunc(groupHandler.AddMember))).Methods("POST", "OPTIONS")

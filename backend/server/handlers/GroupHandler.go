@@ -17,18 +17,18 @@ import (
 
 // GroupHandler handles HTTP requests for groups.
 type GroupHandler struct {
-	GroupRepository   *repository.GroupRepository
-	SessionRepository *repository.SessionRepository
-	UserRepository    *repository.UserRepository
+	GroupRepository        *repository.GroupRepository
+	SessionRepository      *repository.SessionRepository
+	UserRepository         *repository.UserRepository
 	NotificationRepository *repository.NotificationRepository
 }
 
 // NewGroupHandler creates a new GroupHandler.
 func NewGroupHandler(gr *repository.GroupRepository, sr *repository.SessionRepository, ur *repository.UserRepository, nr *repository.NotificationRepository) *GroupHandler {
 	return &GroupHandler{
-		GroupRepository:   gr,
-		SessionRepository: sr,
-		UserRepository:    ur,
+		GroupRepository:        gr,
+		SessionRepository:      sr,
+		UserRepository:         ur,
 		NotificationRepository: nr,
 	}
 }
@@ -112,10 +112,10 @@ func (h *GroupHandler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	group.ID = id
 
 	response := GroupResponse{
-		ID:        group.ID,
-		CreatorID: group.CreatorID,
+		ID:          group.ID,
+		CreatorID:   group.CreatorID,
 		CreatorName: group.CreatorName,
-		Title:     group.Title,
+		Title:       group.Title,
 		Description: func() string {
 			if group.Description != nil {
 				return *group.Description
@@ -156,8 +156,8 @@ func (h *GroupHandler) GetGroupsByUserID(w http.ResponseWriter, r *http.Request)
 				}
 				return ""
 			}(),
-			CreatedAt:   group.CreatedAt.Format(time.RFC3339),
-			UpdatedAt:   group.UpdatedAt.Format(time.RFC3339),
+			CreatedAt: group.CreatedAt.Format(time.RFC3339),
+			UpdatedAt: group.UpdatedAt.Format(time.RFC3339),
 		})
 	}
 
@@ -200,8 +200,8 @@ func (h *GroupHandler) GetGroupByID(w http.ResponseWriter, r *http.Request) {
 			}
 			return ""
 		}(),
-		CreatedAt:   group.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:   group.UpdatedAt.Format(time.RFC3339),
+		CreatedAt: group.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: group.UpdatedAt.Format(time.RFC3339),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -548,8 +548,8 @@ func BroadcastToGroupClients(groupID int64, message interface{}) {
 
 func (h *GroupHandler) AcceptGroupInvitation(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
-		GroupID int64 `json:"group_id"`
-		UserID  int64 `json:"current_user"`
+		GroupID       int64  `json:"group_id"`
+		UserID        int64  `json:"current_user"`
 		ReferenceType string `json:"reference_type"`
 	}
 
@@ -589,8 +589,8 @@ func (h *GroupHandler) AcceptGroupInvitation(w http.ResponseWriter, r *http.Requ
 
 func (h *GroupHandler) DeclineGroupInvitation(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
-		GroupID int64 `json:"group_id"`
-		UserID  int64 `json:"current_user"`
+		GroupID       int64  `json:"group_id"`
+		UserID        int64  `json:"current_user"`
 		ReferenceType string `json:"reference_type"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -642,4 +642,33 @@ func (h *GroupHandler) CheckMembership(w http.ResponseWriter, r *http.Request) {
 	response := map[string]bool{"is_member": isMember}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// CheckInvitationStatus checks if a user has a pending group invitation
+func (h *GroupHandler) CheckInvitationStatus(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		GroupID int64 `json:"group_id"`
+		UserID  int64 `json:"user_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	hasPendingInvitation, err := h.NotificationRepository.HasPendingGroupInvitation(req.UserID, req.GroupID)
+	if err != nil {
+		http.Error(w, "Failed to check invitation status", http.StatusInternalServerError)
+		return
+	}
+
+	isMember, err := h.GroupRepository.IsMember(req.GroupID, req.UserID)
+	if err != nil {
+		http.Error(w, "Failed to check membership", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]bool{
+		"hasPendingInvitation": hasPendingInvitation,
+		"isMember":             isMember,
+	})
 }
