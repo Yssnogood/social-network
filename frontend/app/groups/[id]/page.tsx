@@ -15,6 +15,7 @@ import TabNavigation from "../../components/groupComponent/TabNavigation";
 import { useGroupData } from "../../hooks/useGroupData";
 import { useGroupWebSocket } from "../../hooks/useGroupWebSocket";
 import { createNotification } from "../../../services/notifications";
+import { Users, Lock } from "lucide-react";
 import {
 	Group,
 	GroupMember,
@@ -29,6 +30,8 @@ import {
 export default function GroupPage() {
 	const { id } = useParams();
 	const [currentUser, setCurrentUser] = useState<User | null>(null);
+	const [isMember, setIsMember] = useState<boolean | null>(null);
+	const [isCheckingAccess, setIsCheckingAccess] = useState(true);
 
 	// États principaux
 	const [group, setGroup] = useState<Group | null>(null);
@@ -97,9 +100,59 @@ export default function GroupPage() {
 		fetchCurrentUser();
 	}, []);
 
-	// Initialisation
+	// Vérification si l'utilisateur est membre du groupe
 	useEffect(() => {
-		if (!id) return;
+		const checkMembership = async () => {
+			if (!id || !currentUser) return;
+
+			try {
+				setIsCheckingAccess(true);
+				const res = await fetch(`http://localhost:8080/api/groups/${id}/membership-status`, {
+					method: "GET",
+					credentials: "include",
+				});
+
+				if (!res.ok) {
+					// Si l'endpoint n'existe pas, on peut vérifier via les membres
+					await fetchMembers();
+					return;
+				}
+
+				const data = await res.json();
+				setIsMember(data.is_member);
+			} catch (err: any) {
+				console.error("Error checking membership:", err.message);
+				// Fallback: vérifier via la liste des membres
+				try {
+					await fetchMembers();
+				} catch (fetchErr: any) {
+					console.error("Error fetching members for membership check:", fetchErr.message);
+					setIsMember(false);
+				}
+			} finally {
+				setIsCheckingAccess(false);
+			}
+		};
+
+		if (currentUser) {
+			checkMembership();
+		}
+	}, [id, currentUser]);
+
+	// Vérification alternative via la liste des membres (fallback)
+	useEffect(() => {
+		if (currentUser && members.length > 0 && isMember === null) {
+			const userIsMember = members.some(member =>
+				member.userId === currentUser.id && member.accepted === true
+			);
+			setIsMember(userIsMember);
+			setIsCheckingAccess(false);
+		}
+	}, [members, currentUser, isMember]);
+
+	// Initialisation (seulement si l'utilisateur est membre)
+	useEffect(() => {
+		if (!id || isMember !== true) return;
 
 		const initialize = async () => {
 			await fetchGroup();
@@ -110,7 +163,7 @@ export default function GroupPage() {
 		};
 
 		initialize();
-	}, [id]);
+	}, [id, isMember]);
 
 	// Actions pour les messages
 	const sendMessage = async () => {
@@ -288,7 +341,7 @@ export default function GroupPage() {
 				createNotification({
 					userId: currentUser?.id,
 					type: "group_event",
-					content: `Nouveau événement dans le groupe "${group?.title}".`,
+					content: `Nouvel événement dans le groupe "${group?.title}".`,
 					referenceId: group?.id,
 					referenceType: "group",
 				});
@@ -338,6 +391,50 @@ export default function GroupPage() {
 		}
 	};
 
+	// Rendu pour l'état de chargement de la vérification d'accès
+	if (isCheckingAccess || !currentUser) {
+		return (
+			<AppLayout>
+				<div className="container mx-auto px-4 py-8">
+					<div className="flex justify-center items-center h-64">
+						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+					</div>
+				</div>
+			</AppLayout>
+		);
+	}
+
+	// Rendu pour l'accès refusé
+	if (isMember === false) {
+		return (
+			<AppLayout>
+				<div className="container mx-auto px-4 py-8">
+					<div className="max-w-md mx-auto text-center">
+						<div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8">
+							<Lock size={64} className="mx-auto text-zinc-600 mb-4" />
+							<h2 className="text-xl font-semibold text-white mb-2">
+								Accès refusé
+							</h2>
+							<p className="text-zinc-400 mb-4">
+								Vous ne faites pas partie de ce groupe. Vous devez être membre accepté pour accéder au contenu du groupe.
+							</p>
+							<div className="flex flex-col space-y-2 text-sm text-zinc-500">
+								<span>• Demandez une invitation à un membre existant</span>
+								<span>• Contactez l'administrateur du groupe</span>
+							</div>
+							<button
+								onClick={() => window.history.back()}
+								className="mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+							>
+								Retourner aux groupes
+							</button>
+						</div>
+					</div>
+				</div>
+			</AppLayout>
+		);
+	}
+
 	// Rendu conditionnel pour les erreurs et le loading
 	if (error) return (
 		<AppLayout>
@@ -346,7 +443,7 @@ export default function GroupPage() {
 			</div>
 		</AppLayout>
 	);
-	
+
 	if (!group) return (
 		<AppLayout>
 			<div className="container mx-auto px-4 py-8">
@@ -357,12 +454,13 @@ export default function GroupPage() {
 		</AppLayout>
 	);
 
+	// Rendu principal du groupe (seulement pour les membres acceptés)
 	return (
 		<AppLayout>
 			<div className="container mx-auto px-4 py-6">
 				<div className="max-w-4xl mx-auto">
 					<GroupHeader group={group} />
-					
+
 					<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 						{/* Main Content */}
 						<div className="lg:col-span-2 space-y-6">

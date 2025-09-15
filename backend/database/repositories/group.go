@@ -378,3 +378,24 @@ func (r *GroupRepository) GetCommentsByPostID(postID int64) ([]models.GroupComme
 
 	return comments, nil
 }
+
+//ismember checks if a user is a member of a group
+func (r *GroupRepository) IsMember(groupID, userID int64) (bool, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT COUNT(*)
+		FROM group_members
+		WHERE group_id = ? AND user_id = ?
+	`)
+	if err != nil {
+		return false, err
+	}
+	defer stmt.Close()
+
+	var count int
+	err = stmt.QueryRow(groupID, userID).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
