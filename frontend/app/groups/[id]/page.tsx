@@ -19,7 +19,7 @@ import { Users, Lock } from "lucide-react";
 import {
 	Group,
 	GroupMember,
-	Follower,
+	FollowerWithDetails,
 	GroupMessage,
 	GroupPost,
 	GroupComment,
@@ -36,7 +36,7 @@ export default function GroupPage() {
 	// États principaux
 	const [group, setGroup] = useState<Group | null>(null);
 	const [members, setMembers] = useState<GroupMember[]>([]);
-	const [followers, setFollowers] = useState<Follower[]>([]);
+	const [followers, setFollowers] = useState<FollowerWithDetails[]>([]);
 	const [error, setError] = useState<string | null>(null);
 
 	// États pour les messages
@@ -66,7 +66,7 @@ export default function GroupPage() {
 		fetchPosts,
 		fetchEvents,
 		fetchComments
-	} = useGroupData(id as string, {
+	} = useGroupData(id as string, currentUser, {
 		setGroup,
 		setMembers,
 		setFollowers,
@@ -496,7 +496,7 @@ export default function GroupPage() {
 						{/* Sidebar */}
 						<div className="space-y-6">
 							<MembersList members={members} />
-							<UserInvitation followers={followers} onInvite={inviteUser} />
+							<UserInvitation followers={followers} members={members} onInvite={inviteUser} />
 							<EventCreator onCreateEvent={createEvent} />
 							<EventsList
 								events={events}

@@ -1,3 +1,5 @@
+import { FollowerUser } from "../../services/follow";
+
 export type Group = {
 	id: number;
 	creatorId: number;
@@ -23,6 +25,9 @@ export interface Follower {
 	accepted: boolean;
 	followed_at: string;
 }
+
+// Use FollowerUser from services for full user data
+export type FollowerWithDetails = FollowerUser;
 
 export type GroupMessage = {
 	id: number;

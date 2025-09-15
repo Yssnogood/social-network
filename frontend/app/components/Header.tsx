@@ -9,6 +9,8 @@ import SearchBar from "./SearchBar";
 import { Input } from "@/components/ui/input";
 import { Bell, MessageCircle, Search, User, Users, Home } from "lucide-react";
 import { useState } from "react";
+import { acceptFollowRequestNotif, declineFollowRequestNotif, acceptGroupJoinRequest, declineGroupJoinRequest } from "../../services/notifications";
+import { getUserIdFromToken } from "../../services/user";
 
 export interface Notification {
 	id: number;
@@ -69,6 +71,74 @@ export default function Header({
 	};
 
 	const isActive = (path: string) => pathname === path;
+
+	const handleAcceptFollowRequest = async (notificationId: number, referenceId: number) => {
+		try {
+			const jwt = cookies.get("jwt");
+			const userId = await getUserIdFromToken(jwt);
+			
+			if (!userId) throw new Error("User not authenticated");
+			
+			await acceptFollowRequestNotif(notificationId, parseInt(userId), referenceId);
+			
+			// Refresh the page to update notifications
+			window.location.reload();
+		} catch (error) {
+			console.error("Error accepting follow request:", error);
+			alert("Erreur lors de l'acceptation de la demande");
+		}
+	};
+
+	const handleDeclineFollowRequest = async (notificationId: number, referenceId: number) => {
+		try {
+			const jwt = cookies.get("jwt");
+			const userId = await getUserIdFromToken(jwt);
+			
+			if (!userId) throw new Error("User not authenticated");
+			
+			await declineFollowRequestNotif(notificationId, parseInt(userId), referenceId);
+			
+			// Refresh the page to update notifications
+			window.location.reload();
+		} catch (error) {
+			console.error("Error declining follow request:", error);
+			alert("Erreur lors du refus de la demande");
+		}
+	};
+
+	const handleAcceptGroupInvitation = async (referenceId: number, referenceType: string) => {
+		try {
+			const jwt = cookies.get("jwt");
+			const userId = await getUserIdFromToken(jwt);
+			
+			if (!userId) throw new Error("User not authenticated");
+			
+			await acceptGroupJoinRequest(referenceId, parseInt(userId), referenceType);
+			
+			// Refresh the page to update notifications
+			window.location.reload();
+		} catch (error) {
+			console.error("Error accepting group invitation:", error);
+			alert("Erreur lors de l'acceptation de l'invitation");
+		}
+	};
+
+	const handleDeclineGroupInvitation = async (referenceId: number, referenceType: string) => {
+		try {
+			const jwt = cookies.get("jwt");
+			const userId = await getUserIdFromToken(jwt);
+			
+			if (!userId) throw new Error("User not authenticated");
+			
+			await declineGroupJoinRequest(referenceId, parseInt(userId), referenceType);
+			
+			// Refresh the page to update notifications
+			window.location.reload();
+		} catch (error) {
+			console.error("Error declining group invitation:", error);
+			alert("Erreur lors du refus de l'invitation");
+		}
+	};
 
 	return (
 		<header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-zinc-950/95 backdrop-blur supports-[backdrop-filter]:bg-zinc-950/90">
@@ -201,15 +271,64 @@ export default function Header({
 			{/* Notifications Panel */}
 			{showNotifications && (
 				<div className="absolute right-4 top-16 z-50">
-					<div className="bg-zinc-900 border border-zinc-800 rounded-lg shadow-lg p-4 w-80">
+					<div className="bg-zinc-900 border border-zinc-800 rounded-lg shadow-lg p-4 w-80 max-h-96 overflow-y-auto">
 						<h3 className="font-semibold text-white mb-3">Notifications</h3>
 						{notifications.length === 0 ? (
 							<p className="text-zinc-400 text-sm">No new notifications</p>
 						) : (
-							<div className="space-y-2">
+							<div className="space-y-3">
 								{notifications.slice(0, 5).map((notification) => (
-									<div key={notification.id} className="p-2 bg-zinc-800 rounded text-sm text-zinc-300">
-										{notification.content}
+									<div key={notification.id} className="p-3 bg-zinc-800 rounded-lg border border-zinc-700">
+										<p className="text-sm text-zinc-300 mb-2">{notification.content}</p>
+										
+										{/* Follow request buttons */}
+										{notification.type === 'follow_request' && notification.reference_id && (
+											<div className="flex space-x-2 mt-2">
+												<Button
+													size="sm"
+													onClick={() => handleAcceptFollowRequest(notification.id, notification.reference_id!)}
+													className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1"
+												>
+													Accept
+												</Button>
+												<Button
+													size="sm"
+													onClick={() => handleDeclineFollowRequest(notification.id, notification.reference_id!)}
+													className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1"
+												>
+													Decline
+												</Button>
+											</div>
+										)}
+										
+										{/* Group invitation buttons */}
+										{notification.type === 'group_invitation' && notification.reference_id && notification.reference_type && (
+											<div className="flex space-x-2 mt-2">
+												<Button
+													size="sm"
+													onClick={() => handleAcceptGroupInvitation(notification.reference_id!, notification.reference_type!)}
+													className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1"
+												>
+													Accept
+												</Button>
+												<Button
+													size="sm"
+													onClick={() => handleDeclineGroupInvitation(notification.reference_id!, notification.reference_type!)}
+													className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1"
+												>
+													Decline
+												</Button>
+											</div>
+										)}
+										
+										<div className="text-xs text-zinc-500 mt-2">
+											{new Date(notification.created_at).toLocaleDateString("fr-FR", {
+												day: "numeric",
+												month: "short",
+												hour: "2-digit",
+												minute: "2-digit"
+											})}
+										</div>
 									</div>
 								))}
 							</div>

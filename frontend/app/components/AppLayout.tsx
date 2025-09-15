@@ -26,7 +26,7 @@ export default function AppLayout({ children, showHeader = true }: AppLayoutProp
       try {
         const fetchedNotifications = await fetchNotifications(token, userId);
         if (Array.isArray(fetchedNotifications)) {
-          setNotifications(fetchedNotifications);
+          setNotifications(fetchedNotifications.reverse());
         }
       } catch (error) {
         console.error("Failed to fetch notifications:", error);

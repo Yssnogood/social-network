@@ -63,7 +63,17 @@ export async function acceptFollowRequestNotif(notificationId: number, user_id: 
     throw new Error("Erreur lors de l'acceptation de la demande de follow.");
   }
 
-  return res.json();
+  // Check if response has content before parsing JSON
+  const text = await res.text();
+  if (text) {
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      console.warn("Response is not valid JSON:", text);
+      return { success: true };
+    }
+  }
+  return { success: true };
 }
 
 // Decline a follow request (from the notification)
@@ -84,7 +94,17 @@ export async function declineFollowRequestNotif(notificationId: number, user_id:
     throw new Error("Erreur lors du refus de la demande de follow.");
   }
 
-  return res.json();
+  // Check if response has content before parsing JSON
+  const text = await res.text();
+  if (text) {
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      console.warn("Response is not valid JSON:", text);
+      return { success: true };
+    }
+  }
+  return { success: true };
 }
 
 // Accept a join group request (from the notification)
@@ -107,7 +127,17 @@ export async function acceptGroupJoinRequest(reference_id: number, user_id: numb
     throw new Error("Erreur lors de l'acceptation de l'invitation au groupe.");
   }
 
-  return res.json();
+  // Check if response has content before parsing JSON
+  const text = await res.text();
+  if (text) {
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      console.warn("Response is not valid JSON:", text);
+      return { success: true };
+    }
+  }
+  return { success: true };
 }
 
 // Decline a join group request (from the notification)
@@ -128,5 +158,15 @@ export async function declineGroupJoinRequest(reference_id: number, user_id: num
     throw new Error("Erreur lors du refus de l'invitation au groupe.");
   }
 
-  return res.json();
+  // Check if response has content before parsing JSON
+  const text = await res.text();
+  if (text) {
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      console.warn("Response is not valid JSON:", text);
+      return { success: true };
+    }
+  }
+  return { success: true };
 }

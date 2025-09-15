@@ -1,7 +1,7 @@
 import {
 	Group,
 	GroupMember,
-	Follower,
+	FollowerWithDetails,
 	GroupMessage,
 	GroupPost,
 	GroupComment,
@@ -11,7 +11,7 @@ import {
 interface UseGroupDataProps {
 	setGroup: (group: Group) => void;
 	setMembers: (members: GroupMember[]) => void;
-	setFollowers: (followers: Follower[]) => void;
+	setFollowers: (followers: FollowerWithDetails[]) => void;
 	setMessages: (messages: GroupMessage[]) => void;
 	setPosts: (posts: GroupPost[]) => void;
 	setEvents: (events: Event[]) => void;
@@ -21,7 +21,12 @@ interface UseGroupDataProps {
 	setError: (error: string | null) => void;
 }
 
-export const useGroupData = (groupId: string, setters: UseGroupDataProps) => {
+interface CurrentUser {
+	id: number;
+	username: string;
+}
+
+export const useGroupData = (groupId: string, currentUser: CurrentUser | null, setters: UseGroupDataProps) => {
 	const {
 		setGroup,
 		setMembers,
@@ -79,7 +84,7 @@ export const useGroupData = (groupId: string, setters: UseGroupDataProps) => {
 
 	const fetchFollowers = async () => {
 		try {
-			const res = await fetch(`http://localhost:8080/api/followers`, {
+			const res = await fetch(`http://localhost:8080/api/followersDetails?userID=${currentUser?.id}`, {
 				credentials: "include",
 			});
 			if (!res.ok) throw new Error(await res.text());
