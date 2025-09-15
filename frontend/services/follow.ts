@@ -12,21 +12,32 @@ export interface FollowerUser {
 }
 
 
-export async function followUser(followerId: number, followedId: number, is_public: boolean) {
+export async function followUser(
+  followerId: number,
+  followedId: number,
+  is_public: boolean
+): Promise<{ followed?: boolean; requestSent?: boolean }> {
   console.log("Following user:", followerId, followedId, is_public);
+
   const res = await fetch("http://localhost:8080/api/followers", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    
-    body: JSON.stringify({ follower_id: followerId, followed_id: followedId, private: is_public == true ? 1 : 0 }),
+    body: JSON.stringify({
+      follower_id: followerId,
+      followed_id: followedId,
+      is_public: is_public, // ✅ Correct field name
+    }),
   });
-  
-  console.log("test")
-  console.log(res.ok)
-  if (!res.ok) throw new Error("Erreur lors du follow");
+
+  if (!res.ok) {
+    throw new Error("Erreur lors du follow");
+  }
+
+  return res.json(); // ✅ Return backend response with `followed` or `requestSent`
 }
+
 
 export async function unfollowUser(followerId: number, followedId: number) {
   const res = await fetch(`http://localhost:8080/api/followers/${followedId}`, {

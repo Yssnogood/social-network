@@ -62,7 +62,7 @@ export default function ClientProfile({
       }
     };
 
-    if (!isOwnProfile && !profile.is_public) {
+    if (!isOwnProfile ) {
       fetchIsFollowingStatus();
     }
   }, [currentUserId, profile.id, isOwnProfile, profile.is_public]);
@@ -82,29 +82,26 @@ export default function ClientProfile({
     }
   };
 
-  const handleFollow = async () => {
-    try {
-      setLoading(true);
-      await followUser(currentUserId, profile.id, profile.is_public);
+const handleFollow = async () => {
+  try {
+    setLoading(true);
+    const res = await followUser(currentUserId, profile.id, profile.is_public);
 
-      createNotification({
-        userId: profile.id,
-        type: "follow_request",
-        content: `${loggedInUser} vous a envoyé une demande de suivi.`,
-        referenceId: currentUserId,
-        referenceType: "user",
-      });
-
-      setIsFollowing(profile.is_public);
-      setIsFollowPending(!profile.is_public);
-      await fetchFollowers();
-    } catch (error: any) {
-      console.error("Erreur lors du follow :", error.message);
-      alert("Impossible de suivre cet utilisateur.");
-    } finally {
-      setLoading(false);
+    if (res.followed) {
+      setIsFollowing(true); // Directly followed
+    } else if (res.requestSent) {
+      setIsFollowPending(true); // Request sent
     }
-  };
+
+    await fetchFollowers();
+  } catch (error: any) {
+    console.error("Follow error:", error.message);
+    alert("Impossible de suivre cet utilisateur.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleUnfollow = async () => {
     try {

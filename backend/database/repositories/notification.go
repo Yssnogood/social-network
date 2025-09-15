@@ -230,3 +230,21 @@ func (r *NotificationRepository) DeleteGroupInvitationRequest(userID, groupID in
 
 	return nil
 }
+
+func (r *NotificationRepository) CreateNotification(
+    userID int64,
+    notifType string,
+    content string,
+    referenceID *int64,
+    referenceType *string,
+) (int64, error) {
+    notification := &models.Notification{
+        UserID:        userID,
+        Type:          notifType,
+        Content:       content,
+        Read:          false,
+        ReferenceID:   referenceID,
+        ReferenceType: referenceType,
+    }
+    return r.Create(notification)
+}

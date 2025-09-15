@@ -15,22 +15,27 @@ import (
 type FollowerHandler struct {
 	FollowerRepository     *repository.FollowerRepository
 	NotificationRepository *repository.NotificationRepository
+	UserRepository         *repository.UserRepository
 }
 
 // NewFollowerHandler creates a new instance of FollowerHandler.
-func NewFollowerHandler(fr *repository.FollowerRepository, nr *repository.NotificationRepository) *FollowerHandler {
+func NewFollowerHandler(
+	fr *repository.FollowerRepository, 
+	nr *repository.NotificationRepository, 
+	ur *repository.UserRepository,  // Add this
+) *FollowerHandler {
 	return &FollowerHandler{
 		FollowerRepository:     fr,
 		NotificationRepository: nr,
+		UserRepository:         ur,  // Initialize it
 	}
 }
-
 // Request DTOs
 
 type followRequest struct {
 	FollowerID int64 `json:"follower_id"`
 	FollowedID int64 `json:"followed_id"`
-	Private    bool  `json:"is_public"`
+	IsPublic    bool  `json:"is_public"`
 }
 
 type acceptFollowerRequest struct {
@@ -40,30 +45,70 @@ type acceptFollowerRequest struct {
 
 // Handlers
 
-// CreateFollower creates a new follow request (or direct follow if accepted by default).
 func (h *FollowerHandler) CreateFollower(w http.ResponseWriter, r *http.Request) {
-	var req followRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
+    var req followRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid request body", http.StatusBadRequest)
+        return
+    }
 
-	follower := &models.Follower{
-		FollowerID: req.FollowerID,
-		FollowedID: req.FollowedID,
-		Accepted:   req.Private,
-		FollowedAt: time.Now(),
-	}
+    // Determine if the follow is automatic or a request
+    accepted := req.IsPublic
 
-	if err := h.FollowerRepository.Create(follower); err != nil {
-		http.Error(w, "Failed to follow user", http.StatusInternalServerError)
-		return
-	}
+    follower := &models.Follower{
+        FollowerID: req.FollowerID,
+        FollowedID: req.FollowedID,
+        Accepted:   accepted,
+        FollowedAt: time.Now(),
+    }
 
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Follow request sent",
-	})
+    if err := h.FollowerRepository.Create(follower); err != nil {
+        http.Error(w, "Failed to follow user", http.StatusInternalServerError)
+        return
+    }
+
+    // 🔑 Get follower username for notification message
+    followerUser, err := h.UserRepository.GetByID(req.FollowerID)
+    if err != nil {
+        http.Error(w, "Failed to get follower user", http.StatusInternalServerError)
+        return
+    }
+
+    var notifType, notifContent string
+    if accepted {
+        notifType = "follow"
+        notifContent = followerUser.Username + " started following you"
+    } else {
+        notifType = "follow_request"
+        notifContent = followerUser.Username + " sent you a follow request"
+    }
+
+    // Set reference ID and type
+    refID := req.FollowerID
+    refType := "user"
+
+    _, err = h.NotificationRepository.CreateNotification(
+        req.FollowedID,
+        notifType,
+        notifContent,
+        &refID,
+        &refType,
+    )
+    if err != nil {
+        http.Error(w, "Failed to create notification", http.StatusInternalServerError)
+        return
+    }
+
+    resp := map[string]bool{
+        "followed":    accepted,
+        "requestSent": !accepted,
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(resp)
 }
+
+
 
 // AcceptFollowRequest accepts a follow request.
 func (h *FollowerHandler) AcceptFollowRequest(w http.ResponseWriter, r *http.Request) {
