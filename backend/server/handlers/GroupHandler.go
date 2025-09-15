@@ -612,3 +612,34 @@ func (h *GroupHandler) DeclineGroupInvitation(w http.ResponseWriter, r *http.Req
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *GroupHandler) CheckMembership(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	groupIDStr, ok := vars["id"]
+	if !ok {
+		http.Error(w, "Missing group ID in path", http.StatusBadRequest)
+		return
+	}
+
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(int64)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	isMember, err := h.GroupRepository.IsMember(groupID, userID)
+	if err != nil {
+		http.Error(w, "Failed to check membership: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := map[string]bool{"is_member": isMember}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
