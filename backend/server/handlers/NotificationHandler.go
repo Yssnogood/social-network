@@ -66,7 +66,7 @@ type deleteAllNotificationsRequest struct {
 
 type deleteNotificationByRefRequest struct {
 	ReferenceID int64  `json:"reference_id"`
-	Type       string `json:"type"`
+	Type        string `json:"type"`
 }
 
 // Handlers
@@ -78,7 +78,7 @@ func (h *NotificationHandler) CreateNotification(w http.ResponseWriter, r *http.
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
-	if req.Type == "post_created" || (strings.Contains(req.Type, "group") && !strings.Contains(req.Type, "comment")) {
+	if req.Type == "post_created" || (strings.Contains(req.Type, "group") && !strings.Contains(req.Type, "comment") && !strings.Contains(req.Type, "invitation")) {
 		fmt.Println("Creating notification to broadcast...")
 		h.BroadcastNotifToUsers(w, r, req)
 		return

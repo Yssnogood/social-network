@@ -248,3 +248,15 @@ func (r *NotificationRepository) CreateNotification(
     }
     return r.Create(notification)
 }
+// Check if a group invitation notification exists for a user and group
+func (r *NotificationRepository) HasPendingGroupInvitation(userID, groupID int64) (bool, error) {
+	var exists bool
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM notifications
+			WHERE user_id = ? AND reference_id = ? AND type = 'group_invitation'
+		)
+	`
+	err := r.db.QueryRow(query, userID, groupID).Scan(&exists)
+	return exists, err
+}

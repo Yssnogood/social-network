@@ -106,7 +106,7 @@ export default function Home() {
             <div className="min-h-screen bg-zinc-950">
                 <div className="container mx-auto px-4 py-6">
                     {/* Sticky Create Post Section */}
-                    <div className="sticky top-20 z-40 bg-zinc-950/95 backdrop-blur pb-4 mb-6">
+                    <div className="sticky top-20 z-40 bg-zinc-950/95 backdrop-blur">
                         <div className="max-w-xl mx-auto">
                             <div 
                                 onClick={handleOpenModal}
