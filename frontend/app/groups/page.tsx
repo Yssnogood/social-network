@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useCookies } from "next-client-cookies";
 import Link from "next/link";
-import Header from "../components/Header";
+import AppLayout from "../components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -98,9 +98,7 @@ export default function GroupsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-zinc-950">
-            <Header username={cookies.get("user")} notifications={[]} showNotifications={false} onToggleNotifications={() => {}} />
-            
+        <AppLayout>
             <div className="container mx-auto px-4 py-8">
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
@@ -206,6 +204,6 @@ export default function GroupsPage() {
                 onClose={() => setIsCreateModalOpen(false)}
                 onSubmit={handleSubmitGroup}
             />
-        </div>
+        </AppLayout>
     );
 }

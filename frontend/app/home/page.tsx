@@ -9,7 +9,7 @@ import { useCookies } from "next-client-cookies";
 import { getUserIdFromToken } from "../../services/user";
 
 // Nouveaux composants extraits
-import Header, { Notification } from "../components/Header";
+import AppLayout from "../components/AppLayout";
 import CreatePostModal from "../components/CreatePostModal";
 import PostsList from "../components/PostsList";
 import CreateGroupModal from "../components/GroupModal";
@@ -20,27 +20,6 @@ export default function Home() {
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
-    const [showNotifications, setShowNotifications] = useState(false);
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-
-    useEffect(() => {
-        const getNotif = async () => {
-            const token = cookies.get("jwt");
-            const userId = await getUserIdFromToken(token);
-            if (!token || !userId) return;
-
-            try {
-                const fetchedNotifications = await fetchNotifications(token, userId);
-                if (Array.isArray(fetchedNotifications)) {
-                    setNotifications(fetchedNotifications);
-                }
-            } catch (error) {
-                console.error("Failed to fetch notifications:", error);
-            }
-        };
-
-        getNotif();
-    }, [cookies]);
 
     useEffect(() => {
         async function loadPosts() {
@@ -122,20 +101,9 @@ export default function Home() {
         }
     }
 
-    const handleToggleNotifications = () => {
-        setShowNotifications(!showNotifications);
-    };
-
     return (
-        <>
-            <Header
-                username={cookies.get("user")}
-                notifications={notifications}
-                showNotifications={showNotifications}
-                onToggleNotifications={handleToggleNotifications}
-            />
-
-            <div className="min-h-screen bg-zinc-950 pt-16">
+        <AppLayout>
+            <div className="min-h-screen bg-zinc-950">
                 <div className="container mx-auto px-4 py-6">
                     {/* Sticky Create Post Section */}
                     <div className="sticky top-20 z-40 bg-zinc-950/95 backdrop-blur pb-4 mb-6">
@@ -179,6 +147,6 @@ export default function Home() {
                 onClose={handleCloseGroupModal}
                 onSubmit={handleSubmitGroup}
             />
-        </>
+        </AppLayout>
     );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Header from "../../components/Header";
+import AppLayout from "../../components/AppLayout";
 import GroupHeader from "../../components/groupComponent/GroupHeader";
 import MembersList from "../../components/groupComponent/MembersList";
 import UserInvitation from "../../components/groupComponent/UserInvitation";
@@ -340,29 +340,25 @@ export default function GroupPage() {
 
 	// Rendu conditionnel pour les erreurs et le loading
 	if (error) return (
-		<div className="min-h-screen bg-zinc-950">
-			<Header username={currentUser?.username} notifications={[]} showNotifications={false} onToggleNotifications={() => {}} />
+		<AppLayout>
 			<div className="container mx-auto px-4 py-8">
 				<p className="text-red-500">Error: {error}</p>
 			</div>
-		</div>
+		</AppLayout>
 	);
 	
 	if (!group) return (
-		<div className="min-h-screen bg-zinc-950">
-			<Header username={currentUser?.username} notifications={[]} showNotifications={false} onToggleNotifications={() => {}} />
+		<AppLayout>
 			<div className="container mx-auto px-4 py-8">
 				<div className="flex justify-center items-center h-64">
 					<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
 				</div>
 			</div>
-		</div>
+		</AppLayout>
 	);
 
 	return (
-		<div className="min-h-screen bg-zinc-950">
-			<Header username={currentUser?.username} notifications={[]} showNotifications={false} onToggleNotifications={() => {}} />
-			
+		<AppLayout>
 			<div className="container mx-auto px-4 py-6">
 				<div className="max-w-4xl mx-auto">
 					<GroupHeader group={group} />
@@ -414,6 +410,6 @@ export default function GroupPage() {
 					</div>
 				</div>
 			</div>
-		</div>
+		</AppLayout>
 	);
 }

@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useCookies } from "next-client-cookies";
 import { getUserIdFromToken } from "../../services/user";
 import { fetchNotifications } from "../../services/notifications";
-import Header, { Notification } from "../components/Header";
+import AppLayout from "../components/AppLayout";
 import { fetchUserConversation } from '../../services/contact';
 export default function ContactPage() {
     const cookies = useCookies();
@@ -20,8 +20,6 @@ export default function ContactPage() {
     const [contacts, setContacts] = useState<any[]>([]);
     const [input,setInput] = useState("")
     const [selectedContact, setSelectedContact] = useState<any | null>(null);
-    const [showNotifications, setShowNotifications] = useState(false);
-    const [notifications, setNotifications] = useState<Notification[]>([]);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [isNewConversationModalOpen, setIsNewConversationModalOpen] = useState(false);
@@ -100,30 +98,6 @@ export default function ContactPage() {
         
           };
 
-    // Charger les notifications
-    useEffect(() => {
-        const getNotif = async () => {
-            const token = cookies.get("jwt");
-            const userId = await getUserIdFromToken(token);
-            if (!token || !userId) return;
-
-            try {
-                const fetchedNotifications = await fetchNotifications(token, userId);
-                if (Array.isArray(fetchedNotifications)) {
-                    setNotifications(fetchedNotifications);
-                }
-            } catch (error) {
-                console.error("Failed to fetch notifications:", error);
-            }
-        };
-
-        getNotif();
-    }, [cookies]);
-
-    const handleToggleNotifications = () => {
-        setShowNotifications(!showNotifications);
-    };
-
     // Fetch users from backend based on search term
     useEffect(() => {
         const delayDebounce = setTimeout(async () => {
@@ -172,17 +146,10 @@ export default function ContactPage() {
     };
 
     return (
-        <>
-            <Header
-                username={cookies.get("user")}
-                notifications={notifications}
-                showNotifications={showNotifications}
-                onToggleNotifications={handleToggleNotifications}
-            />
-
-            <div className="flex h-screen bg-gray-800 pt-12">
+        <AppLayout>
+            <div className="flex h-screen bg-zinc-950">
                 {/* Left sidebar - Contacts */}
-                <div className="w-1/4 min-w-[250px] border-r border-gray-400 flex flex-col">
+                <div className="w-1/4 min-w-[250px] border-r border-zinc-700 flex flex-col bg-zinc-900">
                     <div className="p-4 border-b border-gray-400">
                         <h1 className="text-xl font-semibold mb-4">Chats</h1>
                         <div className="relative">
@@ -393,6 +360,6 @@ export default function ContactPage() {
                     </div>
                 )}
             </div>
-        </>
+        </AppLayout>
     );
 }

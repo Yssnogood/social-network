@@ -8,7 +8,7 @@ import { createNotification, fetchNotifications } from "@/services/notifications
 import { getUserIdFromToken } from "../../../../services/user";
 
 // Component imports
-import Header, { Notification } from "../../../components/Header";
+import AppLayout from "../../../components/AppLayout";
 import PostDetail from "../../../components/PostDetail";
 import CommentForm from "../../../components/CommentForm";
 import CommentsList from "../../../components/CommentsList";
@@ -25,8 +25,6 @@ export default function CommentsPage({
     const [post, setPost] = useState<Post | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [showNotifications, setShowNotifications] = useState(false);
-    const [notifications, setNotifications] = useState<Notification[]>([]);
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
     const param = use(params);
@@ -44,30 +42,6 @@ export default function CommentsPage({
 
         loadUserId();
     }, [cookies]);
-
-    // Load notifications
-    useEffect(() => {
-        const getNotif = async () => {
-            const token = cookies.get("jwt");
-            const userId = await getUserIdFromToken(token);
-            if (!token || !userId) return;
-
-            try {
-                const fetchedNotifications = await fetchNotifications(token, userId);
-                if (Array.isArray(fetchedNotifications)) {
-                    setNotifications(fetchedNotifications);
-                }
-            } catch (error) {
-                console.error("Failed to fetch notifications:", error);
-            }
-        };
-
-        getNotif();
-    }, [cookies]);
-
-    const handleToggleNotifications = () => {
-        setShowNotifications(!showNotifications);
-    };
 
     // Load post and comments
     useEffect(() => {
@@ -130,14 +104,7 @@ export default function CommentsPage({
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white">
-            <Header
-                username={cookies.get("user")}
-                notifications={notifications}
-                showNotifications={showNotifications}
-                onToggleNotifications={handleToggleNotifications}
-            />
-
+        <AppLayout>
             <main className="container mx-auto px-4 pt-16 pb-8">
                 <div className="max-w-2xl mx-auto">
                     <BackButton href="/home" text="Back to Feed" />
@@ -161,6 +128,6 @@ export default function CommentsPage({
                     )}
                 </div>
             </main>
-        </div>
+        </AppLayout>
     );
 }

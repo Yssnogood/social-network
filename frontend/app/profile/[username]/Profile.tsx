@@ -9,6 +9,10 @@ import FollowersSection from "../../components/FollowersSection";
 import EditableProfile from "./EditableProfile";
 import { followUser, unfollowUser, FollowerUser } from "../../../services/follow";
 import { createNotification } from "../../../services/notifications";
+import AppLayout from "../../components/AppLayout";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { User, Settings, UserPlus, UserMinus, Clock } from "lucide-react";
 
 export default function ClientProfile({
   profile,
@@ -120,56 +124,41 @@ export default function ClientProfile({
   const canViewProfile = isOwnProfile || profile.is_public || (isFollowing && !isFollowPending);
 
   return (
-    <>
-      <header className="fixed top-0 left-0 right-0 h-12 bg-blue-600 shadow-sm z-50 flex items-center px-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <Link href="/home" className="font-bold text-lg text-white">
-            Social Network
-          </Link>
-          <nav className="flex gap-4 items-center">
-            <Link
-              href={`/profile/${loggedInUser}`}
-              className="flex items-center justify-center w-8 h-8 rounded-full bg-white hover:bg-blue-100"
-            >
-              <Image
-                src="/social-placeholder.png"
-                alt="Profile"
-                width={24}
-                height={24}
-                className="rounded-full"
-              />
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      <main className="pt-16 px-4 mx-auto max-w-6xl">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-3 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+    <AppLayout>
+      <div className="container mx-auto px-4 py-8">
+        <Card className="border-zinc-800 bg-zinc-900">
+          <CardHeader>
             {!followStatusLoaded ? (
-              <div className="text-center text-gray-600 py-8">Chargement du profil...</div>
+              <div className="text-center text-zinc-400 py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                Chargement du profil...
+              </div>
             ) : !canViewProfile ? (
-              <div className="text-center text-gray-700 dark:text-white py-8">
-                <p className="text-lg">Ce profil est privé.</p>
-                <p className="mt-2">S'abonner pour voir le contenu ?</p>
+              <div className="text-center text-zinc-300 py-8">
+                <User size={64} className="mx-auto text-zinc-600 mb-4" />
+                <p className="text-lg text-white mb-2">Ce profil est privé.</p>
+                <p className="text-zinc-400 mb-6">S'abonner pour voir le contenu ?</p>
                 {isFollowPending ? (
-                  <button 
-                    className="mt-4 px-4 py-2 bg-yellow-300 text-gray-800 rounded"
+                  <Button 
+                    variant="outline"
                     onClick={() => {
                       unfollowUser(currentUserId, profile.id);
                       setIsFollowPending(false);
                     }}
+                    className="border-yellow-600 text-yellow-400 hover:bg-yellow-600/10"
                   >
+                    <Clock size={16} className="mr-2" />
                     Annuler la demande
-                  </button>
+                  </Button>
                 ) : (
-                  <button
+                  <Button
                     onClick={handleFollow}
                     disabled={loading}
-                    className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                    className="bg-blue-600 hover:bg-blue-700"
                   >
+                    <UserPlus size={16} className="mr-2" />
                     {loading ? "..." : "Envoyer une demande"}
-                  </button>
+                  </Button>
                 )}
               </div>
             ) : isOwnProfile && isEditingProfile ? (
@@ -181,110 +170,153 @@ export default function ClientProfile({
                 setIsPublic={setIsPublic}
               />
             ) : (
-              <>
-                <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
+              <div className="space-y-6">
+                {/* Header avec avatar et infos principales */}
+                <div className="flex flex-col md:flex-row items-start gap-6">
                   <div className="flex-shrink-0">
-                    <Image
-                      src={updatedAvatar || "/defaultPP.webp"}
-                      alt="Profile"
-                      width={150}
-                      height={150}
-                      className="rounded-full border-4 border-blue-100"
-                    />
+                    <div className="relative">
+                      <Image
+                        src={updatedAvatar || "/defaultPP.webp"}
+                        alt="Profile"
+                        width={120}
+                        height={120}
+                        className="rounded-full border-4 border-zinc-700"
+                      />
+                      <div className={`absolute bottom-2 right-2 w-4 h-4 rounded-full border-2 border-zinc-900 ${
+                        profile.is_public ? 'bg-green-500' : 'bg-zinc-500'
+                      }`}></div>
+                    </div>
                   </div>
 
-                  <div className="flex flex-col mt-4 md:mt-0">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {profile.username}
-                    </h1>
-                    <h2 className="text-xl text-gray-700 dark:text-gray-300 mt-2">
-                      {profile.first_name} {profile.last_name}
-                    </h2>
-
-                    {isOwnProfile ? (
-                      <button
-                        onClick={() => setIsEditingProfile(true)}
-                        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                      >
-                        Modifier le profil
-                      </button>
-                    ) : isFollowing ? (
-                      <div className="flex items-center gap-2 mt-4">
-                        <span className="px-4 py-2 bg-gray-200 text-gray-800 rounded">
-                          Abonné
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <h1 className="text-3xl font-bold text-white mb-2">
+                        {profile.username}
+                      </h1>
+                      <h2 className="text-xl text-zinc-400">
+                        {profile.first_name} {profile.last_name}
+                      </h2>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          profile.is_public 
+                            ? 'bg-green-600/20 text-green-400 border border-green-600/30' 
+                            : 'bg-zinc-600/20 text-zinc-400 border border-zinc-600/30'
+                        }`}>
+                          {profile.is_public ? 'Public' : 'Private'}
                         </span>
-                        <button
-                          onClick={handleUnfollow}
-                          disabled={loading}
-                          className="text-sm text-red-500 hover:underline"
-                        >
-                          {loading ? "..." : "Se désabonner"}
-                        </button>
                       </div>
-                    ) : isFollowPending ? (
-                      <button 
-                        className="mt-4 px-4 py-2 bg-yellow-300 text-gray-800 rounded"
-                        onClick={() => {
-                          unfollowUser(currentUserId, profile.id);
-                        }}
-                      >
-                        Annuler la demande
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleFollow}
-                        disabled={loading}
-                        className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                      >
-                        {loading ? "..." : "Suivre"}
-                      </button>
-                    )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-3">
+                      {isOwnProfile ? (
+                        <Button
+                          onClick={() => setIsEditingProfile(true)}
+                          variant="outline"
+                          className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                        >
+                          <Settings size={16} className="mr-2" />
+                          Modifier le profil
+                        </Button>
+                      ) : (
+                        <div className="flex gap-2">
+                          {isFollowing ? (
+                            <Button
+                              onClick={handleUnfollow}
+                              disabled={loading}
+                              variant="outline"
+                              className="border-red-600 text-red-400 hover:bg-red-600/10"
+                            >
+                              <UserMinus size={16} className="mr-2" />
+                              {loading ? "..." : "Ne plus suivre"}
+                            </Button>
+                          ) : isFollowPending ? (
+                            <Button
+                              onClick={() => {
+                                unfollowUser(currentUserId, profile.id);
+                                setIsFollowPending(false);
+                              }}
+                              variant="outline"
+                              className="border-yellow-600 text-yellow-400 hover:bg-yellow-600/10"
+                            >
+                              <Clock size={16} className="mr-2" />
+                              Demande envoyée
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={handleFollow}
+                              disabled={loading}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              <UserPlus size={16} className="mr-2" />
+                              {loading ? "..." : "Suivre"}
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-                    Informations
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
-                      <p className="text-gray-900 dark:text-white">{profile.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Date de naissance
-                      </p>
-                      <p className="text-gray-900 dark:text-white">
-                        {new Date(profile.birth_date).toLocaleDateString("fr-FR")}
-                      </p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        À propos de moi
-                      </p>
-                      <p className="text-gray-900 dark:text-white mt-2">
+                {/* Informations détaillées */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="border-zinc-800 bg-zinc-800">
+                    <CardHeader>
+                      <h3 className="text-lg font-semibold text-white">Informations</h3>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <p className="text-sm font-medium text-zinc-400 mb-1">Email</p>
+                        <p className="text-zinc-200">{profile.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-zinc-400 mb-1">Date de naissance</p>
+                        <p className="text-zinc-200">
+                          {new Date(profile.birth_date).toLocaleDateString("fr-FR")}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-zinc-800 bg-zinc-800">
+                    <CardHeader>
+                      <h3 className="text-lg font-semibold text-white">À propos</h3>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-zinc-200">
                         {aboutMe || "Aucune description pour le moment."}
                       </p>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </>
+              </div>
             )}
-          </div>
-          {canViewProfile && (<div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <FollowersSection
-              followers={followerList}
-              currentUserId={currentUserId}
-              currentUsername={profile.username}
-              isOwnProfile={isOwnProfile}
-            />
-          </div>)}
-          
-        </div>
+          </CardHeader>
+        </Card>
 
-        {canViewProfile && <ProfileTabs userId={profile.id} />}
-      </main>
-    </>
+        {/* Section followers */}
+        {canViewProfile && (
+          <div className="mt-6">
+            <Card className="border-zinc-800 bg-zinc-900">
+              <CardContent className="p-6">
+                <FollowersSection
+                  followers={followerList}
+                  currentUserId={currentUserId}
+                  currentUsername={profile.username}
+                  isOwnProfile={isOwnProfile}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Tabs de contenu */}
+        {canViewProfile && (
+          <div className="mt-6">
+            <ProfileTabs userId={profile.id} />
+          </div>
+        )}
+      </div>
+    </AppLayout>
   );
 }
