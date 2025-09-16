@@ -14,9 +14,10 @@ func SetupWebSocketRoutes(
 	messageRepo repository.MessageRepositoryInterface,
 	conversationRepo repository.ConversationRepositoryInterface,
 	conversationMembersRepo repository.ConversationMemberRepositoryInterface,
+	notificationRepo repository.NotificationRepositoryInterface,
 ) {
 	// Create WebSocket handler
-	wsHandler := NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo)
+	wsHandler := NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo, notificationRepo)
 
 	// WebSocket endpoint
 	router.Handle("/ws", middlewares.JWTMiddleware(http.HandlerFunc(wsHandler.HandleWebSocket))).Methods("GET")

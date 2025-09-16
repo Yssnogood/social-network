@@ -6,7 +6,7 @@ import { fetchUsersByUsername, fetchMessages } from "../../services/contact";
 import Link from 'next/link';
 import { useCookies } from "next-client-cookies";
 import { getUserIdFromToken } from "../../services/user";
-import { fetchNotifications } from "../../services/notifications";
+import { fetchNotifications, createNotification } from "../../services/notifications";
 import AppLayout from "../components/AppLayout";
 import { fetchUserConversation } from '../../services/contact';
 import { Button } from "@/components/ui/button";
@@ -98,6 +98,16 @@ export default function ContactPage() {
         try {
             console.log("📤 Envoi du message:", message);
             ws.current?.send(JSON.stringify(message));
+            
+            // Créer une notification pour le destinataire
+            const currentUsername = cookies.get("user");
+            await createNotification({
+                userId: selectedContact.id,
+                type: "message",
+                content: `Nouveau message de ${currentUsername}`,
+                referenceId: Number(userID),
+                referenceType: "user",
+            });
             setInput(""); // Vider le champ après envoi
         } catch (error) {
             console.error("❌ Failed to send message:", error);

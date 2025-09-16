@@ -9,6 +9,7 @@ import (
 	"social-network/backend/database/models"
 	repository "social-network/backend/database/repositories"
 	"social-network/backend/server/middlewares"
+	"social-network/backend/websocket"
 )
 
 // FollowerHandler handles HTTP requests related to followers.
@@ -30,6 +31,7 @@ func NewFollowerHandler(
 		UserRepository:         ur,  // Initialize it
 	}
 }
+
 // Request DTOs
 
 type followRequest struct {
@@ -87,17 +89,32 @@ func (h *FollowerHandler) CreateFollower(w http.ResponseWriter, r *http.Request)
     refID := req.FollowerID
     refType := "user"
 
-    _, err = h.NotificationRepository.CreateNotification(
-        req.FollowedID,
-        notifType,
-        notifContent,
-        &refID,
-        &refType,
-    )
-    if err != nil {
-        http.Error(w, "Failed to create notification", http.StatusInternalServerError)
-        return
-    }
+	notificationID, err := h.NotificationRepository.CreateNotification(
+		req.FollowedID,
+		notifType,
+		notifContent,
+		&refID,
+		&refType,
+	)
+	if err != nil {
+		http.Error(w, "Failed to create notification", http.StatusInternalServerError)
+		return
+	}
+
+	// Envoyer la notification en temps réel via WebSocket
+	if websocket.GlobalHub != nil {
+		notification := &models.Notification{
+			ID:            notificationID,
+			UserID:        req.FollowedID,
+			Type:          notifType,
+			Content:       notifContent,
+			Read:          false,
+			ReferenceID:   &refID,
+			ReferenceType: &refType,
+			CreatedAt:     time.Now(),
+		}
+		websocket.GlobalHub.SendNotificationToUser(int64(req.FollowedID), notification)
+	}
 
     resp := map[string]bool{
         "followed":    accepted,

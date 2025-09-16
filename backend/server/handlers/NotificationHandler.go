@@ -9,6 +9,7 @@ import (
 
 	"social-network/backend/database/models"
 	repository "social-network/backend/database/repositories"
+	"social-network/backend/websocket"
 )
 
 // NotificationHandler handles HTTP requests related to notifications.
@@ -101,6 +102,12 @@ func (h *NotificationHandler) CreateNotification(w http.ResponseWriter, r *http.
 	}
 
 	notification.ID = id
+
+	// Envoyer la notification en temps réel via WebSocket
+	if websocket.GlobalHub != nil {
+		websocket.GlobalHub.SendNotificationToUser(int64(req.UserID), notification)
+	}
+
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(notification)
 }
@@ -226,9 +233,15 @@ func (h *NotificationHandler) BroadcastNotifToUsers(w http.ResponseWriter, r *ht
 		// Send the notification to each follower
 		for _, f := range followers {
 			notification.UserID = f.FollowerID
-			_, err := h.NotificationRepository.Create(notification)
+			id, err := h.NotificationRepository.Create(notification)
 			if err != nil {
 				continue
+			}
+
+			// Envoyer la notification en temps réel via WebSocket
+			notification.ID = id
+			if websocket.GlobalHub != nil {
+				websocket.GlobalHub.SendNotificationToUser(int64(f.FollowerID), notification)
 			}
 		}
 	}
@@ -247,9 +260,15 @@ func (h *NotificationHandler) BroadcastNotifToUsers(w http.ResponseWriter, r *ht
 				continue // Skip the sender
 			}
 			notification.UserID = member.UserID
-			_, err := h.NotificationRepository.Create(notification)
+			id, err := h.NotificationRepository.Create(notification)
 			if err != nil {
 				continue
+			}
+
+			// Envoyer la notification en temps réel via WebSocket
+			notification.ID = id
+			if websocket.GlobalHub != nil {
+				websocket.GlobalHub.SendNotificationToUser(int64(member.UserID), notification)
 			}
 		}
 	}

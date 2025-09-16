@@ -232,22 +232,23 @@ func (r *NotificationRepository) DeleteGroupInvitationRequest(userID, groupID in
 }
 
 func (r *NotificationRepository) CreateNotification(
-    userID int64,
-    notifType string,
-    content string,
-    referenceID *int64,
-    referenceType *string,
+	userID int64,
+	notifType string,
+	content string,
+	referenceID *int64,
+	referenceType *string,
 ) (int64, error) {
-    notification := &models.Notification{
-        UserID:        userID,
-        Type:          notifType,
-        Content:       content,
-        Read:          false,
-        ReferenceID:   referenceID,
-        ReferenceType: referenceType,
-    }
-    return r.Create(notification)
+	notification := &models.Notification{
+		UserID:        userID,
+		Type:          notifType,
+		Content:       content,
+		Read:          false,
+		ReferenceID:   referenceID,
+		ReferenceType: referenceType,
+	}
+	return r.Create(notification)
 }
+
 // Check if a group invitation notification exists for a user and group
 func (r *NotificationRepository) HasPendingGroupInvitation(userID, groupID int64) (bool, error) {
 	var exists bool
