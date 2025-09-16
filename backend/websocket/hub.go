@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"social-network/backend/database/models"
-	"social-network/backend/database/repositories"
+	repository "social-network/backend/database/repositories"
 	"sync"
 	"time"
 )
@@ -30,6 +30,7 @@ type Hub struct {
 	messageRepo             repository.MessageRepositoryInterface
 	conversationRepo        repository.ConversationRepositoryInterface
 	conversationMembersRepo repository.ConversationMemberRepositoryInterface
+	notificationRepo        repository.NotificationRepositoryInterface
 
 	// Mutex for thread-safe operations
 	mutex sync.RWMutex
@@ -45,6 +46,7 @@ type WSMessage struct {
 	MessageID      int64     `json:"message_id,omitempty"`
 	Timestamp      time.Time `json:"timestamp,omitempty"`
 	Error          string    `json:"error,omitempty"`
+	Data           interface{} `json:"data,omitempty"`
 }
 
 // NewHub creates a new WebSocket hub
@@ -52,6 +54,7 @@ func NewHub(
 	messageRepo repository.MessageRepositoryInterface,
 	conversationRepo repository.ConversationRepositoryInterface,
 	conversationMembersRepo repository.ConversationMemberRepositoryInterface,
+	notificationRepo repository.NotificationRepositoryInterface,
 ) *Hub {
 	return &Hub{
 		clients:                 make(map[*Client]bool),
@@ -62,6 +65,7 @@ func NewHub(
 		messageRepo:             messageRepo,
 		conversationRepo:        conversationRepo,
 		conversationMembersRepo: conversationMembersRepo,
+		notificationRepo:        notificationRepo,
 	}
 }
 
@@ -172,7 +176,6 @@ func (h *Hub) handleMessageSend(wsMsg WSMessage) {
 	h.sendToUser(wsMsg.ReceiverID, response)
 }
 
-
 // sendToUser sends a message to a specific user
 func (h *Hub) sendToUser(userID int64, message WSMessage) {
 	h.mutex.RLock()
@@ -203,3 +206,13 @@ func (h *Hub) sendToClient(client *Client, message WSMessage) {
 	}
 }
 
+// SendNotificationToUser sends a notification to a specific user via WebSocket
+func (h *Hub) SendNotificationToUser(userID int64, notification interface{}) {
+	message := WSMessage{
+		Type:      "notification",
+		Data:      notification,
+		Timestamp: time.Now(),
+	}
+
+	h.sendToUser(userID, message)
+}

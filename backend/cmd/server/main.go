@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"os"
 
+	gorillaHandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
-	gorillaHandlers "github.com/gorilla/handlers"
 
 	"social-network/backend/app/services"
 	repository "social-network/backend/database/repositories"
@@ -64,7 +64,7 @@ func main() {
 	commentHandler := appHandlers.NewCommentHandler(commentRepo, sessionRepo)
 	followerHandler := appHandlers.NewFollowerHandler(followerRepo, notificationRepo, userRepo)
 	messageHandler := appHandlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
-	websocketHandler := websocket.NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo)
+	websocketHandler := websocket.NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo, notificationRepo)
 	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo, followerRepo, groupRepo)
 	eventHandler := appHandlers.NewEventHandler(eventRepo)
 

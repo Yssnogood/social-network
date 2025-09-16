@@ -10,12 +10,16 @@ import (
 	"strconv"
 )
 
+// Variable globale pour accéder au hub depuis d'autres packages
+var GlobalHub *Hub
+
 // WebSocketHandler handles WebSocket connections and HTTP requests
 type WebSocketHandler struct {
 	hub                     *Hub
 	messageRepo             repository.MessageRepositoryInterface
 	conversationRepo        repository.ConversationRepositoryInterface
 	conversationMembersRepo repository.ConversationMemberRepositoryInterface
+	notificationRepo        repository.NotificationRepositoryInterface
 }
 
 // NewWebSocketHandler creates a new WebSocket handler
@@ -23,15 +27,20 @@ func NewWebSocketHandler(
 	messageRepo repository.MessageRepositoryInterface,
 	conversationRepo repository.ConversationRepositoryInterface,
 	conversationMembersRepo repository.ConversationMemberRepositoryInterface,
+	notificationRepo repository.NotificationRepositoryInterface,
 ) *WebSocketHandler {
-	hub := NewHub(messageRepo, conversationRepo, conversationMembersRepo)
+	hub := NewHub(messageRepo, conversationRepo, conversationMembersRepo, notificationRepo)
 	go hub.Run()
+
+	// Assigner le hub à la variable globale
+	GlobalHub = hub
 
 	return &WebSocketHandler{
 		hub:                     hub,
 		messageRepo:             messageRepo,
 		conversationRepo:        conversationRepo,
 		conversationMembersRepo: conversationMembersRepo,
+		notificationRepo:        notificationRepo,
 	}
 }
 
