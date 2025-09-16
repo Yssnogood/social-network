@@ -53,7 +53,7 @@ export default function AppLayout({ children, showHeader = true }: AppLayoutProp
         />
       )}
       
-      <main className={showHeader ? "pt-16" : ""}>
+      <main>
         {children}
       </main>
     </div>
