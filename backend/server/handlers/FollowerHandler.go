@@ -302,3 +302,37 @@ func (h *FollowerHandler) GetFollowingHandler(w http.ResponseWriter, r *http.Req
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(response)
 }
+
+
+// GetFriendsHandler retrieves mutual followers (friends) for a user.
+func (h *FollowerHandler) GetFriendsHandler(w http.ResponseWriter, r *http.Request) {
+    userIDStr := r.URL.Query().Get("userID")
+    if userIDStr == "" {
+        http.Error(w, "Missing userID", http.StatusBadRequest)
+        return
+    }
+
+    userID, err := strconv.ParseInt(userIDStr, 10, 64)
+    if err != nil {
+        http.Error(w, "Invalid userID", http.StatusBadRequest)
+        return
+    }
+
+    friends, err := h.FollowerRepository.GetFriends(userID)
+    if err != nil {
+        http.Error(w, "Failed to fetch friends", http.StatusInternalServerError)
+        return
+    }
+
+    response := make([]*FollowerUserResponse, 0, len(friends))
+    for _, f := range friends {
+        response = append(response, &FollowerUserResponse{
+            ID:          f.ID,
+            Username:    f.Username,
+            Avatar_path: f.Avatar_path,
+        })
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(response)
+}

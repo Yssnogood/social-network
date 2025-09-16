@@ -17,4 +17,6 @@ func FollowersRoutes(r *mux.Router, followerHandler *handlers.FollowerHandler) {
 	r.HandleFunc("/api/followers/decline", followerHandler.DeclineFollower).Methods("POST")
     r.HandleFunc("/api/followingDetails", followerHandler.GetFollowingHandler).Methods("GET")
 
+	r.HandleFunc("/api/friendsDetails", followerHandler.GetFriendsHandler).Methods("GET")
+
 }
