@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { Post, LikePost } from "../../services/post";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, MoreHorizontal, User } from "lucide-react";
+import { Heart, MessageCircle, User } from "lucide-react";
 
 interface PostItemProps {
   post: Post;
@@ -157,10 +157,6 @@ export default function PostItem({ post, jwt, onlineUser }: PostItemProps) {
               <p className="text-sm text-zinc-400">{formatDate(post.createdAt)}</p>
             </div>
           </div>
-
-          <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white">
-            <MoreHorizontal size={20} />
-          </Button>
         </div>
       </CardHeader>
 

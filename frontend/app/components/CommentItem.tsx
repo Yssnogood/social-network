@@ -49,14 +49,14 @@ export default function CommentItem({ comment, isOwn }: CommentItemProps) {
 
   return (
     <div
-      className={`bg-gray-800 p-4 rounded-lg shadow-md relative ${
+      className={`bg-zinc-800 p-4 rounded-lg shadow-md relative ${
         isOwn ? "border border-blue-500" : ""
       }`}
     >
       <div className="flex items-center mb-2 relative">
         {/* Avatar */}
         <div
-          className="w-8 h-8 rounded-full overflow-hidden mr-3 bg-gray-700 cursor-pointer"
+          className="w-8 h-8 rounded-full overflow-hidden mr-3 bg-zinc-700 cursor-pointer"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           onClick={toggleCard}
@@ -88,12 +88,12 @@ export default function CommentItem({ comment, isOwn }: CommentItemProps) {
         {/* Hover Card */}
         {user && showProfileCard && (
           <div
-            className="absolute top-10 left-0 z-50 bg-gray-900 border border-gray-700 rounded-lg shadow-lg p-4 w-64"
+            className="absolute top-10 left-0 z-50 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg p-4 w-64"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
             <div className="flex items-center mb-3">
-              <div className="w-12 h-12 rounded-full overflow-hidden mr-3 bg-gray-700">
+              <div className="w-12 h-12 rounded-full overflow-hidden mr-3 bg-zinc-700">
                 {user.avatar_path && (
                   <img
                     src={
@@ -113,7 +113,7 @@ export default function CommentItem({ comment, isOwn }: CommentItemProps) {
                 >
                   {user.username}
                 </Link>
-                <div className="text-sm text-gray-400">
+                <div className="text-sm text-zinc-400">
                   Membre depuis{" "}
                   {user.created_at
                     ? new Date(user.created_at).getFullYear()
@@ -121,7 +121,7 @@ export default function CommentItem({ comment, isOwn }: CommentItemProps) {
                 </div>
               </div>
             </div>
-            <div className="text-gray-300 text-sm mb-3">
+            <div className="text-zinc-300 text-sm mb-3">
               {user.about_me || "Pas de description."}
             </div>
             {!isOwn && (
@@ -150,10 +150,10 @@ export default function CommentItem({ comment, isOwn }: CommentItemProps) {
       </div>
 
       {/* Comment Content */}
-      <div className="text-gray-300">{comment.content}</div>
+      <div className="text-zinc-300">{comment.content}</div>
 
       {/* Timestamp */}
-      <div className="text-xs text-gray-500 mt-1">
+      <div className="text-xs text-zinc-500 mt-1">
         {formatRelativeTime(new Date(comment.createdAt))}
       </div>
     </div>

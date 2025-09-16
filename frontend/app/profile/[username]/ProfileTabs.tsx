@@ -99,9 +99,9 @@ export default function ProfileTabs({ userId }: { userId: number }) {
   ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   return (
-    <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+    <div className="mt-8 bg-white dark:bg-zinc-800 rounded-2xl shadow-lg p-6">
       {/* Tabs */}
-      <div className="flex justify-around border-b border-gray-200 dark:border-gray-700">
+      <div className="flex justify-around border-b border-zinc-200 dark:border-zinc-700">
         {["activities", "posts", "likes", "followers", "following"].map((tab) => (
           <button
             key={tab}
@@ -109,7 +109,7 @@ export default function ProfileTabs({ userId }: { userId: number }) {
             className={`py-2 px-4 font-medium transition ${
               activeTab === tab
                 ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-600 hover:text-blue-600"
+                : "text-white hover:text-blue-600"
             }`}
           >
             {tab === "activities"
@@ -129,22 +129,22 @@ export default function ProfileTabs({ userId }: { userId: number }) {
                 <Link
                   key={index}
                   href={`/post/${activity.type === "comment" ? activity.item.postId : activity.item.id}/comments`}
-                  className="flex items-center space-x-4 p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer"
+                  className="flex items-center space-x-4 p-4 bg-zinc-100 dark:bg-zinc-700 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-600 transition cursor-pointer"
                 >
                   {activity.type === "post" && <PencilLine className="text-blue-500 w-6 h-6" />}
                   {activity.type === "comment" && <MessageSquare className="text-green-500 w-6 h-6" />}
                   {activity.type === "like" && <ThumbsUp className="text-red-500 w-6 h-6" />}
                   <div>
-                    <p className="text-gray-800 dark:text-gray-200">
+                    <p className="text-zinc-800 dark:text-zinc-200">
                       {activity.item.content}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-zinc-500 mt-1">
                       {activity.type === "post" && `New Post • ${activity.date.toLocaleString()}`}
                       {activity.type === "comment" && `Comment on Post ID: ${activity.item.postId} • ${activity.date.toLocaleString()}`}
                       {activity.type === "like" && `Liked Post • ${activity.date.toLocaleString()}`}
                     </p>
                     {activity.type !== "comment" && (
-                      <p className="flex items-center space-x-2 text-xs text-gray-400 mt-1">
+                      <p className="flex items-center space-x-2 text-xs text-zinc-400 mt-1">
                         <ThumbsUp className="w-4 h-4" /> 
                         <span>{activity.item.likes} likes</span>
                         <MessageSquare className="w-4 h-4 ml-4" />
@@ -155,7 +155,7 @@ export default function ProfileTabs({ userId }: { userId: number }) {
                 </Link>
               ))
             ) : (
-              <p className="text-center text-gray-500">No recent activity found.</p>
+              <p className="text-center text-zinc-500">No recent activity found.</p>
             )}
           </>
         )}
@@ -168,13 +168,13 @@ export default function ProfileTabs({ userId }: { userId: number }) {
                 <Link
                   key={post.id}
                   href={`/post/${post.id}/comments`}
-                  className="block p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer"
+                  className="block p-4 bg-zinc-100 dark:bg-zinc-700 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-600 transition cursor-pointer"
                 >
-                  <p className="text-gray-800 dark:text-gray-200">{post.content}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-zinc-800 dark:text-zinc-200">{post.content}</p>
+                  <p className="text-xs text-zinc-500 mt-1">
                     {post.createdAt.toLocaleString()}
                   </p>
-                  <p className="flex items-center space-x-2 text-xs text-gray-400 mt-1">
+                  <p className="flex items-center space-x-2 text-xs text-zinc-400 mt-1">
                     <ThumbsUp className="w-4 h-4" /> 
                     <span>{post.likes} likes</span>
                     <MessageSquare className="w-4 h-4 ml-4" />
@@ -183,7 +183,7 @@ export default function ProfileTabs({ userId }: { userId: number }) {
                 </Link>
               ))
             ) : (
-              <p className="text-center text-gray-500">No posts found.</p>
+              <p className="text-center text-zinc-500">No posts found.</p>
             )}
           </>
         )}
@@ -196,13 +196,13 @@ export default function ProfileTabs({ userId }: { userId: number }) {
                 <Link
                   key={post.id}
                   href={`/post/${post.id}/comments`}
-                  className="block p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer"
+                  className="block p-4 bg-zinc-100 dark:bg-zinc-700 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-600 transition cursor-pointer"
                 >
-                  <p className="text-gray-800 dark:text-gray-200">{post.content}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-zinc-800 dark:text-zinc-200">{post.content}</p>
+                  <p className="text-xs text-zinc-500 mt-1">
                     {post.createdAt.toLocaleString()}
                   </p>
-                  <p className="flex items-center space-x-2 text-xs text-gray-400 mt-1">
+                  <p className="flex items-center space-x-2 text-xs text-zinc-400 mt-1">
                     <ThumbsUp className="w-4 h-4" /> 
                     <span>{post.likes} likes</span>
                     <MessageSquare className="w-4 h-4 ml-4" />
@@ -211,7 +211,7 @@ export default function ProfileTabs({ userId }: { userId: number }) {
                 </Link>
               ))
             ) : (
-              <p className="text-center text-gray-500">No liked posts found.</p>
+              <p className="text-center text-zinc-500">No liked posts found.</p>
             )}
           </>
         )}
@@ -220,27 +220,27 @@ export default function ProfileTabs({ userId }: { userId: number }) {
         {activeTab === "followers" && (
           <div>
             {loadingFollowers ? (
-              <p className="text-center text-gray-500">Loading followers...</p>
+              <p className="text-center text-zinc-500">Loading followers...</p>
             ) : followers.length > 0 ? (
               followers.map((f) => (
                 <Link
                   key={f.id}
                   href={`/profile/${f.username}`}
-                  className="flex items-center space-x-4 p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                  className="flex items-center space-x-4 p-4 bg-zinc-100 dark:bg-zinc-700 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-600 transition"
                 >
                   <img
                     src={f.avatar_path || "/defaultPP.webp"}
                     alt={f.username}
-                    className="w-12 h-12 rounded-full object-cover border border-gray-300"
+                    className="w-12 h-12 rounded-full object-cover border border-zinc-300"
                   />
                   <div>
-                    <p className="text-gray-800 dark:text-gray-200 font-medium">{f.username}</p>
-                    <p className="text-sm text-gray-500">@{f.username}</p>
+                    <p className="text-zinc-800 dark:text-zinc-200 font-medium">{f.username}</p>
+                    <p className="text-sm text-zinc-500">@{f.username}</p>
                   </div>
                 </Link>
               ))
             ) : (
-              <p className="text-center text-gray-500">No followers found.</p>
+              <p className="text-center text-zinc-500">No followers found.</p>
             )}
           </div>
         )}
@@ -249,27 +249,27 @@ export default function ProfileTabs({ userId }: { userId: number }) {
         {activeTab === "following" && (
           <div>
             {loadingFollowing ? (
-              <p className="text-center text-gray-500">Loading following...</p>
+              <p className="text-center text-zinc-500">Loading following...</p>
             ) : following.length > 0 ? (
               following.map((f) => (
                 <Link
                   key={f.id}
                   href={`/profile/${f.username}`}
-                  className="flex items-center space-x-4 p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                  className="flex items-center space-x-4 p-4 bg-zinc-100 dark:bg-zinc-700 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-600 transition"
                 >
                   <img
                     src={f.avatar_path || "/defaultPP.webp"}
                     alt={f.username}
-                    className="w-12 h-12 rounded-full object-cover border border-gray-300"
+                    className="w-12 h-12 rounded-full object-cover border border-zinc-300"
                   />
                   <div>
-                    <p className="text-gray-800 dark:text-gray-200 font-medium">{f.username}</p>
-                    <p className="text-sm text-gray-500">@{f.username}</p>
+                    <p className="text-zinc-800 dark:text-zinc-200 font-medium">{f.username}</p>
+                    <p className="text-sm text-zinc-500">@{f.username}</p>
                   </div>
                 </Link>
               ))
             ) : (
-              <p className="text-center text-gray-500">No following found.</p>
+              <p className="text-center text-zinc-500">No following found.</p>
             )}
           </div>
         )}
