@@ -44,14 +44,14 @@ export function MultiSelect({
 
   return (
     <Command className="overflow-visible bg-transparent">
-      <div className="group border border-input px-3 py-2 text-sm ring-offset-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+      <div className="group border border-gray-600 bg-gray-700 px-3 py-2 text-sm rounded-md focus-within:ring-2 focus-within:ring-gray-500">
         <div className="flex gap-1 flex-wrap">
           {selected.map((option) => {
             return (
-              <Badge key={option.username} variant="secondary">
+              <Badge key={option.username} variant="secondary" className="bg-gray-800 text-white border-gray-600">
                 {option.username}
                 <button
-                  className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  className="ml-1 rounded-full outline-none focus:ring-2 focus:ring-gray-500"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       handleUnselect(option);
@@ -63,7 +63,7 @@ export function MultiSelect({
                   }}
                   onClick={() => handleUnselect(option)}
                 >
-                  <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                  <X className="h-3 w-3 text-gray-400 hover:text-white" />
                 </button>
               </Badge>
             );
@@ -75,15 +75,15 @@ export function MultiSelect({
             onBlur={() => setOpen(false)}
             onFocus={() => setOpen(true)}
             placeholder={placeholder}
-            className="ml-2 bg-transparent outline-none placeholder:text-muted-foreground flex-1"
+            className="ml-2 bg-transparent text-white placeholder:text-gray-400 outline-none flex-1"
           />
         </div>
       </div>
       <div className="relative mt-2">
         {open && selectables.length > 0 ? (
-          <div className="absolute w-full z-10 top-0 rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in">
+          <div className="absolute w-full z-10 top-0 rounded-md border border-gray-600 bg-gray-700 text-white shadow-md outline-none animate-in">
             <CommandList>
-              <CommandEmpty>No results found.</CommandEmpty>
+              <CommandEmpty className="text-gray-400">No results found.</CommandEmpty>
               <CommandGroup className="h-full overflow-auto">
                 {selectables.map((option) => {
                   return (
@@ -97,7 +97,7 @@ export function MultiSelect({
                         setInputValue("");
                         onChange([...selected, option]);
                       }}
-                      className={"cursor-pointer"}
+                      className={"cursor-pointer hover:bg-gray-600"}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           onChange([...selected, option]);
