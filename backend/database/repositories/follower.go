@@ -190,3 +190,37 @@ func (r *FollowerRepository) GetFollowingUsers(userID int64) ([]*FollowerInfo, e
 
     return followingUsers, nil
 }
+
+// GetFriends returns users that the given user follows AND who follow them back
+func (r *FollowerRepository) GetFriends(userID int64) ([]*FollowerInfo, error) {
+    rows, err := r.db.Query(`
+        SELECT u.id, u.username, u.avatar_path
+        FROM followers f1
+        JOIN followers f2 ON f1.followed_id = f2.follower_id
+        JOIN users u ON u.id = f1.followed_id
+        WHERE f1.follower_id = ? 
+          AND f2.followed_id = ? 
+          AND f1.accepted = 1 
+          AND f2.accepted = 1
+    `, userID, userID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var friends []*FollowerInfo
+    for rows.Next() {
+        f := &FollowerInfo{}
+        err := rows.Scan(&f.ID, &f.Username, &f.Avatar_path)
+        if err != nil {
+            return nil, err
+        }
+        friends = append(friends, f)
+    }
+
+    if err = rows.Err(); err != nil {
+        return nil, err
+    }
+
+    return friends, nil
+}
