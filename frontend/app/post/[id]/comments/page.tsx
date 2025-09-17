@@ -65,43 +65,45 @@ export default function CommentsPage({
         loadPostAndComments();
     }, [postId, cookies]);
 
-    // Handle new comment submission
-    const handleSubmitComment = async (commentContent: string) => {
-        const token = cookies.get("jwt");
-        const username = cookies.get("user");
+// Handle new comment submission
+const handleSubmitComment = async (data: { content: string; imageUrl?: string }) => {
+    const token = cookies.get("jwt");
+    const username = cookies.get("user");
 
-        const newComment = await createComment(
-            {
-                postId,
-                content: commentContent,
-            },
-            token
-        );
+    const newComment = await createComment(
+        {
+            postId,
+            content: data.content,
+            imageUrl: data.imageUrl, // <-- send image if available
+        },
+        token
+    );
 
         if (newComment) {
-            const commentWithUsername = {
-                ...newComment,
-                userName: username || newComment.userName || "You",
-            };
+        const commentWithAuthor = {
+            ...newComment,
+        };
 
-            setComments([commentWithUsername, ...comments]);
+        setComments([commentWithAuthor, ...comments]);
 
-            if (post?.userName !== username) {
-                try {
-                    if (!post) return;
-                    await createNotification({
-                        userId: parseInt(post.userId),
-                        type: "comment",
-                        content: `${username || "You"} commented on your post`,
-                        referenceId: post.id,
-                        referenceType: "post",
-                    });
-                } catch (error) {
-                    console.error("Failed to create notification:", error);
-                }
+
+        if (post?.userName !== username) {
+            try {
+                if (!post) return;
+                await createNotification({
+                    userId: parseInt(post.userId),
+                    type: "comment",
+                    content: `${username || "You"} commented on your post`,
+                    referenceId: post.id,
+                    referenceType: "post",
+                });
+            } catch (error) {
+                console.error("Failed to create notification:", error);
             }
         }
-    };
+    }
+};
+
 
     return (
         <AppLayout>

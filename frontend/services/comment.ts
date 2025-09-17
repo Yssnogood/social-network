@@ -94,7 +94,7 @@ export async function createComment(
         content: commentData.content,
         imageUrl: commentData.imageUrl,
         createdAt: new Date(),
-        author:""
+        author: null
     };
 
     try {
@@ -104,26 +104,28 @@ export async function createComment(
                 jwt: jwt,
                 post_id: commentData.postId,
                 content: commentData.content,
-                image_path: commentData.imageUrl
+                image_path: commentData.imageUrl,
             })
         });
 
         if (resp.ok) {
             const r = await resp.json();
+
             newComment = {
-                id: r.comment.id,
-                postId: r.comment.post_id,
-                userId: r.comment.user_id,
-                userName: r.username || "User",
-                content: r.comment.content,
-                imageUrl: r.comment.image_path,
-                createdAt: new Date(Date.parse(r.comment.created_at)),
-                author:""
+                id: r.id,
+                postId: r.post_id,
+                userId: r.user_id,
+                userName: r.author?.username || "User",
+                content: r.content,
+                imageUrl: r.image_path,
+                createdAt: new Date(Date.parse(r.created_at)),
+                author: r.author || null,
             };
         }
     } catch (error) {
         console.error("Failed to create comment:", error);
     }
-
     return newComment;
 }
+
+

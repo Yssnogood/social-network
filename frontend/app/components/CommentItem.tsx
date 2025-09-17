@@ -124,33 +124,23 @@ export default function CommentItem({ comment, isOwn }: CommentItemProps) {
             <div className="text-zinc-300 text-sm mb-3">
               {user.about_me || "Pas de description."}
             </div>
-            {!isOwn && (
-              user.isPublic ? (
-                <div className="flex gap-2">
-                  <button className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white">
-                    Message
-                  </button>
-                  <button className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 rounded text-white">
-                    Suivre
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <button className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white">
-                    Demander message
-                  </button>
-                  <button className="px-3 py-1 text-sm bg-yellow-600 hover:bg-yellow-700 rounded text-white">
-                    Demander follow
-                  </button>
-                </div>
-              )
-            )}
           </div>
         )}
       </div>
 
       {/* Comment Content */}
       <div className="text-zinc-300">{comment.content}</div>
+
+      {/* Comment Image */}
+      {comment.imageUrl && (
+        <div className="mt-2">
+          <img
+            src={comment.imageUrl}
+            alt="Comment attachment"
+            className="rounded-lg max-h-60 object-cover"
+          />
+        </div>
+      )}
 
       {/* Timestamp */}
       <div className="text-xs text-zinc-500 mt-1">

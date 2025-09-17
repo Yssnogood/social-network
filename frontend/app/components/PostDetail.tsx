@@ -134,25 +134,6 @@ export default function PostDetail({ post, commentsCount, jwt }: PostDetailProps
             <div className="text-zinc-300 text-sm mb-3">
               {post.userName.about_me || "Pas de description."}
             </div>
-            {post.userName.is_public ? (
-              <div className="flex gap-2">
-                <button className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white">
-                  Message
-                </button>
-                <button className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 rounded text-white">
-                  Suivre
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <button className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white">
-                  Demander message
-                </button>
-                <button className="px-3 py-1 text-sm bg-yellow-600 hover:bg-yellow-700 rounded text-white">
-                  Demander follow
-                </button>
-              </div>
-            )}
           </div>
         )}
       </div>

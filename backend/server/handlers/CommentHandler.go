@@ -57,37 +57,49 @@ type getPostCommentsRequest struct {
 
 // CreateComment handles creating a new comment.
 func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
-	var req createCommentRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-		return
-	}
+    var req createCommentRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid request", http.StatusBadRequest)
+        return
+    }
 
-	session, err := h.SessionRepository.GetBySessionToken(req.JWT)
-	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+    session, err := h.SessionRepository.GetBySessionToken(req.JWT)
+    if err != nil {
+        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    }
 
-	comment := &models.Comment{
-		PostID:    req.PostID,
-		UserID:    session.UserID,
-		Content:   req.Content,
-		ImagePath: req.ImagePath,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
+    // 🔹 Fetch the user linked to this session
+    user := h.SessionRepository.GetUserBySession(session)
+    if user == nil {
+        http.Error(w, "Failed to fetch user", http.StatusInternalServerError)
+        return
+    }
 
-	id, err := h.CommentRepository.Create(comment)
-	if err != nil {
-		http.Error(w, "Failed to create comment", http.StatusInternalServerError)
-		return
-	}
+    comment := &models.Comment{
+        PostID:    req.PostID,
+        UserID:    session.UserID,
+        Content:   req.Content,
+        ImagePath: req.ImagePath,
+        CreatedAt: time.Now(),
+        UpdatedAt: time.Now(),
+        Author:    *user, // attach full user info as Author
+    }
 
-	comment.ID = id
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(comment)
+    id, err := h.CommentRepository.Create(comment)
+    if err != nil {
+        http.Error(w, "Failed to create comment", http.StatusInternalServerError)
+        return
+    }
+
+    comment.ID = id
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(comment)
 }
+
+
 
 // GetComment returns a single comment by ID.
 func (h *CommentHandler) GetComment(w http.ResponseWriter, r *http.Request) {
