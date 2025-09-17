@@ -391,9 +391,10 @@ export default function ContactPage() {
                                     <div className="max-h-60 overflow-y-auto space-y-2">
                                         {users.length > 0 ? (
                                             users.map(user => {
-                                                const handleStartConversation = () => {
-                                                    const exists = contacts.some(contact => contact.id === user.id);
+                                                const handleStartConversation = async () => {
+                                                    const exists = contacts.some(({ contact, messages, conversation }) => contact.id === user.id);
                                                     if (!exists) {
+                                                        console.log(user)
                                                         const newContact = {
                                                             id: user.id,
                                                             username: user.name,
@@ -403,9 +404,13 @@ export default function ContactPage() {
                                                         };
                                                         setContacts(prev => [newContact, ...prev]);
                                                         setSelectedContact(newContact);
+                                                        setMessages([]);
+                                                        
                                                     } else {
-                                                        const existingContact = contacts.find(c => c.id === user.id);
-                                                        if (existingContact) setSelectedContact(existingContact);
+                                                        const existingContact = contacts.find(({ contact, messages, conversation }) => contact.id === user.id);
+                                                        if (existingContact) setSelectedContact(existingContact.contact);
+                                                        let mess = await fetchMessages(existingContact.conversation.id);
+                                                        setMessages(mess);
                                                     }
                                                     closeNewConversationModal();
                                                 };
