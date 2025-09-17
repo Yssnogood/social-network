@@ -76,6 +76,25 @@ export interface EventWithResponse extends Event {
 	response_status?: "going" | "not_going" | null;
 }
 
+export type EventParticipant = {
+	user_id: number;
+	username: string;
+};
+
+export type EventWithResponses = {
+	id: number;
+	group_id: number;
+	creator_id: number;
+	title: string;
+	description: string;
+	event_date: string;
+	created_at: string;
+	updated_at: string;
+	user_response_status?: "going" | "not_going" | null;
+	participants: EventParticipant[] | null;
+	non_participants: EventParticipant[] | null;
+};
+
 export type User = {
 	id: number;
 	username: string;

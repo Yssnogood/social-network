@@ -1,9 +1,9 @@
 "use client";
 
-import { Event, User } from "../../types/group";
+import { EventWithResponses, User } from "../../types/group";
 
 interface EventsListProps {
-	events: Event[];
+	events: EventWithResponses[];
 	currentUser: User | null;
 	onEventResponse: (eventId: number, status: string) => Promise<void>;
 	onDeleteEvent: (eventId: number) => Promise<void>;
@@ -36,18 +36,28 @@ export default function EventsList({
 						<h4 className="font-semibold text-blue-400 mb-2">{event.title}</h4>
 						<p className="text-sm text-zinc-300 mb-1">📅 {formatDate(event.event_date)}</p>
 						<p className="text-zinc-100 mb-3">{event.description}</p>
-						<div className="flex flex-wrap gap-2 items-center">
+						
+						{/* Boutons de réponse */}
+						<div className="flex flex-wrap gap-2 items-center mb-4">
 							<button
 								onClick={() => onEventResponse(event.id, 'going')}
-								className="bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700 font-medium transition-colors flex-shrink-0"
+								className={`px-3 py-1.5 rounded text-sm font-medium transition-colors flex-shrink-0 ${
+									event.user_response_status === 'going'
+										? 'bg-green-700 text-white border-2 border-green-400'
+										: 'bg-green-600 text-white hover:bg-green-700'
+								}`}
 							>
-								Participer
+								{event.user_response_status === 'going' ? '✓ Je participe' : 'Participer'}
 							</button>
 							<button
 								onClick={() => onEventResponse(event.id, 'not_going')}
-								className="bg-red-600 text-white px-3 py-1.5 rounded text-sm hover:bg-red-700 font-medium transition-colors flex-shrink-0"
+								className={`px-3 py-1.5 rounded text-sm font-medium transition-colors flex-shrink-0 ${
+									event.user_response_status === 'not_going'
+										? 'bg-red-700 text-white border-2 border-red-400'
+										: 'bg-red-600 text-white hover:bg-red-700'
+								}`}
 							>
-								Ne pas participer
+								{event.user_response_status === 'not_going' ? '✗ Je ne participe pas' : 'Ne pas participer'}
 							</button>
 							{currentUser?.id === event.creator_id && (
 								<button
@@ -56,6 +66,51 @@ export default function EventsList({
 								>
 									Supprimer
 								</button>
+							)}
+						</div>
+
+						{/* Affichage des participants */}
+						<div className="space-y-3">
+							{event.participants && event.participants.length > 0 && (
+								<div className="bg-green-900/20 p-3 rounded-lg border border-green-800/50 transition-all duration-300">
+									<h5 className="text-green-400 font-medium mb-2">
+										🟢 Participants ({event.participants.length})
+									</h5>
+									<div className="flex flex-wrap gap-2">
+										{event.participants.map((participant) => (
+											<span
+												key={participant.user_id}
+												className="bg-green-800/50 text-green-200 px-2 py-1 rounded-full text-xs animate-in fade-in-0 duration-300"
+											>
+												{participant.username}
+											</span>
+										))}
+									</div>
+								</div>
+							)}
+
+							{event.non_participants && event.non_participants.length > 0 && (
+								<div className="bg-red-900/20 p-3 rounded-lg border border-red-800/50 transition-all duration-300">
+									<h5 className="text-red-400 font-medium mb-2">
+										🔴 Ne participent pas ({event.non_participants.length})
+									</h5>
+									<div className="flex flex-wrap gap-2">
+										{event.non_participants.map((participant) => (
+											<span
+												key={participant.user_id}
+												className="bg-red-800/50 text-red-200 px-2 py-1 rounded-full text-xs animate-in fade-in-0 duration-300"
+											>
+												{participant.username}
+											</span>
+										))}
+									</div>
+								</div>
+							)}
+
+							{(!event.participants || event.participants.length === 0) && (!event.non_participants || event.non_participants.length === 0) && (
+								<div className="bg-zinc-900/50 p-3 rounded-lg border border-zinc-700/50">
+									<p className="text-zinc-400 text-sm">Aucune réponse pour le moment</p>
+								</div>
 							)}
 						</div>
 					</div>
