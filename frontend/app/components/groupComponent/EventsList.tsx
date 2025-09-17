@@ -109,7 +109,7 @@ export default function EventsList({
 
 							{(!event.participants || event.participants.length === 0) && (!event.non_participants || event.non_participants.length === 0) && (
 								<div className="bg-zinc-900/50 p-3 rounded-lg border border-zinc-700/50">
-									<p className="text-zinc-400 text-sm">Aucune réponse pour le moment</p>
+									<p className="text-zinc-400 text-sm">Aucuns participants ou refus de participation</p>
 								</div>
 							)}
 						</div>
