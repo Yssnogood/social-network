@@ -87,7 +87,7 @@ const handleSubmitComment = async (data: { content: string; imageUrl?: string })
         setComments([commentWithAuthor, ...comments]);
 
 
-        if (post?.userName !== username) {
+        if (post?.userName.username !== username) {
             try {
                 if (!post) return;
                 await createNotification({
