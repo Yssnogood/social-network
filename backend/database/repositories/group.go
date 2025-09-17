@@ -3,9 +3,9 @@ package repository
 import (
 	"database/sql"
 	"fmt"
-	"time"
-
 	"social-network/backend/database/models"
+	"strconv"
+	"time"
 )
 
 // Connection to the database
@@ -129,7 +129,7 @@ func (r *GroupRepository) GetGroupsByUserID(userID int64) ([]models.Group, error
 	var groups []models.Group
 	for rows.Next() {
 		var group models.Group
-		if err := rows.Scan(&group.ID, &group.CreatorID, &group.CreatorName ,&group.Title, &group.Description, &group.CreatedAt, &group.UpdatedAt); err != nil {
+		if err := rows.Scan(&group.ID, &group.CreatorID, &group.CreatorName, &group.Title, &group.Description, &group.CreatedAt, &group.UpdatedAt); err != nil {
 			return nil, err
 		}
 		groups = append(groups, group)
@@ -138,7 +138,7 @@ func (r *GroupRepository) GetGroupsByUserID(userID int64) ([]models.Group, error
 	return groups, nil
 }
 
-func (r* GroupRepository) GetGroupByID(groupID int64) (*models.Group, error) {
+func (r *GroupRepository) GetGroupByID(groupID int64) (*models.Group, error) {
 	stmt, err := r.db.Prepare(`
 		SELECT id, creator_id, creator_name, title, description, created_at, updated_at
 		FROM groups
@@ -235,7 +235,7 @@ func (r *GroupRepository) GetMessagesByGroupID(groupID int64) ([]models.GroupMes
 	var messages []models.GroupMessage
 	for rows.Next() {
 		var msg models.GroupMessage
-		if err := rows.Scan(&msg.ID, &msg.GroupID, &msg.UserID, &msg.Username , &msg.Content, &msg.CreatedAt, &msg.UpdatedAt); err != nil {
+		if err := rows.Scan(&msg.ID, &msg.GroupID, &msg.UserID, &msg.Username, &msg.Content, &msg.CreatedAt, &msg.UpdatedAt); err != nil {
 			return nil, err
 		}
 		messages = append(messages, msg)
@@ -306,6 +306,25 @@ func (r *GroupRepository) GetPostsByGroupID(groupID int64) ([]models.GroupPost, 
 	}
 
 	return posts, nil
+}
+
+func (r *GroupRepository) GetCreatorID(group_id int64) (int64, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT creator_id 
+		FROM groups 
+		WHERE id = ?;
+	`)
+	if err != nil {
+		return 0, err
+	}
+	defer stmt.Close()
+	var id int64
+	err = stmt.QueryRow(group_id).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
 }
 
 func (r *GroupRepository) CreateGroupComment(comment *models.GroupComment) (int64, error) {
@@ -379,7 +398,7 @@ func (r *GroupRepository) GetCommentsByPostID(postID int64) ([]models.GroupComme
 	return comments, nil
 }
 
-//ismember checks if a user is a member of a group
+// ismember checks if a user is a member of a group
 func (r *GroupRepository) IsMember(groupID, userID int64) (bool, error) {
 	stmt, err := r.db.Prepare(`
 		SELECT COUNT(*)
@@ -393,6 +412,26 @@ func (r *GroupRepository) IsMember(groupID, userID int64) (bool, error) {
 
 	var count int
 	err = stmt.QueryRow(groupID, userID).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+func (r *GroupRepository) IsRequestPending(groupID, userID int64) (bool, error) {
+	stmt, err := r.db.Prepare(`
+		SELECT COUNT(*)
+		FROM notifications
+		WHERE reference_id = ? AND reference_type = ? AND content LIKE ? ; 
+	`)
+	if err != nil {
+		return false, err
+	}
+	defer stmt.Close()
+
+	var count int
+	err = stmt.QueryRow(groupID, "group", "%;"+strconv.Itoa(int(userID))).Scan(&count)
 	if err != nil {
 		return false, err
 	}

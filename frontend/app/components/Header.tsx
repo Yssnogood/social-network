@@ -106,6 +106,30 @@ export default function Header({
 		}
 	};
 
+	const handleAcceptGroupRequest = async (referenceId: number, reqId:string, referenceType: string) => {
+		try {
+			await acceptGroupJoinRequest(referenceId, parseInt(reqId), referenceType);
+			
+			// Refresh the page to update notifications
+			window.location.reload();
+		} catch (error) {
+			console.error("Error accepting group invitation:", error);
+			alert("Erreur lors de l'acceptation de l'invitation");
+		}
+	};
+
+	const handleDeclineGroupRequest = async (referenceId: number, reqId:string, referenceType: string) => {
+		try {
+			await declineGroupJoinRequest(referenceId, parseInt(reqId), referenceType);
+			
+			// Refresh the page to update notifications
+			window.location.reload();
+		} catch (error) {
+			console.error("Error declining group invitation:", error);
+			alert("Erreur lors du refus de l'invitation");
+		}
+	};
+
 	const handleAcceptGroupInvitation = async (referenceId: number, referenceType: string) => {
 		try {
 			const jwt = cookies.get("jwt");
@@ -279,7 +303,7 @@ export default function Header({
 							<div className="space-y-3">
 								{notifications.slice(0, 5).map((notification) => (
 									<div key={notification.id} className="p-3 bg-zinc-800 rounded-lg border border-zinc-700">
-										<p className="text-sm text-zinc-300 mb-2">{notification.content}</p>
+										{notification.type === 'group_request' ? <p className="text-sm text-zinc-300 mb-2">{notification.content.split(';')[0]}</p> : <p className="text-sm text-zinc-300 mb-2">{notification.content}</p>}
 										
 										{/* Follow request buttons */}
 										{notification.type === 'follow_request' && notification.reference_id && (
@@ -320,6 +344,25 @@ export default function Header({
 												</Button>
 											</div>
 										)}
+										{/* Group Request buttons */}
+										{notification.type === "group_request" && (
+                                <div className="mt-2">
+                                   <Button
+													size="sm"
+													onClick={() => handleAcceptGroupRequest(notification.reference_id!,notification.content.split(";")[1]!, notification.reference_type!)}
+													className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1"
+												>
+													Accept
+												</Button>
+												<Button
+													size="sm"
+													onClick={() => handleDeclineGroupRequest(notification.reference_id!,notification.content.split(";")[1]!, notification.reference_type!)}
+													className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1"
+												>
+													Decline
+												</Button>
+                                </div>
+							)}
 										
 										<div className="text-xs text-zinc-500 mt-2">
 											{new Date(notification.created_at).toLocaleDateString("fr-FR", {

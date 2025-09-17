@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"strconv"
 
 	"social-network/backend/database/models"
 )
@@ -224,6 +225,19 @@ func (r *NotificationRepository) DeleteGroupInvitationRequest(userID, groupID in
 	defer stmt.Close()
 
 	_, err = stmt.Exec(userID, groupID)
+	if err != nil {
+		return err
+	}
+
+	stmt2, err := r.db.Prepare(`
+		DELETE FROM notifications WHERE reference_id = ? AND content LIKE ? AND type = 'group_request'
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt2.Close()
+	checker := "%;" + strconv.Itoa(int(userID))
+	_, err = stmt2.Exec(groupID, checker)
 	if err != nil {
 		return err
 	}

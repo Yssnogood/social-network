@@ -6,6 +6,7 @@ import Header, { Notification } from "./Header";
 import { fetchNotifications } from "@/services/notifications";
 import { getUserIdFromToken } from "@/services/user";
 import { WebSocketProvider } from "../context/WebSocketContext";
+import { url } from "../login/page";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -23,6 +24,15 @@ export default function AppLayout({ children, showHeader = true }: AppLayoutProp
     console.log("🔔 Adding new notification to state:", newNotification);
     setNotifications(prev => [newNotification, ...prev]);
   }, []);
+
+  const handleDeleteNotifications = async (notification_id: number) => {
+    let resp = await fetch(`${url}/notifications/${notification_id}`,
+      {
+        method: "DELETE"
+      }
+    )
+    if (!resp.ok) throw new Error(`Error Deleting Notifications:${resp.text}`);
+  }
 
   // Charger les notifications initiales
   useEffect(() => {
@@ -47,6 +57,18 @@ export default function AppLayout({ children, showHeader = true }: AppLayoutProp
 
   const handleToggleNotifications = () => {
     setShowNotifications(!showNotifications);
+    if (!showNotifications) return;
+    if (showNotifications === true) {
+    let newNotifs : Notification[] = [];
+      notifications.map((notification) => {
+        if (notification.type !== 'group_request' && notification.type !== 'group_invitation' && notification.type !== 'follow_request' ) {
+          handleDeleteNotifications(notification.id)
+        } else {
+          newNotifs.push(notification)
+        }
+      })
+      setNotifications(newNotifs)
+    }
   };
 
   return (
