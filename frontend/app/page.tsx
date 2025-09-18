@@ -14,18 +14,6 @@ export default function Home() {
                         </div>
                         <span>Social Network</span>
                     </Link>
-                    <nav className="flex gap-4 items-center">
-                        <Button asChild variant="ghost">
-                            <Link href="/login">
-                                Login
-                            </Link>
-                        </Button>
-                        <Button asChild>
-                            <Link href="/register">
-                                Register
-                            </Link>
-                        </Button>
-                    </nav>
                 </div>
             </header>
 
