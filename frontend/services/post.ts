@@ -187,7 +187,7 @@ export async function createPost(postData: {
                 newPost = {
                   id: r.post.id,
                   userId: r.post.user_id,
-                  userName: r.username,
+                  userName: r.user,
                   imageUrl: r.post.image_path,
                   privacy: r.post.privacy_type,
                   createdAt: new Date(Date.parse(r.post.created_at)),

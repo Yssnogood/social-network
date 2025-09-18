@@ -80,9 +80,12 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	post.ID = id
+
+
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]any{
 		"post":     post,
+		"user":		user,
 		"username": user.Username,
 	})
 }
