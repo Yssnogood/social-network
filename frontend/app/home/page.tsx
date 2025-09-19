@@ -48,9 +48,6 @@ export default function Home() {
         try {
             const newPost = await createPost(postData, cookies.get("jwt"));
 			
-            console.log("NOUVEAU POST DE MORT LA : ")
-            console.log(newPost)
-
             if(newPost.privacy === 0 || newPost.privacy === 1){
                 createNotification({
                     userId: parseInt(newPost.userId),
