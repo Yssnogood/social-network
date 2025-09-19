@@ -1,3 +1,5 @@
+import EmojiPicker from './EmojiPicker'
+
 interface MessageInputProps {
 	value: string
 	onChange: (value: string) => void
@@ -12,16 +14,25 @@ export default function MessageInput({ value, onChange, onSend }: MessageInputPr
 		}
 	}
 
+	const handleEmojiSelect = (emoji: string) => {
+		onChange(value + emoji)
+	}
+
 	return (
 		<div className="mt-4">
-			<textarea
-				value={value}
-				onChange={(e) => onChange(e.target.value)}
-				className="w-full p-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-3 resize-none"
-				placeholder="Écrire un message..."
-				rows={3}
-				onKeyPress={handleKeyPress}
-			/>
+			<div className="relative">
+				<textarea
+					value={value}
+					onChange={(e) => onChange(e.target.value)}
+					className="w-full p-3 pr-12 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-3 resize-none"
+					placeholder="Écrire un message..."
+					rows={3}
+					onKeyPress={handleKeyPress}
+				/>
+				<div className="absolute right-2 bottom-5">
+					<EmojiPicker onEmojiSelect={handleEmojiSelect} />
+				</div>
+			</div>
 			<button
 				onClick={onSend}
 				disabled={!value.trim()}

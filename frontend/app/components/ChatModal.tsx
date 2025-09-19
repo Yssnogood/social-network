@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createNotification } from "../../services/notifications";
+import EmojiPicker from "./groupComponent/EmojiPicker";
 
 export default function ChatModal({
 	currentUserId,
@@ -15,6 +16,10 @@ export default function ChatModal({
 	const [messages, setMessages] = useState<{ sender_id: number; content: string }[]>([]);
 	const [input, setInput] = useState("");
 	const ws = useRef<WebSocket | null>(null);
+
+	const handleEmojiSelect = (emoji: string) => {
+		setInput(input + emoji);
+	};
 
 	useEffect(() => {
 		let isMounted = true;
@@ -164,17 +169,22 @@ export default function ChatModal({
 					)}
 				</div>
 
-				<div className="flex gap-2">
-					<input
-						type="text"
-						placeholder="Écris un message..."
-						className="flex-1 border border-gray-300 dark:border-gray-700 rounded px-3 py-2 text-gray-900 dark:text-gray-100"
-						value={input}
-						onChange={(e) => setInput(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter") sendMessage();
-						}}
-					/>
+				<div className="flex gap-2 relative">
+					<div className="flex-1 relative">
+						<input
+							type="text"
+							placeholder="Écris un message..."
+							className="w-full pr-12 border border-gray-300 dark:border-gray-700 rounded px-3 py-2 text-gray-900 dark:text-gray-100"
+							value={input}
+							onChange={(e) => setInput(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") sendMessage();
+							}}
+						/>
+						<div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+							<EmojiPicker onEmojiSelect={handleEmojiSelect} />
+						</div>
+					</div>
 					<button
 						className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
 						onClick={sendMessage}
