@@ -89,23 +89,53 @@ func (r *PostRepository) GetByID(id int64, ps *services.PostService, curr_user *
 
 func (r *PostRepository) GetPosts(ps *services.PostService, curr_user *models.User) ([]map[string]any, error) {
 	var posts []map[string]any
+
 	stmt, err := r.db.Prepare(`
-		SELECT id, user_id, content, image_path, privacy_type, created_at, updated_at
-		FROM posts
-		ORDER BY created_at DESC
-	`)
+SELECT
+    p.id,
+    p.user_id,
+    p.content,
+    p.image_path,
+    p.privacy_type,
+    p.created_at,
+    p.updated_at,
+    u.username,
+    u.avatar_path
+FROM posts p
+JOIN users u ON u.id = p.user_id
+LEFT JOIN followers f1 ON f1.follower_id = ? 
+                      AND f1.followed_id = p.user_id 
+                      AND f1.accepted = 1
+LEFT JOIN followers f2 ON f2.follower_id = p.user_id 
+                      AND f2.followed_id = ? 
+                      AND f2.accepted = 1
+WHERE
+    p.user_id = ? -- l'auteur voit toujours ses propres posts
+    OR p.privacy_type = 0
+    OR (p.privacy_type = 1 AND f1.follower_id IS NOT NULL AND f2.follower_id IS NOT NULL)
+    OR EXISTS (
+        SELECT 1
+        FROM post_privacy pp
+        WHERE pp.post_id = p.id AND pp.user_id = ?
+    )
+ORDER BY p.created_at DESC;
+`)
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
-	results, err := stmt.Query()
+	// Paramètres : curr_user.ID utilisé 4 fois (f1, f2, auteur, post_privacy)
+	results, err := stmt.Query(curr_user.ID, curr_user.ID, curr_user.ID, curr_user.ID)
 	if err != nil {
 		return nil, err
 	}
+	defer results.Close()
 
 	for results.Next() {
 		post := &models.Post{}
+		var username, avatarPath string
+
 		err = results.Scan(
 			&post.ID,
 			&post.UserID,
@@ -114,37 +144,39 @@ func (r *PostRepository) GetPosts(ps *services.PostService, curr_user *models.Us
 			&post.PrivacyType,
 			&post.CreatedAt,
 			&post.UpdatedAt,
+			&username,
+			&avatarPath,
 		)
 		if err != nil {
 			return nil, err
 		}
+
+		// Récupération des likes
 		likes, _ := ps.GetLikes(post.ID)
+
+		// Nombre de commentaires
 		commentCount, err := r.GetNumberOfComments(post.ID)
 		if err != nil {
 			return nil, err
 		}
 		post.CommentsCount = commentCount
-		user, _ := ps.GetPostAuthor(post)
-		isPrivate := user.ID != curr_user.ID && post.PrivacyType != 0
-		if isPrivate {
-			switch post.PrivacyType {
-			case 1:
-				isPrivate = !ps.IsAuthorFriend(user.ID, curr_user.ID)
-			case 2:
-				isPrivate = !ps.CheckPrivacy(post.ID, curr_user.ID)
-			}
-		}
-		if !isPrivate {
-			posts = append(posts, map[string]any{
-				"post":       post,
-				"user":       user,
-				"like":       len(likes),
-				"user_liked": slices.Contains(likes, curr_user.Username),
-			})
-		}
+
+		posts = append(posts, map[string]any{
+			"post":       post,
+			"user":       map[string]any{"username": username, "avatar_path": avatarPath},
+			"like":       len(likes),
+			"user_liked": slices.Contains(likes, curr_user.Username),
+		})
 	}
+
+	if err = results.Err(); err != nil {
+		return nil, err
+	}
+
 	return posts, nil
 }
+
+
 
 func (r *PostRepository) GetNumberOfComments(postID int64) (int64, error) {
 	var count int64
