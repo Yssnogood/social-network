@@ -19,9 +19,9 @@ export default function CreatePostModal({ isOpen, onClose, onSubmit }: CreatePos
     const [selectedFriends,setSelectedFriends] = useState<any[]>([]);
     
     useEffect(() => {
-        if (!isOpen) return
-        fetchFriends().then((data) => setFriends(data))
-    },[isOpen])
+        if (!isOpen) return;
+        fetchFriends().then((data) => setFriends(data || []));
+    }, [isOpen]);
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 

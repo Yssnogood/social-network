@@ -48,13 +48,20 @@ export default function Home() {
         try {
             const newPost = await createPost(postData, cookies.get("jwt"));
 			
-			createNotification({
-				userId: parseInt(newPost.userId),
-				type: 'post_created',
-				content: `New post created by ${newPost.userName}`,
-				referenceId: newPost.id,
-				referenceType: 'post'
-			})
+            console.log("NOUVEAU POST DE MORT LA : ")
+            console.log(newPost)
+
+            if(newPost.privacy === 0 || newPost.privacy === 1){
+                createNotification({
+                    userId: parseInt(newPost.userId),
+                    type: 'post_created',
+                    content: `New post created by ${newPost.userName.username}`,
+                    referenceId: newPost.id,
+                    referenceType: 'post'
+                })
+            }
+
+
             setPosts([newPost, ...posts]);
             handleCloseModal();
         } catch (error) {
