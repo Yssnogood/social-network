@@ -43,15 +43,34 @@ export function MultiSelect({
   const selectables = options.filter((option) => !selected.includes(option));
 
   return (
-    <Command className="overflow-visible bg-transparent">
-      <div className="group border border-gray-600 bg-gray-700 px-3 py-2 text-sm rounded-md focus-within:ring-2 focus-within:ring-gray-500">
+    <Command className="overflow-visible bg-transparent [&_[data-slot=command-input-wrapper]_svg]:text-zinc-400">
+      <div className="group border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm rounded-md focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-colors mt-2">
         <div className="flex gap-1 flex-wrap">
           {selected.map((option) => {
             return (
-              <Badge key={option.username} variant="secondary" className="bg-gray-800 text-white border-gray-600">
-                {option.username}
+              <Badge key={option.username} variant="secondary" className="bg-zinc-700 text-white border-zinc-600 hover:bg-zinc-600 transition-colors flex items-center gap-1.5 pl-1 pr-2 py-1">
+                <div className="w-4 h-4 rounded-full overflow-hidden bg-zinc-600 flex-shrink-0">
+                  {option.avatar_path ? (
+                    <img
+                      src={
+                        option.avatar_path.startsWith("http")
+                          ? option.avatar_path
+                          : `/uploads/${option.avatar_path}`
+                      }
+                      alt={`${option.username}'s avatar`} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                      <span className="text-white text-[8px] font-bold">
+                        {option.username?.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <span className="text-xs">{option.username}</span>
                 <button
-                  className="ml-1 rounded-full outline-none focus:ring-2 focus:ring-gray-500"
+                  className="ml-1 rounded-full outline-none focus:ring-2 focus:ring-blue-500"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       handleUnselect(option);
@@ -63,7 +82,7 @@ export function MultiSelect({
                   }}
                   onClick={() => handleUnselect(option)}
                 >
-                  <X className="h-3 w-3 text-gray-400 hover:text-white" />
+                  <X className="h-3 w-3 text-zinc-400 hover:text-white transition-colors" />
                 </button>
               </Badge>
             );
@@ -75,16 +94,16 @@ export function MultiSelect({
             onBlur={() => setOpen(false)}
             onFocus={() => setOpen(true)}
             placeholder={placeholder}
-            className="ml-2 bg-transparent text-white placeholder:text-gray-400 outline-none flex-1"
+            className="ml-2 bg-transparent text-white placeholder:text-zinc-400 outline-none flex-1"
           />
         </div>
       </div>
       <div className="relative mt-2">
         {open && selectables.length > 0 ? (
-          <div className="absolute w-full z-10 top-0 rounded-md border border-gray-600 bg-gray-700 text-white shadow-md outline-none animate-in">
+          <div className="absolute w-full z-10 top-0 rounded-md border border-zinc-700 bg-zinc-800 text-white shadow-lg outline-none animate-in">
             <CommandList>
-              <CommandEmpty className="text-gray-400">No results found.</CommandEmpty>
-              <CommandGroup className="h-full overflow-auto">
+              <CommandEmpty className="text-zinc-400 px-3 py-2">No results found.</CommandEmpty>
+              <CommandGroup className="h-full overflow-auto max-h-48">
                 {selectables.map((option) => {
                   return (
                     <CommandItem
@@ -97,7 +116,7 @@ export function MultiSelect({
                         setInputValue("");
                         onChange([...selected, option]);
                       }}
-                      className={"cursor-pointer hover:bg-gray-600"}
+                      className={"cursor-pointer hover:bg-zinc-700 px-3 py-2 transition-colors text-zinc-200 hover:text-white"}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           onChange([...selected, option]);
@@ -105,7 +124,28 @@ export function MultiSelect({
                         }
                       }}
                     >
-                      {option.username}
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full overflow-hidden bg-zinc-700 flex-shrink-0">
+                          {option.avatar_path ? (
+                            <img
+                              src={
+                                option.avatar_path.startsWith("http")
+                                  ? option.avatar_path
+                                  : `/uploads/${option.avatar_path}`
+                              }
+                              alt={`${option.username}'s avatar`}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">
+                                {option.username?.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <span>{option.username}</span>
+                      </div>
                     </CommandItem>
                   );
                 })}
