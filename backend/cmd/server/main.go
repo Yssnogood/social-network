@@ -70,10 +70,6 @@ func main() {
 	messageHandler := appHandlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
 	websocketHandler := websocket.NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo, notificationRepo)
 	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo, followerRepo, groupRepo)
-
-
-	// CORS
-	r.Use(middlewares.CORSMiddleware)
 	eventHandler := appHandlers.NewEventHandler(eventRepo, groupRepo)
 	groupHandler := appHandlers.NewGroupHandler(groupRepo, sessionRepo, userRepo, notificationRepo)
 
