@@ -365,7 +365,13 @@ export default function GroupPage() {
 			});
 			if (!res.ok) throw new Error(await res.text());
 
-			// Ne pas mettre à jour localement - laisser le WebSocket s'en charger
+			// Update local state immediately for the current user
+			setEvents((prev) => prev.map(event => 
+				event.id === eventId 
+					? { ...event, user_response_status: status as "going" | "not_going" }
+					: event
+			));
+
 			console.log("Event response sent, waiting for WebSocket update...");
 		} catch (err: any) {
 			console.error("Error setting event response:", err.message);
