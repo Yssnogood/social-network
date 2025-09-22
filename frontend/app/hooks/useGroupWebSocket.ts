@@ -1,9 +1,10 @@
 import { useEffect } from "react";
-import { GroupMessage } from "../types/group";
+import { GroupMessage, EventWithResponses } from "../types/group";
 
 export const useGroupWebSocket = (
 	groupId: string,
-	setMessages: (messages: GroupMessage[] | ((prev: GroupMessage[]) => GroupMessage[])) => void
+	setMessages: (messages: GroupMessage[] | ((prev: GroupMessage[]) => GroupMessage[])) => void,
+	setEvents?: (events: EventWithResponses[] | ((prev: EventWithResponses[]) => EventWithResponses[])) => void
 ) => {
 	useEffect(() => {
 		if (!groupId) return;
@@ -19,14 +20,32 @@ export const useGroupWebSocket = (
 
 			socket.onmessage = (event) => {
 				try {
-					const newMsg = JSON.parse(event.data);
-					setMessages((prev) => {
-						const safePrev = Array.isArray(prev) ? prev : [];
-						if (safePrev.some((msg) => msg.id === newMsg.id)) {
-							return safePrev;
-						}
-						return [...safePrev, newMsg];
-					});
+					const data = JSON.parse(event.data);
+					console.log("WebSocket message received:", data);
+					
+					// Handle different message types
+					if (data.type === "event_response_update" && setEvents) {
+						console.log("Updating event:", data.event);
+						// Update the specific event with new participant data
+						setEvents((prev) => {
+							const safeEvents = Array.isArray(prev) ? prev : [];
+							const updated = safeEvents.map(existingEvent => 
+								existingEvent.id === data.event.id ? data.event : existingEvent
+							);
+							console.log("Events updated:", updated);
+							return updated;
+						});
+					} else {
+						// Handle regular group messages
+						const newMsg = data;
+						setMessages((prev) => {
+							const safePrev = Array.isArray(prev) ? prev : [];
+							if (safePrev.some((msg) => msg.id === newMsg.id)) {
+								return safePrev;
+							}
+							return [...safePrev, newMsg];
+						});
+					}
 				} catch (err) {
 					console.error("Error WebSocket group:", err);
 				}
@@ -48,5 +67,5 @@ export const useGroupWebSocket = (
 				socket.close();
 			}
 		};
-	}, [groupId, setMessages]);
+	}, [groupId, setMessages, setEvents]);
 };

@@ -23,7 +23,7 @@ import {
 	GroupMessage,
 	GroupPost,
 	GroupComment,
-	Event,
+	EventWithResponses,
 	User
 } from "../../types/group";
 
@@ -55,7 +55,7 @@ export default function GroupPage() {
 	const [loadingComments, setLoadingComments] = useState<Record<number, boolean>>({});
 
 	// États pour les événements
-	const [events, setEvents] = useState<Event[]>([]);
+	const [events, setEvents] = useState<EventWithResponses[]>([]);
 
 	// Custom hooks pour les données et WebSocket
 	const {
@@ -79,7 +79,7 @@ export default function GroupPage() {
 		setError
 	});
 
-	useGroupWebSocket(id as string, setMessages);
+	useGroupWebSocket(id as string, setMessages, setEvents);
 
 	// Récupération de l'utilisateur actuel
 	useEffect(() => {
@@ -365,10 +365,8 @@ export default function GroupPage() {
 			});
 			if (!res.ok) throw new Error(await res.text());
 
-			const updatedEvents = events.map((event) =>
-				event.id === eventId ? { ...event, status } : event
-			);
-			setEvents(updatedEvents);
+			// Ne pas mettre à jour localement - laisser le WebSocket s'en charger
+			console.log("Event response sent, waiting for WebSocket update...");
 		} catch (err: any) {
 			console.error("Error setting event response:", err.message);
 			alert(`Erreur lors de la response à l'événement : ${err.message}`);

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -16,12 +17,14 @@ import (
 // EventHandler handles HTTP requests related to events.
 type EventHandler struct {
 	EventRepository *repository.EventRepository
+	GroupRepository *repository.GroupRepository
 }
 
 // NewEventHandler creates a new EventHandler.
-func NewEventHandler(er *repository.EventRepository) *EventHandler {
+func NewEventHandler(er *repository.EventRepository, gr *repository.GroupRepository) *EventHandler {
 	return &EventHandler{
 		EventRepository: er,
+		GroupRepository: gr,
 	}
 }
 
@@ -99,6 +102,28 @@ func (h *EventHandler) SetEventResponse(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Get the event to find the group ID
+	event, err := h.EventRepository.GetByID(eventID)
+	if err != nil {
+		http.Error(w, "Failed to get event: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Get updated event with participants for broadcast
+	updatedEvent, err := h.EventRepository.GetEventWithResponsesByID(eventID, userID)
+	if err == nil {
+		// Broadcast the updated event data to all group members
+		broadcastData := map[string]interface{}{
+			"type":  "event_response_update",
+			"event": updatedEvent,
+		}
+
+		// Use the existing BroadcastToGroupClients function
+		BroadcastToGroupClients(event.GroupID, broadcastData)
+	} else {
+		fmt.Printf("❌ Error getting updated event: %v\n", err)
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -111,7 +136,9 @@ func (h *EventHandler) GetEventsByGroupID(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	events, err := h.EventRepository.GetEventsByGroupID(groupID)
+	userID := r.Context().Value(middlewares.UserIDKey).(int64)
+
+	events, err := h.EventRepository.GetEventsWithResponsesByGroupID(groupID, userID)
 	if err != nil {
 		http.Error(w, "Failed to fetch events: "+err.Error(), http.StatusInternalServerError)
 		return

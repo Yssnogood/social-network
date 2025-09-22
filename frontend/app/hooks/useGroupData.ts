@@ -5,7 +5,7 @@ import {
 	GroupMessage,
 	GroupPost,
 	GroupComment,
-	Event
+	EventWithResponses
 } from "../types/group";
 
 interface UseGroupDataProps {
@@ -14,7 +14,7 @@ interface UseGroupDataProps {
 	setFollowers: (followers: FollowerWithDetails[]) => void;
 	setMessages: (messages: GroupMessage[]) => void;
 	setPosts: (posts: GroupPost[]) => void;
-	setEvents: (events: Event[]) => void;
+	setEvents: (events: EventWithResponses[]) => void;
 	setCommentsByPost: (comments: Record<number, GroupComment[]> | ((prev: Record<number, GroupComment[]>) => Record<number, GroupComment[]>)) => void;
 	setLoadingComments: (loading: Record<number, boolean> | ((prev: Record<number, boolean>) => Record<number, boolean>)) => void;
 	setIsLoadingPosts: (loading: boolean) => void;

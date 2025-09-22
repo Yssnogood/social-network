@@ -22,14 +22,14 @@ type User struct {
 
 // Post model
 type Post struct {
-	ID          int64     `json:"id"`
-	UserID      int64     `json:"user_id"`
-	Content     string    `json:"content"`
-	ImagePath   *string   `json:"image_path,omitempty"`
-	PrivacyType int64     `json:"privacy_type"` // 0: public, 1: friend, 2: private
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	CommentsCount int64   `json:"comments_count"`
+	ID            int64     `json:"id"`
+	UserID        int64     `json:"user_id"`
+	Content       string    `json:"content"`
+	ImagePath     *string   `json:"image_path,omitempty"`
+	PrivacyType   int64     `json:"privacy_type"` // 0: public, 1: friend, 2: private
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+	CommentsCount int64     `json:"comments_count"`
 }
 
 // Comment model
@@ -42,7 +42,7 @@ type Comment struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Username  string    `json:"username"`
-	Author  User    `json:"author"`
+	Author    User      `json:"author"`
 }
 
 // Follower model
@@ -52,7 +52,6 @@ type Follower struct {
 	Accepted   bool      `json:"accepted"`
 	FollowedAt time.Time `json:"followed_at"`
 }
-
 
 // Notification model
 type Notification struct {
@@ -79,11 +78,11 @@ type Session struct {
 
 // Conversation model
 type Conversation struct {
-	ID          int64     `json:"id"`
-	Name 	  	string    `json:"name"`
-	IsGroup   	bool      `json:"is_group"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	IsGroup   bool      `json:"is_group"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // ConversationMember model
@@ -104,16 +103,15 @@ type TypingStatus struct {
 
 // Message model
 type Message struct {
-	ID         		int64      `json:"id"`
-	ConversationID 	int64      `json:"conversation_id"`
-	SenderID   		int64      `json:"sender_id"`
-	ReceiverID 		int64      `json:"receiver_id"`
-	GroupID    		*int64     `json:"group_id"`
-	Content    		string     `json:"content"`
-	CreatedAt  		time.Time  `json:"created_at"`
-	ReadAt     		*time.Time `json:"read_at"`
+	ID             int64      `json:"id"`
+	ConversationID int64      `json:"conversation_id"`
+	SenderID       int64      `json:"sender_id"`
+	ReceiverID     int64      `json:"receiver_id"`
+	GroupID        *int64     `json:"group_id"`
+	Content        string     `json:"content"`
+	CreatedAt      time.Time  `json:"created_at"`
+	ReadAt         *time.Time `json:"read_at"`
 }
-
 
 // --- Group models ---
 
@@ -169,15 +167,15 @@ type GroupMessage struct {
 
 // GroupPost model
 type GroupPost struct {
-	ID          int64     `json:"id"`
-	GroupID     int64     `json:"group_id"`
-	UserID      int64     `json:"user_id"`
-	Username    string    `json:"username"`
-	Content     string    `json:"content"`
-	ImagePath   *string   `json:"image_path,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	CommentsCount int64   `json:"comments_count"`
+	ID            int64     `json:"id"`
+	GroupID       int64     `json:"group_id"`
+	UserID        int64     `json:"user_id"`
+	Username      string    `json:"username"`
+	Content       string    `json:"content"`
+	ImagePath     *string   `json:"image_path,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+	CommentsCount int64     `json:"comments_count"`
 }
 
 // GroupComment model
@@ -185,7 +183,7 @@ type GroupComment struct {
 	ID          int64     `json:"id"`
 	GroupPostID int64     `json:"group_post_id"`
 	UserID      int64     `json:"user_id"`
-	Username   string    `json:"username"`
+	Username    string    `json:"username"`
 	Content     string    `json:"content"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
@@ -212,4 +210,25 @@ type EventResponse struct {
 	UserID    int64     `json:"user_id"`
 	Status    string    `json:"status"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+// EventParticipant model
+type EventParticipant struct {
+	UserID   int64  `json:"user_id"`
+	Username string `json:"username"`
+}
+
+// EventWithResponses model - extends Event with participant information
+type EventWithResponses struct {
+	ID                 int64               `json:"id"`
+	GroupID            int64               `json:"group_id"`
+	CreatorID          int64               `json:"creator_id"`
+	Title              string              `json:"title"`
+	Description        *string             `json:"description"`
+	EventDate          time.Time           `json:"event_date"`
+	CreatedAt          time.Time           `json:"created_at"`
+	UpdatedAt          time.Time           `json:"updated_at"`
+	UserResponseStatus *string             `json:"user_response_status,omitempty"`
+	Participants       []*EventParticipant `json:"participants"`
+	NonParticipants    []*EventParticipant `json:"non_participants"`
 }
