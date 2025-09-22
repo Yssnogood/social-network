@@ -120,6 +120,55 @@ func (r *EventRepository) GetEventWithResponsesByID(eventID, userID int64) (*mod
 	return &event, nil
 }
 
+// GetEventWithResponsesForBroadcast retrieves an event with participants but without any specific user's response status
+// This is used for WebSocket broadcasts to avoid overriding each user's individual response status
+func (r *EventRepository) GetEventWithResponsesForBroadcast(eventID int64) (*models.EventWithResponses, error) {
+	var event models.EventWithResponses
+
+	err := r.db.QueryRow(`
+		SELECT 
+			e.id, e.group_id, e.creator_id, e.title, e.description, e.event_date, e.created_at, e.updated_at
+		FROM events e
+		WHERE e.id = ?
+	`, eventID).Scan(
+		&event.ID,
+		&event.GroupID,
+		&event.CreatorID,
+		&event.Title,
+		&event.Description,
+		&event.EventDate,
+		&event.CreatedAt,
+		&event.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Don't set UserResponseStatus - leave it nil so each client preserves their own status
+
+	// Get participants for this event
+	participants, err := r.getEventParticipants(event.ID)
+	if err != nil {
+		return nil, err
+	}
+	if participants == nil {
+		participants = []*models.EventParticipant{}
+	}
+	event.Participants = participants
+
+	// Get non-participants for this event
+	nonParticipants, err := r.getEventNonParticipants(event.ID)
+	if err != nil {
+		return nil, err
+	}
+	if nonParticipants == nil {
+		nonParticipants = []*models.EventParticipant{}
+	}
+	event.NonParticipants = nonParticipants
+
+	return &event, nil
+}
+
 func (r *EventRepository) SetEventResponse(eventID, userID int64, status string) error {
 	_, err := r.db.Exec(`
 		INSERT INTO event_responses (event_id, user_id, status, created_at)

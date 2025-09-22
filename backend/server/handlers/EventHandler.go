@@ -109,8 +109,8 @@ func (h *EventHandler) SetEventResponse(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Get updated event with participants for broadcast
-	updatedEvent, err := h.EventRepository.GetEventWithResponsesByID(eventID, userID)
+	// Get updated event with participants for broadcast (without specific user response status)
+	updatedEvent, err := h.EventRepository.GetEventWithResponsesForBroadcast(eventID)
 	if err == nil {
 		// Broadcast the updated event data to all group members
 		broadcastData := map[string]interface{}{

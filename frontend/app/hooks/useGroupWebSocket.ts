@@ -27,11 +27,20 @@ export const useGroupWebSocket = (
 					if (data.type === "event_response_update" && setEvents) {
 						console.log("Updating event:", data.event);
 						// Update the specific event with new participant data
+						// Preserve each user's own response status
 						setEvents((prev) => {
 							const safeEvents = Array.isArray(prev) ? prev : [];
-							const updated = safeEvents.map(existingEvent => 
-								existingEvent.id === data.event.id ? data.event : existingEvent
-							);
+							const updated = safeEvents.map(existingEvent => {
+								if (existingEvent.id === data.event.id) {
+									// Preserve the current user's response status
+									const currentUserResponseStatus = existingEvent.user_response_status;
+									return {
+										...data.event,
+										user_response_status: currentUserResponseStatus
+									};
+								}
+								return existingEvent;
+							});
 							console.log("Events updated:", updated);
 							return updated;
 						});
