@@ -54,7 +54,6 @@ func main() {
 	notificationRepo := repository.NewNotificationRepository(db)
 	eventRepo := repository.NewEventRepository(db)
 
-
 	// =========================
 	// Services
 	// =========================
@@ -75,29 +74,6 @@ func main() {
 
 	eventHandler := appHandlers.NewEventHandler(eventRepo)
 	groupHandler := appHandlers.NewGroupHandler(groupRepo, sessionRepo, userRepo, notificationRepo)
-
-	// CORS
-	r.Use(middlewares.CORSMiddleware)
-
-	// Routes
-	routes.UserRoutes(r, userHandler)
-	routes.PostRoutes(r, postHandler)
-	routes.CommentsRoutes(r, commentHandler)
-	routes.FollowersRoutes(r, followerHandler)
-	routes.GroupRoutes(r, groupHandler)
-	routes.MessageRoutes(r, messageHandler)
-	routes.NotificationsRoutes(r, notificationHandler)
-	routes.EventsRoutes(r, eventHandler)
-
-	// WebSocket
-	wsHandler := middlewares.JWTMiddleware(http.HandlerFunc(websocketHandler.HandleWebSocket))
-	r.Handle("/ws", wsHandler).Methods("GET", "OPTIONS")
-
-	r.Handle("/ws/groups", middlewares.JWTMiddleware(http.HandlerFunc(appHandlers.HandleGroupWebSocket)))
-
-	r.Handle("/api/messages/conversation", middlewares.CORSMiddleware(
-		http.HandlerFunc(websocketHandler.HandleGetConversation),
-	)).Methods("POST", "OPTIONS")
 
 	// =========================
 	// Routes publiques
@@ -137,4 +113,3 @@ func main() {
 		log.Fatalf("Error starting server: %v", err)
 	}
 }
-
