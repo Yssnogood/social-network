@@ -66,13 +66,11 @@ func main() {
 	userHandler := appHandlers.NewUserHandler(userService, userRepo, sessionRepo)
 	postHandler := appHandlers.NewPostHandler(postService, postRepo, sessionRepo, userRepo)
 	commentHandler := appHandlers.NewCommentHandler(commentRepo, sessionRepo)
-	followerHandler := appHandlers.NewFollowerHandler(followerRepo, notificationRepo, userRepo)
+	followerHandler := appHandlers.NewFollowerHandler(followerRepo, notificationRepo)
 	messageHandler := appHandlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
 	websocketHandler := websocket.NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo, notificationRepo)
 	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo, followerRepo, groupRepo)
 	eventHandler := appHandlers.NewEventHandler(eventRepo, groupRepo)
-
-	eventHandler := appHandlers.NewEventHandler(eventRepo)
 	groupHandler := appHandlers.NewGroupHandler(groupRepo, sessionRepo, userRepo, notificationRepo)
 
 	// =========================
