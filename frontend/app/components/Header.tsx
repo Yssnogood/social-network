@@ -301,7 +301,7 @@ export default function Header({
 							<p className="text-zinc-400 text-sm">No new notifications</p>
 						) : (
 							<div className="space-y-3">
-								{notifications.slice(0, 5).map((notification) => (
+								{notifications.map((notification) => (
 									<div key={notification.id} className="p-3 bg-zinc-800 rounded-lg border border-zinc-700">
 										{notification.type === 'group_request' ? <p className="text-sm text-zinc-300 mb-2">{notification.content.split(';')[0]}</p> : <p className="text-sm text-zinc-300 mb-2">{notification.content}</p>}
 										

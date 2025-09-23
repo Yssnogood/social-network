@@ -118,7 +118,7 @@ export default function ContactPage() {
             {msg.length !== 0 && <><p className="text-sm leading-relaxed">{msg}</p></>} 
             {msg.length !== 0 && link.length !== 0 && <br />}
             {link.length !== 0 && (link.includes("giphy.com") || link.includes(".tenor.com") ) && file_ext.includes(link.slice(-4)) 
-                ? <Image src={link} alt={id} width={200} height={200} className="rounded-lg" />
+                ? <Image src={link} alt={link.split("/")[link.split("/").length - 1]} width={200} height={200} className="rounded-lg" />
                 : <a href={link} className="text-sm leading-relaxed">{link}</a>
             } 
             </>
