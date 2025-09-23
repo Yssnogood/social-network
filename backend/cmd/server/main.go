@@ -66,7 +66,7 @@ func main() {
 	userHandler := appHandlers.NewUserHandler(userService, userRepo, sessionRepo)
 	postHandler := appHandlers.NewPostHandler(postService, postRepo, sessionRepo, userRepo)
 	commentHandler := appHandlers.NewCommentHandler(commentRepo, sessionRepo)
-	followerHandler := appHandlers.NewFollowerHandler(followerRepo, notificationRepo)
+	followerHandler := appHandlers.NewFollowerHandler(followerRepo, notificationRepo, userRepo)
 	messageHandler := appHandlers.NewMessageHandler(messageRepo, conversationRepo, conversationMembersRepo)
 	websocketHandler := websocket.NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo, notificationRepo)
 	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo, followerRepo, groupRepo)
@@ -100,7 +100,7 @@ func main() {
     routes.MessageRoutes(protected, messageHandler)
     routes.NotificationsRoutes(protected, notificationHandler)
     routes.EventsRoutes(protected, eventHandler)
-	
+
 	// =========================
 	// WebSocket sécurisé
 	// =========================
