@@ -73,25 +73,34 @@ func main() {
 	eventHandler := appHandlers.NewEventHandler(eventRepo)
 	groupHandler := appHandlers.NewGroupHandler(groupRepo, sessionRepo, userRepo, notificationRepo)
 
-	// =========================
-	// Routes publiques
-	// =========================
-	routes.UserRoutes(r, userHandler) // Inscription / login peuvent rester publiques
+    // =========================
+    // Routes PUBLIQUES (sans middleware JWT)
+    // =========================
+    routes.UserRoutes(r, userHandler)
 
-	// =========================
-	// Routes protégées (JWTMiddleware)
-	// =========================
-	protected := r.NewRoute().Subrouter()
-	protected.Use(middlewares.JWTMiddleware) // Applique le middleware JWT à tout le sousrouter
+    // Ajouter les routes post ici (PAS dans le subrouter protégé)
+    r.HandleFunc("/api/post", postHandler.CreatePost).Methods("POST", "OPTIONS")
+    r.HandleFunc("/api/posts", postHandler.GetRecentsPosts).Methods("POST", "OPTIONS")
+    r.HandleFunc("/api/posts_user", postHandler.GetPostsFromUserByID).Methods("POST", "OPTIONS")
+    r.HandleFunc("/api/like", postHandler.LikePost).Methods("POST", "OPTIONS")
+    r.HandleFunc("/api/posts/{id}", postHandler.GetPost).Methods("POST", "OPTIONS")
+    r.HandleFunc("/api/posts/{id}", postHandler.DeletePost).Methods("DELETE", "OPTIONS")
+    r.HandleFunc("/api/liked_posts", postHandler.GetLikedPostsByUserId).Methods("POST", "OPTIONS")
 
-	routes.PostRoutes(protected, postHandler)
-	routes.CommentsRoutes(protected, commentHandler)
-	routes.FollowersRoutes(protected, followerHandler)
-	routes.GroupRoutes(protected, groupHandler)
-	routes.MessageRoutes(protected, messageHandler)
-	routes.NotificationsRoutes(protected, notificationHandler)
-	routes.EventsRoutes(protected, eventHandler)
+    // =========================
+    // Routes PROTÉGÉES (avec middleware JWT)
+    // =========================
+    protected := r.NewRoute().Subrouter()
+    protected.Use(middlewares.JWTMiddleware)
 
+    // Déplacer seulement les routes qui nécessitent l'ancienne méthode ici
+    routes.CommentsRoutes(protected, commentHandler)
+    routes.FollowersRoutes(protected, followerHandler)
+    routes.GroupRoutes(protected, groupHandler)
+    routes.MessageRoutes(protected, messageHandler)
+    routes.NotificationsRoutes(protected, notificationHandler)
+    routes.EventsRoutes(protected, eventHandler)
+	
 	// =========================
 	// WebSocket sécurisé
 	// =========================

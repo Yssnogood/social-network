@@ -29,6 +29,7 @@ func NewPostHandler(ps *services.PostService, pr *repository.PostRepository, sr 
 	}
 }
 
+
 type CreatePostRequest struct {
 	JWT         string  `json:"jwt"`
 	Content     string  `json:"content"`
@@ -132,7 +133,7 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Post not found", http.StatusNotFound)
 		return
 	}
-	
+
 
 	p, ok := post["post"].(*models.Post)
 	if !ok {
