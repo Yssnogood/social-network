@@ -13,6 +13,7 @@ import (
 	repository "social-network/backend/database/repositories"
 	"social-network/backend/database/sqlite"
 	appHandlers "social-network/backend/server/handlers"
+
 	"social-network/backend/server/middlewares"
 	"social-network/backend/server/routes"
 	"social-network/backend/websocket"
@@ -21,27 +22,25 @@ import (
 func main() {
 	r := mux.NewRouter()
 
-	// CORS global
+	// Appliquer le middleware CORS
 	headersOk := gorillaHandlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
 	originsOk := gorillaHandlers.AllowedOrigins([]string{"http://localhost:3000"})
 	credentialsOk := gorillaHandlers.AllowCredentials()
 	methodsOk := gorillaHandlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"})
-	r.Use(middlewares.CORSMiddleware)
 
-	// Charger .env
-	if err := godotenv.Load(); err != nil {
+	err := godotenv.Load()
+	if err != nil {
 		log.Fatal("Erreur loading .env")
 	}
+
 	log.Println("DB_PATH =", os.Getenv("DB_PATH"))
 
-	// Initialisation DB
 	db := sqlite.InitDBAndMigrate()
 	defer db.Close()
+
 	log.Println("Serveur ready")
 
-	// =========================
 	// Repositories
-	// =========================
 	userRepo := repository.NewUserRepository(db)
 	postRepo := repository.NewPostRepository(db)
 	commentRepo := repository.NewCommentRepository(db)
@@ -54,15 +53,11 @@ func main() {
 	notificationRepo := repository.NewNotificationRepository(db)
 	eventRepo := repository.NewEventRepository(db)
 
-	// =========================
 	// Services
-	// =========================
 	userService := services.NewUserService(db)
 	postService := services.NewPostService(db)
 
-	// =========================
 	// Handlers
-	// =========================
 	userHandler := appHandlers.NewUserHandler(userService, userRepo, sessionRepo)
 	postHandler := appHandlers.NewPostHandler(postService, postRepo, sessionRepo, userRepo)
 	commentHandler := appHandlers.NewCommentHandler(commentRepo, sessionRepo)
@@ -71,50 +66,38 @@ func main() {
 	websocketHandler := websocket.NewWebSocketHandler(messageRepo, conversationRepo, conversationMembersRepo, notificationRepo)
 	notificationHandler := appHandlers.NewNotificationHandler(notificationRepo, followerRepo, groupRepo)
 	eventHandler := appHandlers.NewEventHandler(eventRepo, groupRepo)
+
 	groupHandler := appHandlers.NewGroupHandler(groupRepo, sessionRepo, userRepo, notificationRepo)
 
-    // =========================
-    // Routes PUBLIQUES (sans middleware JWT)
-    // =========================
-    routes.UserRoutes(r, userHandler)
+	// CORS
+	r.Use(middlewares.CORSMiddleware)
 
-    // Ajouter les routes post ici (PAS dans le subrouter protégé)
-    r.HandleFunc("/api/post", postHandler.CreatePost).Methods("POST", "OPTIONS")
-    r.HandleFunc("/api/posts", postHandler.GetRecentsPosts).Methods("POST", "OPTIONS")
-    r.HandleFunc("/api/posts_user", postHandler.GetPostsFromUserByID).Methods("POST", "OPTIONS")
-    r.HandleFunc("/api/like", postHandler.LikePost).Methods("POST", "OPTIONS")
-    r.HandleFunc("/api/posts/{id}", postHandler.GetPost).Methods("POST", "OPTIONS")
-    r.HandleFunc("/api/posts/{id}", postHandler.DeletePost).Methods("DELETE", "OPTIONS")
-    r.HandleFunc("/api/liked_posts", postHandler.GetLikedPostsByUserId).Methods("POST", "OPTIONS")
+	// Routes
+	routes.UserRoutes(r, userHandler)
+	routes.PostRoutes(r, postHandler)
+	routes.CommentsRoutes(r, commentHandler)
+	routes.FollowersRoutes(r, followerHandler)
+	routes.GroupRoutes(r, groupHandler)
+	routes.MessageRoutes(r, messageHandler)
+	routes.NotificationsRoutes(r, notificationHandler)
+	routes.EventsRoutes(r, eventHandler)
 
-    // =========================
-    // Routes PROTÉGÉES (avec middleware JWT)
-    // =========================
-    protected := r.NewRoute().Subrouter()
-    protected.Use(middlewares.JWTMiddleware)
+	// WebSocket
+	wsHandler := middlewares.JWTMiddleware(http.HandlerFunc(websocketHandler.HandleWebSocket))
+	r.Handle("/ws", wsHandler).Methods("GET", "OPTIONS")
 
-    // Déplacer seulement les routes qui nécessitent l'ancienne méthode ici
-    routes.CommentsRoutes(protected, commentHandler)
-    routes.FollowersRoutes(protected, followerHandler)
-    routes.GroupRoutes(protected, groupHandler)
-    routes.MessageRoutes(protected, messageHandler)
-    routes.NotificationsRoutes(protected, notificationHandler)
-    routes.EventsRoutes(protected, eventHandler)
+	r.Handle("/ws/groups", middlewares.JWTMiddleware(http.HandlerFunc(appHandlers.HandleGroupWebSocket)))
 
-	// =========================
-	// WebSocket sécurisé
-	// =========================
-	protected.Handle("/ws", http.HandlerFunc(websocketHandler.HandleWebSocket)).Methods("GET", "OPTIONS")
-	protected.Handle("/ws/groups", http.HandlerFunc(appHandlers.HandleGroupWebSocket))
-	protected.Handle("/messages/conversation", http.HandlerFunc(websocketHandler.HandleGetConversation)).Methods("POST", "OPTIONS")
+	r.Handle("/api/messages/conversation", middlewares.CORSMiddleware(
+		http.HandlerFunc(websocketHandler.HandleGetConversation),
+	)).Methods("POST", "OPTIONS")
 
-	// =========================
-	// Lancement serveur
-	// =========================
+	// Lancement du serveur HTTP
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
+
 	log.Println("Server start on http://localhost:" + port + "/")
 	if err := http.ListenAndServe(":"+port, gorillaHandlers.CORS(originsOk, headersOk, methodsOk, credentialsOk)(r)); err != nil {
 		log.Fatalf("Error starting server: %v", err)
