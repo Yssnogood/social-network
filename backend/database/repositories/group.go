@@ -308,23 +308,24 @@ func (r *GroupRepository) GetPostsByGroupID(groupID int64) ([]models.GroupPost, 
 	return posts, nil
 }
 
-func (r *GroupRepository) GetCreatorID(group_id int64) (int64, error) {
+func (r *GroupRepository) GetGroupInfos(group_id int64) (int64, string, error) {
 	stmt, err := r.db.Prepare(`
-		SELECT creator_id 
+		SELECT creator_id, title 
 		FROM groups 
 		WHERE id = ?;
 	`)
 	if err != nil {
-		return 0, err
+		return 0, "", err
 	}
 	defer stmt.Close()
 	var id int64
-	err = stmt.QueryRow(group_id).Scan(&id)
+	var title string
+	err = stmt.QueryRow(group_id).Scan(&id, &title)
 	if err != nil {
-		return 0, err
+		return 0, "", err
 	}
 
-	return id, nil
+	return id, title, nil
 }
 
 func (r *GroupRepository) CreateGroupComment(comment *models.GroupComment) (int64, error) {
@@ -419,22 +420,22 @@ func (r *GroupRepository) IsMember(groupID, userID int64) (bool, error) {
 	return count > 0, nil
 }
 
-func (r *GroupRepository) IsRequestPending(groupID, userID int64) (bool, error) {
+func (r *GroupRepository) IsRequestPending(groupID, userID int64) int64 {
 	stmt, err := r.db.Prepare(`
-		SELECT COUNT(*)
+		SELECT id
 		FROM notifications
 		WHERE reference_id = ? AND reference_type = ? AND content LIKE ? ; 
 	`)
 	if err != nil {
-		return false, err
+		return 0
 	}
 	defer stmt.Close()
 
-	var count int
+	var count int64
 	err = stmt.QueryRow(groupID, "group", "%;"+strconv.Itoa(int(userID))).Scan(&count)
 	if err != nil {
-		return false, err
+		return 0
 	}
 
-	return count > 0, nil
+	return count
 }

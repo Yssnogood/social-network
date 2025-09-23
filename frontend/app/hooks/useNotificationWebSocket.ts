@@ -48,7 +48,7 @@ export const useNotificationWebSocket = (
             };
 
             ws.current.onerror = (err) => {
-                //console.error("❌ Global WebSocket error:", err);
+                console.error("❌ Global WebSocket error:", err);
             };
 
             ws.current.onclose = () => {
@@ -74,5 +74,5 @@ export const useNotificationWebSocket = (
         }
     };
 
-    return { sendMessage, isConnected: ws.current?.readyState === WebSocket.OPEN };
+    return { sendMessage, isConnected: ws.current?.readyState === WebSocket.OPEN,ws };
 };

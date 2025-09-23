@@ -96,23 +96,26 @@ func (h *NotificationHandler) CreateNotification(w http.ResponseWriter, r *http.
 		CreatedAt:     time.Now(),
 	}
 
+	receiver_id := req.UserID
+	if req.Type == "group_request" {
+		id, title, err := h.GroupRepository.GetGroupInfos(req.ReferenceID)
+		if err != nil {
+			http.Error(w, "Failed to create notification", http.StatusInternalServerError)
+			return
+		}
+		notification.Content += fmt.Sprintf(" \"%s\".;%d", title, receiver_id)
+		receiver_id = id
+		notification.UserID = id
+	}
+
 	id, err := h.NotificationRepository.Create(notification)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Failed to create notification", http.StatusInternalServerError)
 		return
 	}
 
 	notification.ID = id
-
-	receiver_id := req.UserID
-	if req.Type == "group_request" {
-		id, err := h.GroupRepository.GetCreatorID(req.ReferenceID)
-		if err != nil {
-			http.Error(w, "Failed to create notification", http.StatusInternalServerError)
-			return
-		}
-		receiver_id = id
-	}
 
 	// Envoyer la notification en temps réel via WebSocket
 	if websocket.GlobalHub != nil {
@@ -188,6 +191,7 @@ func (h *NotificationHandler) UpdateNotification(w http.ResponseWriter, r *http.
 // DeleteNotification deletes a single notification by ID.
 func (h *NotificationHandler) DeleteNotification(w http.ResponseWriter, r *http.Request) {
 	notifID, err := strconv.ParseInt(strings.Split(r.URL.Path, "/")[3], 0, 64)
+	fmt.Println(notifID)
 	if err != nil {
 		http.Error(w, "Notification ID Not Given", http.StatusBadRequest)
 		return

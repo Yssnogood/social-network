@@ -5,8 +5,8 @@ import { useCookies } from "next-client-cookies";
 import Header, { Notification } from "./Header";
 import { fetchNotifications } from "@/services/notifications";
 import { getUserIdFromToken } from "@/services/user";
-import { WebSocketProvider } from "../context/WebSocketContext";
 import { url } from "../login/page";
+import { useNotifications } from "../context/WebSocketContext";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -16,14 +16,8 @@ interface AppLayoutProps {
 export default function AppLayout({ children, showHeader = true }: AppLayoutProps) {
   const cookies = useCookies();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const token = cookies.get("jwt");
-
-  // Callback pour traiter les nouvelles notifications WebSocket
-  const handleNewNotification = useCallback((newNotification: Notification) => {
-    console.log("🔔 Adding new notification to state:", newNotification);
-    setNotifications(prev => [newNotification, ...prev]);
-  }, []);
+  const {notifications,setNotifications} = useNotifications();
 
   const handleDeleteNotifications = async (notification_id: number) => {
     let resp = await fetch(`${url}/notifications/${notification_id}`,
@@ -72,11 +66,7 @@ export default function AppLayout({ children, showHeader = true }: AppLayoutProp
   };
 
   return (
-    <WebSocketProvider
-      onNewNotification={handleNewNotification}
-      token={token}
-    >
-      <div className="min-h-screen bg-zinc-950">
+        <div className="min-h-screen bg-zinc-950">
         {showHeader && (
           <Header
             username={cookies.get("user")}
@@ -90,6 +80,5 @@ export default function AppLayout({ children, showHeader = true }: AppLayoutProp
           {children}
         </main>
       </div>
-    </WebSocketProvider>
   );
 }

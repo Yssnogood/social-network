@@ -42,6 +42,7 @@ export const useGroupData = (groupId: string, currentUser: CurrentUser | null, s
 
 	const fetchGroup = async () => {
 		try {
+			console.log(groupId)
 			const res = await fetch(`http://localhost:8080/api/groups/${groupId}`, {
 				credentials: "include",
 			});

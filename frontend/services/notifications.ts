@@ -39,7 +39,7 @@ export async function createNotification(notification: {
   });
 
   if (!res.ok) {
-    throw new Error("Erreur lors de la création de la notification.");
+    throw new Error(`Erreur lors de la création de la notification.${res.text}`);
   }
 
   return res.json();
@@ -74,6 +74,18 @@ export async function acceptFollowRequestNotif(notificationId: number, user_id: 
     }
   }
   return { success: true };
+}
+
+export async function DeleteNotifications(notification_id: number | null) {
+  console.log(notification_id)
+  if (!notification_id) return
+  const res = await fetch(`http://localhost:8080/api/notifications/${notification_id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return res.ok
 }
 
 // Decline a follow request (from the notification)
