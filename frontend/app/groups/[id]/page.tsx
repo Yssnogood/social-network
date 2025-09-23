@@ -14,8 +14,8 @@ import PostsList from "../../components/groupComponent/PostsList";
 import TabNavigation from "../../components/groupComponent/TabNavigation";
 import { useGroupData } from "../../hooks/useGroupData";
 import { useGroupWebSocket } from "../../hooks/useGroupWebSocket";
-import { createNotification } from "../../../services/notifications";
-import { Users, Lock } from "lucide-react";
+import { createNotification, DeleteNotifications } from "../../../services/notifications";
+import { Users, Lock, Clock } from "lucide-react";
 import {
 	Group,
 	GroupMember,
@@ -26,11 +26,13 @@ import {
 	EventWithResponses,
 	User
 } from "../../types/group";
+import { Button } from "@/components/ui/button";
 
 export default function GroupPage() {
 	const { id } = useParams();
 	const [currentUser, setCurrentUser] = useState<User | null>(null);
 	const [isMember, setIsMember] = useState<boolean | null>(null);
+	const [RequestPending, setRequestPending] = useState<number | null>(null);
 	const [isCheckingAccess, setIsCheckingAccess] = useState(true);
 
 	// États principaux
@@ -119,7 +121,11 @@ export default function GroupPage() {
 				}
 
 				const data = await res.json();
+				console.log(data)
 				setIsMember(data.is_member);
+				if (data.request_pending !== 0) {
+				setRequestPending(data.request_pending);
+				}
 			} catch (err: any) {
 				console.error("Error checking membership:", err.message);
 				// Fallback: vérifier via la liste des membres
@@ -205,7 +211,7 @@ export default function GroupPage() {
 				body: JSON.stringify({ user_id: userIdToInvite, current_user_id: currentUser?.id, current_user_name: currentUser?.username }),
 			});
 			if (!res.ok) throw new Error(await res.text());
-			alert(`Invitation envoyée à l'utilisateur #${userIdToInvite} !`);
+			//alert(`Invitation envoyée à l'utilisateur #${userIdToInvite} !`);
 			try {
 				createNotification({
 					userId: userIdToInvite,
@@ -220,6 +226,34 @@ export default function GroupPage() {
 		} catch (err: any) {
 			alert(`Erreur lors de l'invitation : ${err.message}`);
 		}
+	};
+
+	// Actions pour demander de rejoindre un groupe
+	const joinRequest = async () => {
+			try {
+				if (!currentUser) return;
+				let notif = await createNotification({
+					userId: currentUser.id,
+					type: "group_request",
+					content: `${currentUser?.username} demande à rejoindre le groupe`,
+					referenceId: Number(id),
+					referenceType: "group",
+				});
+				console.log(notif.id)
+				setRequestPending(notif.id)
+			} catch (err: any) {
+				alert(`Erreur lors de la création de la notification : ${err.message}`);
+			}
+	};
+
+	// Actions pour demander de rejoindre un groupe
+	const deleteRequest = async () => {
+			try {
+				if (!currentUser) return;
+				if (await DeleteNotifications(RequestPending)) setRequestPending(null)
+			} catch (err: any) {
+				alert(`Erreur lors de la création de la notification : ${err.message}`);
+			}
 	};
 
 	// Actions pour les posts
@@ -422,16 +456,33 @@ export default function GroupPage() {
 							<p className="text-zinc-400 mb-4">
 								Vous ne faites pas partie de ce groupe. Vous devez être membre accepté pour accéder au contenu du groupe.
 							</p>
-							<div className="flex flex-col space-y-2 text-sm text-zinc-500">
+							{/* <div className="flex flex-col space-y-2 text-sm text-zinc-500">
 								<span>• Demandez une invitation à un membre existant</span>
 								<span>• Contactez l'administrateur du groupe</span>
-							</div>
-							<button
-								onClick={() => window.history.back()}
-								className="mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+							</div> */}
+
+							{RequestPending 
+							? (
+								<Button
+								
+                              variant="outline"
+                              className="border-yellow-600 text-yellow-400 hover:bg-yellow-600/10"
+							  onClick={deleteRequest}
 							>
-								Retourner aux groupes
-							</button>
+								<Clock size={16} className="mr-2" />
+                    			Annuler la demande
+							</Button>
+							) 
+							
+							: (
+								<Button
+                    		onClick={joinRequest}
+                    		className="bg-blue-600 hover:bg-blue-700"
+                  			>
+                    	<Users size={16} className="mr-2" />
+                    	Envoyer une demande
+                  </Button>
+							)}
 						</div>
 					</div>
 				</div>

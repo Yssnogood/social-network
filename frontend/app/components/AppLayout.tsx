@@ -5,7 +5,8 @@ import { useCookies } from "next-client-cookies";
 import Header, { Notification } from "./Header";
 import { fetchNotifications } from "@/services/notifications";
 import { getUserIdFromToken } from "@/services/user";
-import { WebSocketProvider } from "../context/WebSocketContext";
+import { url } from "../login/page";
+import { useNotifications } from "../context/WebSocketContext";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -15,14 +16,17 @@ interface AppLayoutProps {
 export default function AppLayout({ children, showHeader = true }: AppLayoutProps) {
   const cookies = useCookies();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const token = cookies.get("jwt");
+  const {notifications,setNotifications} = useNotifications();
 
-  // Callback pour traiter les nouvelles notifications WebSocket
-  const handleNewNotification = useCallback((newNotification: Notification) => {
-    console.log("🔔 Adding new notification to state:", newNotification);
-    setNotifications(prev => [newNotification, ...prev]);
-  }, []);
+  const handleDeleteNotifications = async (notification_id: number) => {
+    let resp = await fetch(`${url}/notifications/${notification_id}`,
+      {
+        method: "DELETE"
+      }
+    )
+    if (!resp.ok) throw new Error(`Error Deleting Notifications:${resp.text}`);
+  }
 
   // Charger les notifications initiales
   useEffect(() => {
@@ -47,14 +51,22 @@ export default function AppLayout({ children, showHeader = true }: AppLayoutProp
 
   const handleToggleNotifications = () => {
     setShowNotifications(!showNotifications);
+    if (!showNotifications) return;
+    if (showNotifications === true) {
+    let newNotifs : Notification[] = [];
+      notifications.map((notification) => {
+        if (notification.type !== 'group_request' && notification.type !== 'group_invitation' && notification.type !== 'follow_request' ) {
+          handleDeleteNotifications(notification.id)
+        } else {
+          newNotifs.push(notification)
+        }
+      })
+      setNotifications(newNotifs)
+    }
   };
 
   return (
-    <WebSocketProvider
-      onNewNotification={handleNewNotification}
-      token={token}
-    >
-      <div className="min-h-screen bg-zinc-950">
+        <div className="min-h-screen bg-zinc-950">
         {showHeader && (
           <Header
             username={cookies.get("user")}
@@ -68,6 +80,5 @@ export default function AppLayout({ children, showHeader = true }: AppLayoutProp
           {children}
         </main>
       </div>
-    </WebSocketProvider>
   );
 }

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import { CookiesProvider } from "next-client-cookies/server";
-import { Navbar } from "./components/navbar";
+import { getCookies } from "next-client-cookies/server";
+import { WebSocketProvider } from "./context/WebSocketContext";
 import "./globals.css";
 
 const inter = Inter({
@@ -28,7 +29,11 @@ export default function RootLayout({
         <html lang="en">
             <body className={`${inter.variable} ${robotoMono.variable} antialiased`}>
                 {/* <header><Navbar /></header> */}
-                <CookiesProvider><main>{children}</main></CookiesProvider>
+                <CookiesProvider>
+                    <WebSocketProvider>
+                        <main>{children}</main>
+                    </WebSocketProvider>
+                </CookiesProvider>
             </body>
         </html>
     );

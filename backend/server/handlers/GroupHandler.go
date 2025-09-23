@@ -639,7 +639,9 @@ func (h *GroupHandler) CheckMembership(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]bool{"is_member": isMember}
+	requestPending := h.GroupRepository.IsRequestPending(groupID, userID)
+
+	response := map[string]any{"is_member": isMember, "request_pending": requestPending}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }

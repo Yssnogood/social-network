@@ -9,8 +9,9 @@ export default function Notifications({ notifications }: { notifications: any[] 
                 ) : (
                     notifications.map((notif, index) => (
                         <li key={index} className="p-3 hover:bg-gray-100 transition">
-                            <p>{notif.content}</p>
                             {notif.type === "follow_request" && (
+                                <>
+                                <p>{notif.content}</p>
                                 <div className="mt-2 flex gap-2">
                                     <button
                                         onClick={() => acceptFollowRequestNotif(notif.id, notif.user_id, notif.reference_id)}
@@ -25,8 +26,12 @@ export default function Notifications({ notifications }: { notifications: any[] 
                                         Refuser
                                     </button>
                                 </div>
+                                </>
+                                
                             )}
                             {notif.type === "group_invitation" && (
+                                <>
+                                <p>{notif.content}</p>
                                 <div className="mt-2">
                                     <button
                                         onClick={() => acceptGroupJoinRequest(notif.reference_id, notif.user_id, notif.reference_type)}
@@ -41,6 +46,28 @@ export default function Notifications({ notifications }: { notifications: any[] 
                                         Refuser l'invitation
                                     </button>
                                 </div>
+                                </>
+                                
+                            )}
+                            {notif.type === "group_request" && (
+                                <>
+                                <p>{notif.content.split(";")[0]}</p>
+                                <div className="mt-2">
+                                    <button
+                                        onClick={() => acceptGroupJoinRequest(notif.reference_id, notif.content.split(";")[1], notif.reference_type)}
+                                        className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    >
+                                        Accepter la demande
+                                    </button>
+                                    <button
+                                        onClick={() => declineGroupJoinRequest(notif.reference_id, notif.content.split(";")[1], notif.reference_type)}
+                                        className="ml-2 px-2 py-1 text-xs bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+                                    >
+                                        Refuser la demande
+                                    </button>
+                                </div>
+                                </>
+                                
                             )}
                         </li>
                     ))

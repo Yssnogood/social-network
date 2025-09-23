@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -57,18 +58,18 @@ type updateNotificationRequest struct {
 	ReferenceType string `json:"reference_type"`
 }
 
-type deleteNotificationRequest struct {
-	ID int64 `json:"id"`
-}
+// type deleteNotificationRequest struct {
+// 	ID int64 `json:"id"`
+// }
 
 type deleteAllNotificationsRequest struct {
 	UserID int64 `json:"user_id"`
 }
 
-type deleteNotificationByRefRequest struct {
-	ReferenceID int64  `json:"reference_id"`
-	Type        string `json:"type"`
-}
+// type deleteNotificationByRefRequest struct {
+// 	ReferenceID int64  `json:"reference_id"`
+// 	Type        string `json:"type"`
+// }
 
 // Handlers
 
@@ -79,7 +80,7 @@ func (h *NotificationHandler) CreateNotification(w http.ResponseWriter, r *http.
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
-	if req.Type == "post_created" || (strings.Contains(req.Type, "group") && !strings.Contains(req.Type, "comment") && !strings.Contains(req.Type, "invitation")) {
+	if req.Type == "post_created" || (strings.Contains(req.Type, "group") && !strings.Contains(req.Type, "comment") && !strings.Contains(req.Type, "invitation") && !strings.Contains(req.Type, "request")) {
 		fmt.Println("Creating notification to broadcast...")
 		h.BroadcastNotifToUsers(w, r, req)
 		return
@@ -95,8 +96,21 @@ func (h *NotificationHandler) CreateNotification(w http.ResponseWriter, r *http.
 		CreatedAt:     time.Now(),
 	}
 
+	receiver_id := req.UserID
+	if req.Type == "group_request" {
+		id, title, err := h.GroupRepository.GetGroupInfos(req.ReferenceID)
+		if err != nil {
+			http.Error(w, "Failed to create notification", http.StatusInternalServerError)
+			return
+		}
+		notification.Content += fmt.Sprintf(" \"%s\".;%d", title, receiver_id)
+		receiver_id = id
+		notification.UserID = id
+	}
+
 	id, err := h.NotificationRepository.Create(notification)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Failed to create notification", http.StatusInternalServerError)
 		return
 	}
@@ -105,7 +119,7 @@ func (h *NotificationHandler) CreateNotification(w http.ResponseWriter, r *http.
 
 	// Envoyer la notification en temps réel via WebSocket
 	if websocket.GlobalHub != nil {
-		websocket.GlobalHub.SendNotificationToUser(int64(req.UserID), notification)
+		websocket.GlobalHub.SendNotificationToUser(int64(receiver_id), notification)
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -176,13 +190,13 @@ func (h *NotificationHandler) UpdateNotification(w http.ResponseWriter, r *http.
 
 // DeleteNotification deletes a single notification by ID.
 func (h *NotificationHandler) DeleteNotification(w http.ResponseWriter, r *http.Request) {
-	var req deleteNotificationRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	notifID, err := strconv.ParseInt(strings.Split(r.URL.Path, "/")[3], 0, 64)
+	fmt.Println(notifID)
+	if err != nil {
+		http.Error(w, "Notification ID Not Given", http.StatusBadRequest)
 		return
 	}
-
-	if err := h.NotificationRepository.Delete(req.ID); err != nil {
+	if err = h.NotificationRepository.Delete(notifID); err != nil {
 		http.Error(w, "Failed to delete notification", http.StatusInternalServerError)
 		return
 	}

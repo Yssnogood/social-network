@@ -1,44 +1,105 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+"use client";
+import React, { createContext, useContext, ReactNode, useState,useCallback, useEffect, useRef } from 'react';
 import { useNotificationWebSocket } from '../hooks/useNotificationWebSocket';
 import { Notification } from '../components/Header';
+import { useCookies } from 'next-client-cookies';
 
 interface WebSocketContextType {
     sendMessage: (message: any) => void;
+
     isConnected: boolean;
+
+    notifications: Notification[];
+    setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
+
+    messages: any[];
+    setMessages: React.Dispatch<React.SetStateAction<any[]>>;
+
+    selectedContact: any;
+    setSelectedContact: React.Dispatch<React.SetStateAction<any>>;
+
+    updateNeeded: boolean;
+    setUpdateNeeded: React.Dispatch<React.SetStateAction<boolean>>;
+
+    ws: React.RefObject<WebSocket | null>;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 interface WebSocketProviderProps {
     children: ReactNode;
-    onNewNotification: (notification: Notification) => void;
-    onNewMessage?: (message: any) => void;
-    token?: string;
 }
 
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
-    children,
-    onNewNotification,
-    onNewMessage,
-    token
+    children
 }) => {
-    const { sendMessage, isConnected } = useNotificationWebSocket(
+    const cookies = useCookies();
+    const [messages,setMessages] = useState<any[]>([]);
+    const [updateNeeded,setUpdateNeeded] = useState<boolean>(true);
+    const [notifications,setNotifications] = useState<Notification[]>([]);
+    const [selectedContact, setSelectedContact] = useState<any | null>(null);
+    const token = cookies.get("jwt");
+    const selectedContactRef = useRef(selectedContact);
+
+    useEffect(() => {
+        selectedContactRef.current = selectedContact;
+    }, [selectedContact]);
+
+    const onNewNotification = useCallback((notification: Notification) => {
+  setNotifications(prev => [notification, ...prev]);
+}, []);
+
+    const onNewMessage = useCallback((message: any) => {
+  const contact = selectedContactRef.current;
+  if (contact && (message.sender_id === contact.id || message.receiver_id === contact.id)) {
+    setMessages(prev => [...prev, message]);
+  }
+}, []);
+
+    const { sendMessage, isConnected, ws } = useNotificationWebSocket(
         onNewNotification,
         onNewMessage,
         token
     );
 
     return (
-        <WebSocketContext.Provider value={{ sendMessage, isConnected }}>
+        <WebSocketContext.Provider value={{ sendMessage, isConnected,ws,notifications,setMessages,setNotifications,messages,selectedContact,setSelectedContact, updateNeeded, setUpdateNeeded}}>
             {children}
         </WebSocketContext.Provider>
     );
 };
+
+
 
 export const useWebSocket = () => {
     const context = useContext(WebSocketContext);
     if (!context) {
         throw new Error('useWebSocket must be used within a WebSocketProvider');
     }
-    return context;
+    return context.ws;
 };
+
+export const useMessages = () => {
+    const context = useContext(WebSocketContext);
+    if (!context) {
+        throw new Error('useWebSocket must be used within a WebSocketProvider');
+    }
+    return ({messages: context.messages,setMessages:context.setMessages,ws:context.ws, updateNeeded: context.updateNeeded, setUpdateNeeded: context.setUpdateNeeded});
+}
+
+export const useNotifications = () => {
+    const context = useContext(WebSocketContext);
+    if (!context) {
+        throw new Error('useWebSocket must be used within a WebSocketProvider');
+    }
+    return ({notifications: context.notifications,setNotifications:context.setNotifications});
+}
+
+export const useContact = () => {
+    const context = useContext(WebSocketContext);
+    if (!context) {
+        throw new Error('useWebSocket must be used within a WebSocketProvider');
+    }
+    return ({selectedContact: context.selectedContact,setSelectedContact:context.setSelectedContact});
+}
+

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { fetchUsersByUsername, fetchMessages } from "../../services/contact";
 import Link from 'next/link';
+import { test } from 'linkifyjs';
 import { useCookies } from "next-client-cookies";
 import { getUserIdFromToken } from "../../services/user";
 import { fetchNotifications, createNotification } from "../../services/notifications";
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search, Plus, Send, Paperclip, X, MessageCircle } from 'lucide-react'
+import { useMessages, useContact } from '../context/WebSocketContext';
 
 export default function ContactPage() {
     const cookies = useCookies();
@@ -21,71 +23,113 @@ export default function ContactPage() {
 
     const file_ext = [".jpg",".gif",".png"]
 
-    const [messages, setMessages] = useState<any[]>([]);
     const [contacts, setContacts] = useState<any[]>([]);
     const [input, setInput] = useState("");
-    const [selectedContact, setSelectedContact] = useState<any | null>(null);
+    const {selectedContact, setSelectedContact} = useContact();
+    const [first,setFirst] = useState<boolean>(false)
 
     const [searchTerm, setSearchTerm] = useState('');
     const [isNewConversationModalOpen, setIsNewConversationModalOpen] = useState(false);
     const [newConversationSearchTerm, setNewConversationSearchTerm] = useState('');
     const [users, setUsers] = useState<any[]>([]);
-
-    const ws = useRef<WebSocket | null>(null);
+    const {messages,setMessages,ws,updateNeeded,setUpdateNeeded} = useMessages();
     const container = useRef<HTMLDivElement>(null);
     
-    const Scroll = (first: boolean) => {
+    const Scroll = () => {
         if (!container.current) return;
         const { offsetHeight, scrollHeight, scrollTop } = container.current as HTMLDivElement;
-        if (scrollHeight <= scrollTop + offsetHeight + 100 || first) {
+        if (scrollHeight <= scrollTop + offsetHeight + 150 || first) {
             container.current?.scrollTo(0, scrollHeight);
         }
     };
 
     useEffect(() => {
-        Scroll(false)
+        Scroll()
+        setFirst(false)
     }, [messages])
 
     useEffect(() => {
         // Fetch existed conversations
-        fetchUserConversation().then((data) => setContacts(data));
-        // Init WebSockets at start
-        initWS();
-    }, []);
+        fetchUserConversation().then((data) => setContacts(data.sort((a:{contact:any,messages:any[],conversation:any}, b:{contact:any,messages:any[],conversation:any}) => {
+        if (Date.parse(a.messages[a.messages.length - 1].created_at) === Date.parse(b.messages[b.messages.length - 1].created_at)) {
+            return 0
+        }
+        if (Date.parse(a.messages[a.messages.length - 1].created_at) > Date.parse(b.messages[b.messages.length - 1].created_at)) {
+            return -1
+        }
+        return 1
+    })));
+        //setUpdateNeeded(false)
+    }, [updateNeeded]);
 
-      const initWS = () => {
-        ws.current = new WebSocket("ws://localhost:8080/ws");
+    //   const initWS = () => {
+    //     ws.current = new WebSocket("ws://localhost:8080/ws");
 
-        ws.current.onopen = () => {
-            console.log("✅ WebSocket connection opened");
-        };
+    //     ws.current.onopen = () => {
+    //         console.log("✅ WebSocket connection opened");
+    //     };
 
-        ws.current.onmessage = (event) => {
-            try {
-                const msg = JSON.parse(event.data);
-                setMessages((prev) => [...prev, msg]);
-                filteredContacts.filter(({ contact, conversation, messages }) => {
-                    if (contact.id == msg.sender_id || contact.id === msg.receiver_id) messages.push(msg);
-                });
-            } catch (err) {
-                console.error("❌ Failed to parse WebSocket message:", err);
-            }
-        };
+    //     ws.current.onmessage = (event) => {
+            
+    //         try {
+    //             const msg = JSON.parse(event.data);
+    //             if (msg.type === "notification") return
+    //             setMessages((prev) => [...prev, msg]);
+    //             // if (msg.type === "message_received") {
 
-        ws.current.onerror = (event) => {
-            console.error("❌ WebSocket error:", event);
-        };
+    //             // updateContacts(msg)
+    //             // }
+    //         } catch (err) {
+    //             console.error("❌ Failed to parse WebSocket message:", err);
+    //         }
+    //     };
 
-        ws.current.onclose = (event) => {
-            console.log("🔌 WebSocket closed:", event);
-        };
-    };
+    //     ws.current.onerror = (event) => {
+    //         console.error("❌ WebSocket error:", event);
+    //     };
+
+    //     ws.current.onclose = (event) => {
+    //         console.log("🔌 WebSocket closed:", event);
+    //     };
+    // };
+
+    // const updateContacts = (message: any) => {
+    //     setContacts((data) => {
+    //         const dataToSort = [...data]
+    //         dataToSort.sort((a:{contact:any,messages:any[],conversation:any}, b:{contact:any,messages:any[],conversation:any}) => {
+    //     if (a.contact.id == message.sender_id || a.contact.id === message.receiver_id) {
+    //         return -1
+    //     }
+    //     return 1
+    //     })
+    //     return dataToSort
+    //     })
+    // }
+    
+    const formatMessage = (message: string, id: string) => {
+        let msg = "";
+        let link = "";
+        message.split(" ").forEach((word) => {
+            if (!test(word,"url")) msg += word + " ";
+            else link = word;
+        })
+        return (
+            <>
+            {msg.length !== 0 && <><p className="text-sm leading-relaxed">{msg}</p></>} 
+            {msg.length !== 0 && link.length !== 0 && <br />}
+            {link.length !== 0 && (link.includes("giphy.com") || link.includes(".tenor.com") ) && file_ext.includes(link.slice(-4)) 
+                ? <Image src={link} alt={link.split("/")[link.split("/").length - 1]} width={200} height={200} className="rounded-lg" />
+                : <a href={link} className="text-sm leading-relaxed">{link}</a>
+            } 
+            </>
+        )
+    }
 
     const sendMessage = async () => {
         if (!input.trim()) return;
 
-        if (ws.current?.readyState !== WebSocket.OPEN) {
-            initWS();
+        while (ws.current?.readyState !== WebSocket.OPEN) {
+            //initWS();
         }
 
         const message = {
@@ -195,8 +239,8 @@ export default function ContactPage() {
                                         onClick={async () => {
                                             setSelectedContact(contact);
                                             let mess = await fetchMessages(conversation.id);
+                                            setFirst(true);
                                             setMessages(mess);
-                                            Scroll(true);
                                         }}
                                         className={`flex items-center p-4 border-b border-zinc-800 hover:bg-zinc-800 cursor-pointer transition-colors ${
                                             selectedContact?.id === contact.id ? 'bg-zinc-800' : ''
@@ -282,10 +326,7 @@ export default function ContactPage() {
                                                         : "bg-zinc-800 text-zinc-100 border border-zinc-700 rounded-bl-md"
                                                 }`}
                                             >
-                                                {msg.content && msg.content.includes("giphy.com") && file_ext.includes(msg.content.slice(-4)) 
-                                                    ? <Image src={msg.content} alt={msg.id} width={200} height={200} className="rounded-lg" />
-                                                    : <p className="text-sm leading-relaxed">{msg.content}</p>
-                                                }
+                                                {msg.content && formatMessage(msg.content,msg.id)}
                                             </div>
                                         </div>
                                     ))
@@ -391,9 +432,10 @@ export default function ContactPage() {
                                     <div className="max-h-60 overflow-y-auto space-y-2">
                                         {users.length > 0 ? (
                                             users.map(user => {
-                                                const handleStartConversation = () => {
-                                                    const exists = contacts.some(contact => contact.id === user.id);
+                                                const handleStartConversation = async () => {
+                                                    const exists = contacts.some(({ contact, messages, conversation }) => contact.id === user.id);
                                                     if (!exists) {
+                                                        console.log(user)
                                                         const newContact = {
                                                             id: user.id,
                                                             username: user.name,
@@ -403,9 +445,13 @@ export default function ContactPage() {
                                                         };
                                                         setContacts(prev => [newContact, ...prev]);
                                                         setSelectedContact(newContact);
+                                                        setMessages([]);
+                                                        
                                                     } else {
-                                                        const existingContact = contacts.find(c => c.id === user.id);
-                                                        if (existingContact) setSelectedContact(existingContact);
+                                                        const existingContact = contacts.find(({ contact, messages, conversation }) => contact.id === user.id);
+                                                        if (existingContact) setSelectedContact(existingContact.contact);
+                                                        let mess = await fetchMessages(existingContact.conversation.id);
+                                                        setMessages(mess);
                                                     }
                                                     closeNewConversationModal();
                                                 };

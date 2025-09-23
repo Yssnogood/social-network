@@ -38,14 +38,14 @@ type Hub struct {
 
 // WSMessage represents a WebSocket message
 type WSMessage struct {
-	Type           string    `json:"type"`
-	ConversationID int64     `json:"conversation_id,omitempty"`
-	Content        string    `json:"content,omitempty"`
-	SenderID       int64     `json:"sender_id,omitempty"`
-	ReceiverID     int64     `json:"receiver_id,omitempty"`
-	MessageID      int64     `json:"message_id,omitempty"`
-	Timestamp      time.Time `json:"timestamp,omitempty"`
-	Error          string    `json:"error,omitempty"`
+	Type           string      `json:"type"`
+	ConversationID int64       `json:"conversation_id,omitempty"`
+	Content        string      `json:"content,omitempty"`
+	SenderID       int64       `json:"sender_id,omitempty"`
+	ReceiverID     int64       `json:"receiver_id,omitempty"`
+	MessageID      int64       `json:"message_id,omitempty"`
+	Timestamp      time.Time   `json:"timestamp,omitempty"`
+	Error          string      `json:"error,omitempty"`
 	Data           interface{} `json:"data,omitempty"`
 }
 

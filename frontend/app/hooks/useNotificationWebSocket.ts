@@ -74,5 +74,5 @@ export const useNotificationWebSocket = (
         }
     };
 
-    return { sendMessage, isConnected: ws.current?.readyState === WebSocket.OPEN };
+    return { sendMessage, isConnected: ws.current?.readyState === WebSocket.OPEN,ws };
 };
