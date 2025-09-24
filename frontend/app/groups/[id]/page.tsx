@@ -232,7 +232,7 @@ export default function GroupPage() {
 	const joinRequest = async () => {
 			try {
 				if (!currentUser) return;
-				let notif = await createNotification({
+				const notif = await createNotification({
 					userId: currentUser.id,
 					type: "group_request",
 					content: `${currentUser?.username} demande à rejoindre le groupe`,

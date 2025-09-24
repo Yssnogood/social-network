@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { url } from "../../login/page";
+import { url } from "@/lib/config";
 import { CldUploadButton } from 'next-cloudinary';
 
 interface EditableProfileProps {

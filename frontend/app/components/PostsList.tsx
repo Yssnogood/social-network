@@ -7,10 +7,9 @@ interface PostsListProps {
     posts: Post[];
     isLoading: boolean;
     jwt: string | undefined;
-    onlineUser: any;
 }
 
-export default function PostsList({ posts, isLoading, jwt, onlineUser }: PostsListProps) {
+export default function PostsList({ posts, isLoading, jwt }: PostsListProps) {
     if (isLoading) {
         return (
             <div className="flex justify-center items-center py-12">
@@ -30,7 +29,7 @@ export default function PostsList({ posts, isLoading, jwt, onlineUser }: PostsLi
     return (
         <div className="max-w-xl mx-auto space-y-4">
             {posts.map((post) => (
-                <PostItem key={post.id} post={post} jwt={jwt} onlineUser={onlineUser} />
+                <PostItem key={post.id} post={post} jwt={jwt} />
             ))}
         </div>
     );

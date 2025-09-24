@@ -1,4 +1,4 @@
-import { url } from "@/app/login/page";
+import { url } from "@/lib/config";
 
 export async function fetchUsersByUsername(query: string, current: string): Promise<any[]> {
   if (current === 'error') {

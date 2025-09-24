@@ -1,14 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useCookies } from "next-client-cookies";
 import { Button } from "@/components/ui/button";
 import SearchBar from "./SearchBar";
-import { Input } from "@/components/ui/input";
-import { Bell, MessageCircle, Search, User, Users, Home } from "lucide-react";
-import { useState } from "react";
+import { Bell, MessageCircle, User, Users, Home } from "lucide-react";
 import { acceptFollowRequestNotif, declineFollowRequestNotif, acceptGroupJoinRequest, declineGroupJoinRequest } from "../../services/notifications";
 import { getUserIdFromToken } from "../../services/user";
 
@@ -39,7 +36,6 @@ export default function Header({
 	const cookies = useCookies();
 	const router = useRouter();
 	const pathname = usePathname();
-	const [searchQuery, setSearchQuery] = useState("");
 
 	const handleLogout = async () => {
 		const jwt = cookies.get("jwt");
@@ -61,13 +57,6 @@ export default function Header({
 		cookies.remove("jwt");
 		cookies.remove("user");
 		router.push("/");
-	};
-
-	const handleSearch = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (searchQuery.trim()) {
-			router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-		}
 	};
 
 	const isActive = (path: string) => pathname === path;

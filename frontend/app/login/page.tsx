@@ -7,8 +7,7 @@ import { useCookies } from "next-client-cookies";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-export const url = "http://localhost:8080/api";
+import { url } from "@/lib/config";
 
 export default function Login() {
     const cookies = useCookies();
@@ -50,7 +49,7 @@ export default function Login() {
             } else {
                 setError('Invalid credentials. Please try again.');
             }
-        } catch (error) {
+        } catch {
             setError('Connection error. Please try again.');
         } finally {
             setIsLoading(false);

@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Post, LikePost } from "../../services/post";
-import { formatRelativeTime } from "../../services/utils";
 import { Heart, MessageCircle } from "lucide-react";
 
 interface PostDetailProps {

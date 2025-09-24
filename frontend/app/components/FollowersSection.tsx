@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import ChatModal from "../components/ChatModal";
 import { FollowerUser } from "@/services/follow";
 import Link from "next/link";
 

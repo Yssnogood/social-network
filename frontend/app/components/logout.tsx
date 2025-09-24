@@ -1,6 +1,6 @@
 "use client";
 import { redirect } from "next/navigation";
-import { url } from "../login/page";
+import { url } from "@/lib/config";
 import { useCookies } from "next-client-cookies";
 
 export default function Logout() {

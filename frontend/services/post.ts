@@ -1,6 +1,5 @@
 import { getCookies } from "next-client-cookies/server";
-
-const url = "http://localhost:8080/api"
+import { url } from "@/lib/config";
 export interface Post {
   id: number;
   userId: string;

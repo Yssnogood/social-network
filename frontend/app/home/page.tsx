@@ -1,12 +1,8 @@
 'use client';
-import Notifications from "../components/NotificationPanel";
-import { createNotification, fetchNotifications } from "../../services/notifications";
-import Link from "next/link";
-import Image from "next/image";
+import { createNotification } from "../../services/notifications";
 import { useState, useEffect } from "react";
 import { getPosts, createPost, Post } from "../../services/post";
 import { useCookies } from "next-client-cookies";
-import { getUserIdFromToken } from "../../services/user";
 
 // Nouveaux composants extraits
 import AppLayout from "../components/AppLayout";
@@ -64,10 +60,6 @@ export default function Home() {
         } catch (error) {
             console.error("Failed to create post:", error);
         }
-    };
-
-    const handleOpenGroupModal = () => {
-        setIsCreateGroupModalOpen(true);
     };
 
     const handleCloseGroupModal = () => {
@@ -135,7 +127,6 @@ export default function Home() {
                         posts={posts}
                         isLoading={isLoading}
                         jwt={cookies.get("jwt")}
-                        onlineUser={cookies.get("user")}
                     />
                 </div>
             </div>

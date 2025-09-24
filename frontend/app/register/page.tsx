@@ -7,7 +7,7 @@ import { useCookies } from "next-client-cookies";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { url } from "../login/page";
+import { url } from "@/lib/config";
 
 export default function Register() {
     const cookies = useCookies();

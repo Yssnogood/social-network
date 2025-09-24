@@ -1,4 +1,4 @@
-import { useState, use, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { CldUploadButton } from "next-cloudinary";
 import { MultiSelect } from "./MultiSelect";
 import { fetchFriends } from "@/services/contact";
@@ -15,8 +15,8 @@ export default function CreatePostModal({ isOpen, onClose, onSubmit }: CreatePos
     const [postPrivacy, setPostPrivacy] = useState(0);
     const [postContent, setPostContent] = useState('');
     const [imageURL, setPostImage] = useState<string>('');
-    const [friends,setFriends] = useState<any[]>([]);
-    const [selectedFriends,setSelectedFriends] = useState<any[]>([]);
+    const [friends,setFriends] = useState<{ id: number; username: string; avatar?: string }[]>([]);
+    const [selectedFriends,setSelectedFriends] = useState<{ id: number; username: string; avatar?: string }[]>([]);
     
     useEffect(() => {
         if (!isOpen) return;

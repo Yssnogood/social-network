@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useCookies } from "next-client-cookies";
 import Header, { Notification } from "./Header";
 import { fetchNotifications } from "@/services/notifications";
 import { getUserIdFromToken } from "@/services/user";
-import { url } from "../login/page";
+import { url } from "@/lib/config";
 import { useNotifications } from "../context/WebSocketContext";
 
 interface AppLayoutProps {
@@ -20,7 +20,7 @@ export default function AppLayout({ children, showHeader = true }: AppLayoutProp
   const {notifications,setNotifications} = useNotifications();
 
   const handleDeleteNotifications = async (notification_id: number) => {
-    let resp = await fetch(`${url}/notifications/${notification_id}`,
+    const resp = await fetch(`${url}/notifications/${notification_id}`,
       {
         method: "DELETE"
       }
@@ -47,13 +47,13 @@ export default function AppLayout({ children, showHeader = true }: AppLayoutProp
     if (showHeader) {
       getNotifications();
     }
-  }, [cookies, showHeader, token]);
+  }, [cookies, showHeader, token, setNotifications]);
 
   const handleToggleNotifications = () => {
     setShowNotifications(!showNotifications);
     if (!showNotifications) return;
     if (showNotifications === true) {
-    let newNotifs : Notification[] = [];
+    const newNotifs : Notification[] = [];
       notifications.map((notification) => {
         if (notification.type !== 'group_request' && notification.type !== 'group_invitation' && notification.type !== 'follow_request' ) {
           handleDeleteNotifications(notification.id)

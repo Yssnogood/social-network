@@ -10,10 +10,9 @@ import { Heart, MessageCircle, User } from "lucide-react";
 interface PostItemProps {
   post: Post;
   jwt: string | undefined;
-  onlineUser: boolean;
 }
 
-export default function PostItem({ post, jwt, onlineUser }: PostItemProps) {
+export default function PostItem({ post, jwt }: PostItemProps) {
   const [showProfileCard, setShowProfileCard] = useState(false);
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
   const [isMobile, setIsMobile] = useState(false);

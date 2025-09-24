@@ -3,11 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { fetchUsersByUsername, fetchMessages } from "../../services/contact";
-import Link from 'next/link';
 import { test } from 'linkifyjs';
 import { useCookies } from "next-client-cookies";
 import { getUserIdFromToken } from "../../services/user";
-import { fetchNotifications, createNotification } from "../../services/notifications";
+import { createNotification } from "../../services/notifications";
 import AppLayout from "../components/AppLayout";
 import { fetchUserConversation } from '../../services/contact';
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,6 @@ import { useMessages, useContact } from '../context/WebSocketContext';
 
 export default function ContactPage() {
     const cookies = useCookies();
-    const jwt = cookies.get("jwt") || ""
     const userID = cookies.get("userID")
 
     const file_ext = [".jpg",".gif",".png"]
@@ -32,7 +30,7 @@ export default function ContactPage() {
     const [isNewConversationModalOpen, setIsNewConversationModalOpen] = useState(false);
     const [newConversationSearchTerm, setNewConversationSearchTerm] = useState('');
     const [users, setUsers] = useState<any[]>([]);
-    const {messages,setMessages,ws,updateNeeded,setUpdateNeeded} = useMessages();
+    const {messages,setMessages,ws,updateNeeded} = useMessages();
     const container = useRef<HTMLDivElement>(null);
     
     const Scroll = () => {
@@ -106,7 +104,7 @@ export default function ContactPage() {
     //     })
     // }
     
-    const formatMessage = (message: string, id: string) => {
+    const formatMessage = (message: string) => {
         let msg = "";
         let link = "";
         message.split(" ").forEach((word) => {
@@ -190,7 +188,7 @@ export default function ContactPage() {
         return () => clearTimeout(delayDebounce);
     }, [newConversationSearchTerm]);
 
-    const filteredContacts = contacts.filter(({ contact, messages, conversation }) => {
+    const filteredContacts = contacts.filter(({ contact }) => {
         return contact?.username.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
@@ -233,12 +231,12 @@ export default function ContactPage() {
 
                         <div className="flex-1 overflow-y-auto">
                             {filteredContacts.length > 0 ? (
-                                filteredContacts.map(({ conversation, contact, messages }) => (
+                                filteredContacts.map(({ conversation, contact }) => (
                                     <div
                                         key={contact.id}
                                         onClick={async () => {
                                             setSelectedContact(contact);
-                                            let mess = await fetchMessages(conversation.id);
+                                            const mess = await fetchMessages(conversation.id);
                                             setFirst(true);
                                             setMessages(mess);
                                         }}
@@ -326,7 +324,7 @@ export default function ContactPage() {
                                                         : "bg-zinc-800 text-zinc-100 border border-zinc-700 rounded-bl-md"
                                                 }`}
                                             >
-                                                {msg.content && formatMessage(msg.content,msg.id)}
+                                                {msg.content && formatMessage(msg.content)}
                                             </div>
                                         </div>
                                     ))
@@ -433,7 +431,7 @@ export default function ContactPage() {
                                         {users.length > 0 ? (
                                             users.map(user => {
                                                 const handleStartConversation = async () => {
-                                                    const exists = contacts.some(({ contact, messages, conversation }) => contact.id === user.id);
+                                                    const exists = contacts.some(({ contact }) => contact.id === user.id);
                                                     if (!exists) {
                                                         console.log(user)
                                                         const newContact = {
@@ -448,9 +446,10 @@ export default function ContactPage() {
                                                         setMessages([]);
                                                         
                                                     } else {
-                                                        const existingContact = contacts.find(({ contact, messages, conversation }) => contact.id === user.id);
+                                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                                        const existingContact = contacts.find(({ contact, conversation }) => contact.id === user.id);
                                                         if (existingContact) setSelectedContact(existingContact.contact);
-                                                        let mess = await fetchMessages(existingContact.conversation.id);
+                                                        const mess = await fetchMessages(existingContact.conversation.id);
                                                         setMessages(mess);
                                                     }
                                                     closeNewConversationModal();

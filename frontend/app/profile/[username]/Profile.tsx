@@ -1,14 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { UserProfile } from "../../../services/user";
 import ProfileTabs from "./ProfileTabs";
-import FollowersSection from "../../components/FollowersSection";
 import EditableProfile from "./EditableProfile";
 import { followUser, unfollowUser, FollowerUser } from "../../../services/follow";
-import { createNotification } from "../../../services/notifications";
 import AppLayout from "../../components/AppLayout";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,12 +13,10 @@ import { User, Settings, UserPlus, UserMinus, Clock } from "lucide-react";
 
 export default function ClientProfile({
   profile,
-  loggedInUser,
   followers,
   currentUserId,
 }: {
   profile: UserProfile;
-  loggedInUser: string;
   followers: FollowerUser[];
   currentUserId: number;
 }) {
@@ -31,8 +26,10 @@ export default function ClientProfile({
   const [aboutMe, setAboutMe] = useState(profile.about_me);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowPending, setIsFollowPending] = useState(false);
-  const [isPublic, setIsPublic] = useState(profile.is_public);
-  const [followerList, setFollowerList] = useState<FollowerUser[]>(followers);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [isPublic, setIsPublic] = useState(profile.is_public); // Used by EditableProfile
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [followerList, setFollowerList] = useState<FollowerUser[]>(followers); // Used by fetchFollowers
   const [loading, setLoading] = useState(false);
   const [followStatusLoaded, setFollowStatusLoaded] = useState(isOwnProfile || profile.is_public);
 

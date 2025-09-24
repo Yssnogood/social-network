@@ -19,7 +19,6 @@ export default async function Profile(props: { params: Promise<{ username: strin
   return (
     <ClientProfile
       profile={profile}
-      loggedInUser={userLogin.username}
       currentUserId={userLogin.id}
 	  followers={followers}
     />

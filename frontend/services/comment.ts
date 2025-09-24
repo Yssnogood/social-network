@@ -1,4 +1,4 @@
-const url = "http://localhost:8080/api";
+import { url } from "@/lib/config";
 
 export interface Comment {
     id: number;

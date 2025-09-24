@@ -2,7 +2,7 @@
 
 import Head from "next/head";
 import { useState, useEffect } from "react";
-import { url } from "../login/page";
+import { url } from "@/lib/config";
 import { useCookies } from "next-client-cookies";
 
 interface Friend {
@@ -71,7 +71,7 @@ export default function PostForm() {
   function parseJwt(token: string) {
     try {
       return JSON.parse(atob(token.split(".")[1]));
-    } catch (e) {
+    } catch {
       return {};
     }
   }

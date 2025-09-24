@@ -4,7 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useCookies } from "next-client-cookies";
 import { getSpecificPost, Post } from "../../../../services/post";
 import { getComments, createComment, Comment } from "../../../../services/comment";
-import { createNotification, fetchNotifications } from "@/services/notifications";
+import { createNotification } from "@/services/notifications";
 import { getUserIdFromToken } from "../../../../services/user";
 
 // Component imports
