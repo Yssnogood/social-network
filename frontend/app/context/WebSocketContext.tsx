@@ -54,6 +54,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   if (contact && (message.sender_id === contact.id || message.receiver_id === contact.id)) {
     setMessages(prev => [...prev, message]);
   }
+  setUpdateNeeded(prev => !prev)
 }, []);
 
     const { sendMessage, isConnected, ws } = useNotificationWebSocket(
