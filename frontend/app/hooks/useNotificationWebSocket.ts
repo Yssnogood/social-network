@@ -13,11 +13,14 @@ export const useNotificationWebSocket = (
     token?: string
 ) => {
     const ws = useRef<WebSocket | null>(null);
+    const shouldReconnect = useRef(true);
 
     useEffect(() => {
         if (!token) return;
+        shouldReconnect.current = true;
 
         const connectWebSocket = () => {
+            if (!shouldReconnect.current) return;
             ws.current = new WebSocket(`ws://localhost:8080/ws`);
 
             ws.current.onopen = () => {
@@ -53,14 +56,17 @@ export const useNotificationWebSocket = (
 
             ws.current.onclose = () => {
                 console.log("🔌 Global WebSocket disconnected");
-                // Reconnection automatique après 3 secondes
-                setTimeout(connectWebSocket, 3000);
+                // Reconnection automatique après 3 secondes seulement si pas fermé manuellement
+                if (shouldReconnect.current) {
+                    setTimeout(connectWebSocket, 3000);
+                }
             };
         };
 
         connectWebSocket();
 
         return () => {
+            shouldReconnect.current = false;
             if (ws.current) {
                 ws.current.close();
             }
@@ -74,5 +80,14 @@ export const useNotificationWebSocket = (
         }
     };
 
-    return { sendMessage, isConnected: ws.current?.readyState === WebSocket.OPEN,ws };
+    const disconnect = () => {
+        shouldReconnect.current = false;
+        if (ws.current) {
+            console.log("🔌 Closing WebSocket connection");
+            ws.current.close();
+            ws.current = null;
+        }
+    };
+
+    return { sendMessage, isConnected: ws.current?.readyState === WebSocket.OPEN, ws, disconnect };
 };

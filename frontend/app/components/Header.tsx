@@ -8,6 +8,7 @@ import SearchBar from "./SearchBar";
 import { Bell, MessageCircle, User, Users, Home } from "lucide-react";
 import { acceptFollowRequestNotif, declineFollowRequestNotif, acceptGroupJoinRequest, declineGroupJoinRequest } from "../../services/notifications";
 import { getUserIdFromToken } from "../../services/user";
+import { useWebSocketClear } from "../context/WebSocketContext";
 
 export interface Notification {
 	id: number;
@@ -36,6 +37,7 @@ export default function Header({
 	const cookies = useCookies();
 	const router = useRouter();
 	const pathname = usePathname();
+	const clearUserData = useWebSocketClear();
 
 	const handleLogout = async () => {
 		const jwt = cookies.get("jwt");
@@ -53,9 +55,11 @@ export default function Header({
 		} catch (err) {
 			console.error("Erreur lors de la déconnexion :", err);
 		}
+		clearUserData();
 
 		cookies.remove("jwt");
 		cookies.remove("user");
+		cookies.remove("userID");
 		router.push("/");
 	};
 

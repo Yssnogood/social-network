@@ -22,6 +22,7 @@ interface WebSocketContextType {
     setUpdateNeeded: React.Dispatch<React.SetStateAction<boolean>>;
 
     ws: React.RefObject<WebSocket | null>;
+    clearUserData: () => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -57,14 +58,22 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   setUpdateNeeded(prev => !prev)
 }, []);
 
-    const { sendMessage, isConnected, ws } = useNotificationWebSocket(
+    const { sendMessage, isConnected, ws, disconnect } = useNotificationWebSocket(
         onNewNotification,
         onNewMessage,
         token
     );
+    const clearUserData = useCallback(() => {
+        setNotifications([]);
+        setMessages([]);
+        setSelectedContact(null);
+        setUpdateNeeded(true);
+        disconnect();
+    }, [disconnect]);
 
     return (
-        <WebSocketContext.Provider value={{ sendMessage, isConnected,ws,notifications,setMessages,setNotifications,messages,selectedContact,setSelectedContact, updateNeeded, setUpdateNeeded}}>
+        <WebSocketContext.Provider value={{ sendMessage, isConnected,ws,notifications,setMessages,setNotifications,messages,selectedContact,setSelectedContact, updateNeeded, setUpdateNeeded,clearUserData
+        }}>
             {children}
         </WebSocketContext.Provider>
     );
@@ -102,5 +111,13 @@ export const useContact = () => {
         throw new Error('useWebSocket must be used within a WebSocketProvider');
     }
     return ({selectedContact: context.selectedContact,setSelectedContact:context.setSelectedContact});
+}
+
+export const useWebSocketClear = () => {
+    const context = useContext(WebSocketContext);
+    if (!context) {
+        throw new Error('useWebSocketClear must be used within a WebSocketProvider');
+    }
+    return context.clearUserData;
 }
 
