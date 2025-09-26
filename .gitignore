@@ -43,8 +43,6 @@ coverage/
 
 # Exclure les fichiers générés par Docker
 .dockerignore
-Dockerfile
-docker-compose.yml
 
 # Exclure les fichiers spécifiques à macOS
 .DS_Store
