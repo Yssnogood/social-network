@@ -313,6 +313,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	username := path.Base((r.URL.Path))
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		fmt.Println(r.Body, err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}

@@ -22,9 +22,10 @@ export interface UserProfile {
 }
 
 
-const BASE_URL = process.env.BACKEND_URL || "http://localhost:8080";
+const BASE_URL = process.env.API_URL;
 
 export async function getUserProfile(userName?: string, useMockData: boolean = false): Promise<UserProfile> {
+    console.log(`${BASE_URL}/user/${userName}`)
     const cookies = await getCookies()
     // If useMockData is true, return mock data
     if (useMockData) {
@@ -65,7 +66,8 @@ export async function getUserProfile(userName?: string, useMockData: boolean = f
 
     // Will be changed for the real API endpoint
     try {
-        const response = await fetch(`${BASE_URL}/user/${userName || 'current'}`,{
+
+        const response = await fetch(`${BASE_URL}/user/${userName}`,{
             method: "POST",
             body: JSON.stringify({
                 jwt: cookies.get("jwt")
