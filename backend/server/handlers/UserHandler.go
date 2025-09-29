@@ -41,6 +41,7 @@ type createUserRequest struct {
 	Username  string `json:"username"`
 	AboutMe   string `json:"about_me"`
 	IsPublic  bool   `json:"is_public"`
+	AvatarPath string `json:"avatar_path"`
 }
 
 // getUserRequest defines the request body for getting a user.
@@ -189,8 +190,12 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	avatar := req.AvatarPath
+	if avatar == "" {
+		avatar = "https://res.cloudinary.com/dc2729t5d/image/upload/v1750498050/olqkqou632nntamawsuk.webp"
+	}
 	user := &models.User{
-		AvatarPath:   "https://res.cloudinary.com/dc2729t5d/image/upload/v1750498050/olqkqou632nntamawsuk.webp",
+		AvatarPath:   avatar,
 		Email:        req.Email,
 		PasswordHash: hashedPassword,
 		FirstName:    req.FirstName,

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CldUploadButton } from "next-cloudinary";
 import React, { useState } from "react";
 import { redirect } from "next/navigation";
 import { useCookies } from "next-client-cookies";
@@ -23,6 +24,8 @@ export default function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [aboutMe, setAboutMe] = useState('');
+    const [profileImageURL, setProfileImageURL] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -46,7 +49,9 @@ export default function Register() {
                     username: userName,
                     birth_date: birthDate,
                     email: email.toLowerCase(),
-                    password: password
+                    password: password,
+                    about_me: aboutMe,
+                    avatar_path: profileImageURL
                 })
             })
 
@@ -233,6 +238,41 @@ export default function Register() {
                                 placeholder="Confirm your password"
                                 className="bg-zinc-800 border-zinc-700"
                             />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label htmlFor="aboutMe" className="block text-sm font-medium text-zinc-300">
+                                About Me
+                            </label>
+                            <textarea
+                                id="aboutMe"
+                                name="aboutMe"
+                                rows={3}
+                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                value={aboutMe}
+                                onChange={(e) => setAboutMe(e.target.value)}
+                                placeholder="Tell us about yourself..."
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-zinc-300">Profile Picture</label>
+                            <CldUploadButton
+                                options={{ sources: ["local", "url"] }}
+                                uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_PRESET_NAME}
+                                onSuccess={(result: any) => {
+                                    if (result.info && typeof result.info !== "string") {
+                                        setProfileImageURL(result.info.secure_url);
+                                    }
+                                }}
+                            >
+                                <span className="text-sm text-blue-400 underline cursor-pointer">Upload Image</span>
+                            </CldUploadButton>
+                            {profileImageURL && (
+                                <div className="mt-2">
+                                    <img src={profileImageURL} alt="Profile preview" className="rounded-md max-h-40" />
+                                </div>
+                            )}
                         </div>
 
                         <Button 

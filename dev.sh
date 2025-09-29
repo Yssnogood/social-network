@@ -10,7 +10,7 @@ echo -e "${YELLOW}Social Network - Outil de développement Docker${NC}"
 
 function start_dev() {
     echo -e "${YELLOW}Démarrage des conteneurs en mode développement...${NC}"
-    if docker-compose up -d; then
+    if docker compose up -d; then
         echo -e "${GREEN}Les conteneurs sont démarrés!${NC}"
         echo -e "Frontend: http://localhost:3000"
         echo -e "Backend: http://localhost:8090"
@@ -22,7 +22,7 @@ function start_dev() {
 
 function stop_dev() {
     echo -e "${YELLOW}Arrêt des conteneurs...${NC}"
-    docker-compose down
+    docker compose down
     echo -e "${GREEN}Conteneurs arrêtés.${NC}"
 }
 
@@ -42,7 +42,7 @@ function show_logs() {
     elif [ "$1" == "frontend" ]; then
         docker logs -f social-network-frontend
     else
-        docker-compose logs -f
+        docker compose logs -f
     fi
 }
 
